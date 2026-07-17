@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+             x:Class="SimuladorMegaHair.App.Views.BudgetPage"
+             x:DataType="vm:BudgetViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="#FDF6F0">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="30" Spacing="25">
+
+            <Label Text="✨ Orçamento gerado ✨"
+                   FontSize="26"
+                   FontAttributes="Bold"
+                   TextColor="#8B4513"
+                   HorizontalOptions="Center"
+                   Margin="0,20" />
+
+            <Border Stroke="#8B4513"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 20"
+                    BackgroundColor="White"
+                    Padding="30">
+
+                <VerticalStackLayout Spacing="15">
+
+                    <Label Text="Detalhes do serviço"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="#5C4033" />
+
+                    <BoxView HeightRequest="1" Color="#DDD" />
+
+                    <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto" RowSpacing="15">
+
+                        <Label Grid.Row="0" Grid.Column="0"
+                               Text="Método:"
+                               FontSize="16"
+                               TextColor="#5C4033" />
+                        <Label Grid.Row="0" Grid.Column="1"
+                               Text="{Binding Metodo}"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               HorizontalOptions="End"
+                               TextColor="#5C4033" />
+
+                        <Label Grid.Row="1" Grid.Column="0"
+                               Text="Comprimento:"
+                               FontSize="16"
+                               TextColor="#5C4033" />
+                        <Label Grid.Row="1" Grid.Column="1"
+                               Text="{Binding Comprimento}"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               HorizontalOptions="End"
+                               TextColor="#5C4033" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="#DDD" />
+
+                    <Label Text="Valor total estimado"
+                           FontSize="16"
+                           TextColor="#5C4033"
+                           HorizontalOptions="Center" />
+
+                    <Label FontSize="42"
+                           FontAttributes="Bold"
+                           TextColor="#556B2F"
+                           HorizontalOptions="Center">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="R$ " />
+                                <Span Text="{Binding ValorEstimado, StringFormat='{0:N2}'}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+
+                    <Label Text="* Valor sujeito a avaliação presencial"
+                           FontSize="12"
+                           TextColor="#999"
+                           HorizontalOptions="Center"
+                           FontAttributes="Italic" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="🏠 Voltar ao início"
+                    FontSize="18"
+                    HeightRequest="60"
+                    CornerRadius="30"
+                    BackgroundColor="#8B4513"
+                    TextColor="White"
+                    Command="{Binding VoltarInicioCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>  

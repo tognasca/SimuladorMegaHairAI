@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SimuladorMegaHair.Api/SimuladorMegaHair.Api.csproj" />
+  <Project Path="SimuladorMegaHair.App/SimuladorMegaHair.App.csproj" />
+  <Project Path="SimuladorMegaHair.Domain/SimuladorMegaHair.Domain.csproj" />
+  <Project Path="SimuladorMegaHair.Infrastructure/SimuladorMegaHair.Infrastructure.csproj" />
+</Solution>

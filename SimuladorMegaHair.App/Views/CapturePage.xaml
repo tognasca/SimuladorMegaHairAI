@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+             x:Class="SimuladorMegaHair.App.Views.CapturePage"
+             x:DataType="vm:CaptureViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="#FDF6F0">
+
+    <Grid RowDefinitions="Auto, *, Auto" Padding="30">
+
+        <Label Grid.Row="0"
+               Text="Tire uma foto ou selecione da galeria"
+               FontSize="20"
+               TextColor="#5C4033"
+               HorizontalOptions="Center"
+               Margin="0,20" />
+
+        <Border Grid.Row="1"
+                Stroke="#8B4513"
+                StrokeThickness="2"
+                StrokeShape="RoundRectangle 20"
+                BackgroundColor="White"
+                Padding="10"
+                Margin="0,20">
+            <Image Source="{Binding FotoPath}"
+                   Aspect="AspectFit" />
+        </Border>
+
+        <VerticalStackLayout Grid.Row="2" Spacing="15">
+
+            <HorizontalStackLayout Spacing="15" HorizontalOptions="Center">
+
+                <Button Text="📷 Tirar foto"
+                        FontSize="16"
+                        HeightRequest="55"
+                        WidthRequest="180"
+                        CornerRadius="27"
+                        BackgroundColor="#8B4513"
+                        TextColor="White"
+                        Command="{Binding TirarFotoCommand}" />
+
+                <Button Text="🖼️ Galeria"
+                        FontSize="16"
+                        HeightRequest="55"
+                        WidthRequest="180"
+                        CornerRadius="27"
+                        BackgroundColor="#A0522D"
+                        TextColor="White"
+                        Command="{Binding SelecionarDaGaleriaCommand}" />
+            </HorizontalStackLayout>
+
+            <Button Text="Avançar →"
+                    FontSize="18"
+                    HeightRequest="60"
+                    CornerRadius="30"
+                    BackgroundColor="#556B2F"
+                    TextColor="White"
+                    IsEnabled="{Binding TemFoto}"
+                    Command="{Binding AvancarCommand}" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

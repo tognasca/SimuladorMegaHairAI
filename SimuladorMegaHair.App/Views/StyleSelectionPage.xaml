@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+             x:Class="SimuladorMegaHair.App.Views.StyleSelectionPage"
+             x:DataType="vm:StyleSelectionViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="#FDF6F0">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="30" Spacing="20">
+
+            <Label Text="Escolha o visual dos sonhos"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="#5C4033"
+                   HorizontalOptions="Center" />
+
+            <Border Stroke="#8B4513"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 15"
+                    HeightRequest="250"
+                    Padding="5">
+                <Image Source="{Binding FotoPath}" Aspect="AspectFit" />
+            </Border>
+
+            <Label Text="Comprimento" FontSize="16" TextColor="#5C4033" />
+            <Picker Title="Selecione"
+                    ItemsSource="{Binding Comprimentos}"
+                    SelectedItem="{Binding ComprimentoSelecionado}"
+                    BackgroundColor="White" />
+
+            <Label Text="Cor" FontSize="16" TextColor="#5C4033" />
+            <Picker Title="Selecione"
+                    ItemsSource="{Binding Cores}"
+                    SelectedItem="{Binding CorSelecionada}"
+                    BackgroundColor="White" />
+
+            <Label Text="Tipo de cabelo" FontSize="16" TextColor="#5C4033" />
+            <Picker Title="Selecione"
+                    ItemsSource="{Binding TiposCabelo}"
+                    SelectedItem="{Binding TipoCabeloSelecionado}"
+                    BackgroundColor="White" />
+
+            <Label Text="Método do mega hair" FontSize="16" TextColor="#5C4033" />
+            <Picker Title="Selecione"
+                    ItemsSource="{Binding Metodos}"
+                    SelectedItem="{Binding MetodoSelecionado}"
+                    BackgroundColor="White" />
+
+            <Button Text="✨ Gerar simulação"
+                    FontSize="18"
+                    HeightRequest="60"
+                    CornerRadius="30"
+                    BackgroundColor="#8B4513"
+                    TextColor="White"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
+                    Command="{Binding GerarSimulacaoCommand}" />
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                               IsVisible="{Binding IsBusy}"
+                               Color="#8B4513" />
+
+            <Label Text="Aguarde, a IA está criando seu novo visual..."
+                   IsVisible="{Binding IsBusy}"
+                   HorizontalOptions="Center"
+                   TextColor="#5C4033" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

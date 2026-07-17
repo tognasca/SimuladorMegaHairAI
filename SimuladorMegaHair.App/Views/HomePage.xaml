@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+             x:Class="SimuladorMegaHair.App.Views.HomePage"
+             x:DataType="vm:HomeViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="#FDF6F0">
+
+    <Grid RowDefinitions="*, Auto, *" Padding="40">
+
+        <VerticalStackLayout Grid.Row="1"
+                             Spacing="30"
+                             HorizontalOptions="Center">
+
+            <Label Text="MegaHair AI"
+                   FontSize="42"
+                   FontAttributes="Bold"
+                   TextColor="#8B4513"
+                   HorizontalOptions="Center" />
+
+            <Label Text="Descubra como você ficaria com o cabelo dos seus sonhos"
+                   FontSize="18"
+                   TextColor="#5C4033"
+                   HorizontalTextAlignment="Center"
+                   MaxLines="3" />
+
+            <Button Text="Iniciar simulação"
+                    FontSize="20"
+                    HeightRequest="60"
+                    WidthRequest="280"
+                    CornerRadius="30"
+                    BackgroundColor="#8B4513"
+                    TextColor="White"
+                    Command="{Binding IniciarSimulacaoCommand}" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>
