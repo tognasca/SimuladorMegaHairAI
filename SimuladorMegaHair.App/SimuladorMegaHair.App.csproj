@@ -31,6 +31,17 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Content Include="resultados\2bd06852-537a-4419-9544-f15fd8f32bac.png">
+	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </Content>
+	  <Content Include="resultados\e9897c5a-dab8-4c12-b89f-b742a931d9c8.png">
+	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Maui" Version="9.0.3" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
@@ -42,6 +53,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Update="Views\Components\BeforeAfterSlider.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </None>
+	  <None Update="Views\Components\LoadingOverlay.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </None>
 	  <None Update="Views\OrcamentosPage.xaml">
 	    <SubType>Designer</SubType>
 	    <Generator>MSBuild:Compile</Generator>

@@ -2,13 +2,27 @@
 <Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:local="clr-namespace:SimuladorMegaHair.App.Converters"
+             xmlns:converters="clr-namespace:SimuladorMegaHair.App.Converters"
+             xmlns:models="clr-namespace:SimuladorMegaHair.App.Models"
+             xmlns:components="clr-namespace:SimuladorMegaHair.App.Views.Components"
              x:Class="SimuladorMegaHair.App.App">
+
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Agora o sistema entende quem é o local -->
+            <local:StringToColorConverter x:Key="StringToColorConverter" />
             <toolkit:InvertedBoolConverter x:Key="InverseBoolConverter" />
+
+            <converters:EqualityConverter x:Key="EqualityConverter" />
+            <converters:BoolToStrokeConverter x:Key="BoolToStrokeConverter" />
+            <converters:BoolToBackgroundConverter x:Key="BoolToBackgroundConverter" />
+            <converters:BoolToTextColorConverter x:Key="BoolToTextColorConverter" />
+            <converters:SelectionMultiConverter x:Key="SelectionConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

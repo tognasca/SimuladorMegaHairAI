@@ -1,8 +1,9 @@
-﻿using System.Net.Http.Headers;
-using System.Text.Json;
-using SimuladorMegaHair.Domain.Interfaces;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using SimuladorMegaHair.Domain.DTOs;
+using SimuladorMegaHair.Domain.Interfaces;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace SimuladorMegaHair.Infrastructure.Services;
 
@@ -42,17 +43,33 @@ public class OpenAiImageSimulationService : IImageSimulationService
         if (!File.Exists(absoluteImagePath))
             throw new FileNotFoundException("Imagem original não encontrada.", absoluteImagePath);
 
+        //await using var imageStream = File.OpenRead(absoluteImagePath);
+
+        //using var form = new MultipartFormDataContent();
+
+        //form.Add(new StringContent("gpt-image-1"), "model");
+        //form.Add(new StringContent(prompt), "prompt");
+        //form.Add(new StringContent("1024x1024"), "size");
+
         await using var imageStream = File.OpenRead(absoluteImagePath);
+        //await using var maskStream = File.OpenRead(maskPath);
 
         using var form = new MultipartFormDataContent();
 
         form.Add(new StringContent("gpt-image-1"), "model");
         form.Add(new StringContent(prompt), "prompt");
-        form.Add(new StringContent("1024x1024"), "size");
 
         var imageContent = new StreamContent(imageStream);
-        imageContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-        form.Add(imageContent, "image", Path.GetFileName(absoluteImagePath));
+        imageContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(imageContent, "image", "image.png");
+
+        //var maskContent = new StreamContent(maskStream);
+        //maskContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        //form.Add(maskContent, "mask", "mask.png");
+
+        //var imageContent = new StreamContent(imageStream);
+        //imageContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+        //form.Add(imageContent, "image", Path.GetFileName(absoluteImagePath));
 
         var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/images/edits");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);

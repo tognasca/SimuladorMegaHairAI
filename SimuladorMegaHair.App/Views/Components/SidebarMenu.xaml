@@ -13,16 +13,27 @@
             <VerticalStackLayout Padding="25,30" Spacing="8">
 
                 <!-- LOGO -->
-                <VerticalStackLayout Spacing="2" Margin="0,0,0,40">
-                    <Label Text="L U X E"
-                           FontSize="28"
-                           FontAttributes="Bold"
-                           CharacterSpacing="10"
-                           TextColor="{StaticResource GoldPrimary}" />
-                    <Label Text="Tati Mega Hair"
-                           FontSize="8"
-                           CharacterSpacing="5"
-                           TextColor="{StaticResource TextSecondary}" />
+                <VerticalStackLayout Margin="0,0,0,35"
+                     HorizontalOptions="Center"
+                     Spacing="10">
+
+                    <Image Source="logo_tati.png"
+           HeightRequest="120"
+           WidthRequest="120"
+           Aspect="AspectFit"
+           HorizontalOptions="Center"/>
+
+                    <Label Text="SALÃO DE BELEZA"
+           FontSize="9"
+           CharacterSpacing="4"
+           HorizontalOptions="Center"
+           TextColor="{StaticResource TextSecondary}"/>
+
+                    <BoxView HeightRequest="1"
+             WidthRequest="120"
+             HorizontalOptions="Center"
+             Color="{StaticResource GoldPrimary}"
+             Opacity="0.35"/>
                 </VerticalStackLayout>
 
                 <!-- INÍCIO -->
@@ -111,18 +122,33 @@
 
                 <!-- SELO EXPERIÊNCIA -->
                 <Border BackgroundColor="{StaticResource CardColor}"
-                        Stroke="{StaticResource BorderGold}"
-                        StrokeThickness="1"
-                        StrokeShape="RoundRectangle 12"
-                        Padding="15,20"
-                        Margin="0,30,0,0">
-                    <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
-                        <Label Text="◈" FontSize="22" TextColor="{StaticResource GoldPrimary}" HorizontalOptions="Center" />
-                        <Label Text="EXPERIÊNCIA" FontSize="9" CharacterSpacing="3" TextColor="{StaticResource TextSecondary}" HorizontalOptions="Center" />
-                        <Label Text="Tati Mega Hair" FontSize="16" FontAttributes="Bold" CharacterSpacing="4" TextColor="{StaticResource GoldPrimary}" HorizontalOptions="Center" />
-                        <Label Text="Sua beleza." FontSize="10" TextColor="{StaticResource TextSecondary}" HorizontalOptions="Center" Margin="0,5,0,0" />
-                        <Label Text="Nossa tecnologia." FontSize="10" TextColor="{StaticResource TextSecondary}" HorizontalOptions="Center" />
+        Stroke="{StaticResource BorderGold}"
+        StrokeThickness="1"
+        StrokeShape="RoundRectangle 12"
+        Padding="15,20"
+        Margin="0,30,0,0">
+
+                    <VerticalStackLayout HorizontalOptions="Center"
+                         Spacing="8">
+
+                        <Image Source="logo_tati.png"
+               HeightRequest="70"
+               Aspect="AspectFit"/>
+
+                        <Label Text="TATI MEGA HAIR"
+               FontSize="11"
+               FontAttributes="Bold"
+               CharacterSpacing="3"
+               TextColor="{StaticResource GoldPrimary}"
+               HorizontalOptions="Center"/>
+
+                        <Label Text="Tecnologia de Simulação"
+               FontSize="10"
+               TextColor="{StaticResource TextSecondary}"
+               HorizontalOptions="Center"/>
+
                     </VerticalStackLayout>
+
                 </Border>
 
             </VerticalStackLayout>

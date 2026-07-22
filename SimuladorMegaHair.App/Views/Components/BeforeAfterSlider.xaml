@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SimuladorMegaHair.App.Views.Components.BeforeAfterSlider"
+             x:Name="RootView">
+
+    <Grid x:Name="ContainerGrid"
+      BackgroundColor="#111316"
+        SizeChanged="OnContainerSizeChanged">
+        <Image x:Name="ImgDepois"
+       Source="{Binding Source={x:Reference RootView}, Path=AfterSource}"
+       Aspect="AspectFit"
+       HorizontalOptions="Fill"
+       VerticalOptions="Fill" />
+
+        <!-- IMAGEM DA FRENTE (ANTES) -->
+        <Image x:Name="ImgAntes"
+       Source="{Binding Source={x:Reference RootView}, Path=BeforeSource}"
+       Aspect="AspectFit"
+       HorizontalOptions="Fill"
+       VerticalOptions="Fill" />
+
+        <!-- LINHA DIVISÓRIA -->
+        <BoxView x:Name="LinhaDivisoria"
+                 WidthRequest="3"
+                 Color="#C8A96E"
+                 HorizontalOptions="Start"
+                 VerticalOptions="Fill"
+                 InputTransparent="True" />
+
+        <!-- HANDLE (círculo arrastável) -->
+        <Border x:Name="Handle"
+                WidthRequest="46"
+                HeightRequest="46"
+                StrokeShape="Ellipse"
+                BackgroundColor="#C8A96E"
+                Stroke="White"
+                StrokeThickness="2"
+                HorizontalOptions="Start"
+                VerticalOptions="Center"
+                InputTransparent="True">
+            <Label Text="⇔"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="#0A0A0C"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center" />
+        </Border>
+
+        <!-- BADGES ANTES / DEPOIS -->
+        <Border HorizontalOptions="Start"
+                VerticalOptions="Start"
+                Margin="15"
+                Padding="10,5"
+                StrokeShape="RoundRectangle 12"
+                BackgroundColor="#CC0A0A0C"
+                Stroke="#C8A96E"
+                StrokeThickness="1"
+                InputTransparent="True">
+            <Label Text="ANTES"
+                   FontSize="10"
+                   FontAttributes="Bold"
+                   CharacterSpacing="3"
+                   TextColor="White" />
+        </Border>
+
+        <Border HorizontalOptions="End"
+                VerticalOptions="Start"
+                Margin="15"
+                Padding="10,5"
+                StrokeShape="RoundRectangle 12"
+                BackgroundColor="#CCC8A96E"
+                InputTransparent="True">
+            <Label Text="DEPOIS"
+                   FontSize="10"
+                   FontAttributes="Bold"
+                   CharacterSpacing="3"
+                   TextColor="#0A0A0C" />
+        </Border>
+
+        <!-- CAMADA DE INTERAÇÃO (só o PanGesture) -->
+        <Grid Background="Transparent">
+            <Grid.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnPanUpdated" />
+            </Grid.GestureRecognizers>
+        </Grid>
+
+    </Grid>
+</ContentView>

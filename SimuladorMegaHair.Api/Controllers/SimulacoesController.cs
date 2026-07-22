@@ -77,6 +77,10 @@ public class SimulacoesController : ControllerBase
         // Se já existe, retorna a mesma sem gastar IA
         if (existente is not null)
         {
+
+        //C:\git\SimuladorMegaHair\SimuladorMegaHair.Api\wwwroot\resultados\2bd06852 - 537a - 4419 - 9544 - f15fd8f32bac.png
+
+
             return Ok(new SimulacaoResponse
             {
                 Id = existente.Id,

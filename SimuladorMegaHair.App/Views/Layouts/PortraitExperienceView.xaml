@@ -1,197 +1,381 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-
 <ContentView
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
     xmlns:models="clr-namespace:SimuladorMegaHair.App.Models"
+    xmlns:components="clr-namespace:SimuladorMegaHair.App.Views.Components"
     x:Class="SimuladorMegaHair.App.Views.Layouts.PortraitExperienceView"
+    x:Name="RootView"
     x:DataType="vm:StyleSelectionViewModel">
 
-    <Grid
-        BackgroundColor="#08090B"
-        RowDefinitions="Auto,*,Auto,Auto,Auto">
+    <!-- Grid raiz: conteúdo + overlay de loading -->
+    <Grid>
 
-        <!-- CABEÇALHO -->
-        <VerticalStackLayout
-            Grid.Row="0"
-            Padding="20,24,20,12">
+        <!-- ═══════════════ CONTEÚDO PRINCIPAL ═══════════════ -->
+        <ScrollView BackgroundColor="#08090B">
+            <VerticalStackLayout Spacing="0">
 
-            <Label
-                Text="TATI MEGA HAIR"
-                FontSize="26"
-                CharacterSpacing="5"
-                TextColor="#D8B27A"
-                HorizontalOptions="Center" />
+                <!-- ═══ CABEÇALHO ═══ -->
+                <VerticalStackLayout Padding="20,24,20,12" Spacing="6">
 
-            <Label
-                Text="Sua nova versão começa aqui"
-                FontSize="12"
-                TextColor="#A9A5A0"
-                HorizontalOptions="Center" />
-        </VerticalStackLayout>
+                    <Image Source="logo_tati.png"
+                           HeightRequest="90"
+                           Aspect="AspectFit"
+                           HorizontalOptions="Center" />
 
-        <!-- IMAGEM PRINCIPAL -->
-        <Border
-            Grid.Row="1"
-            Margin="18,8"
-            Stroke="#80602F"
-            StrokeThickness="2"
-            StrokeShape="RoundRectangle 22"
-            BackgroundColor="#111316">
+                    <Label
+                        Text="Sua nova versão começa aqui"
+                        FontSize="12"
+                        TextColor="#A9A5A0"
+                        HorizontalOptions="Center" />
+                </VerticalStackLayout>
 
-            <Grid>
-                <Image
-                    Source="{Binding FotoExibicao}"
-                    Aspect="AspectFit"
-                    IsVisible="{Binding TemResultado, Converter={StaticResource InverseBoolConverter}}" />
+                <!-- ═══ SELETOR DE MODO (Antes/Comparar/Depois) ═══ -->
+                <Border
+                    Padding="4"
+                    Margin="0,4,0,8"
+                    HorizontalOptions="Center"
+                    StrokeShape="RoundRectangle 22"
+                    BackgroundColor="#111316"
+                    Stroke="#292A2E"
+                    StrokeThickness="1"
+                    IsVisible="{Binding TemResultado}">
 
-                <Image
-                    Source="{Binding FotoResultadoUrl}"
-                    Aspect="AspectFit"
-                    IsVisible="{Binding TemResultado}" />
-            </Grid>
-        </Border>
+                    <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="4">
 
-        <!-- MINIATURAS DO HISTÓRICO -->
-        <CollectionView
-            Grid.Row="2"
-            HeightRequest="110"
-            Margin="18,8"
-            ItemsLayout="HorizontalList"
-            ItemsSource="{Binding Historico}"
-            SelectionMode="None">
+                        <!-- ANTES -->
+                        <Border Grid.Column="0"
+                                Padding="14,8"
+                                StrokeShape="RoundRectangle 18"
+                                StrokeThickness="0">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding ModoAntes}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="#C89442" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Border" Binding="{Binding ModoAntes}" Value="False">
+                                    <Setter Property="BackgroundColor" Value="Transparent" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Label Text="ANTES"
+                                   FontSize="10"
+                                   FontAttributes="Bold"
+                                   CharacterSpacing="2"
+                                   VerticalOptions="Center">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding ModoAntes}" Value="True">
+                                        <Setter Property="TextColor" Value="#0A0A0C" />
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label" Binding="{Binding ModoAntes}" Value="False">
+                                        <Setter Property="TextColor" Value="White" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding MudarModoCommand}" CommandParameter="Antes" />
+                            </Border.GestureRecognizers>
+                        </Border>
 
-            <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:SimulacaoResponse">
+                        <!-- COMPARAR -->
+                        <Border Grid.Column="1"
+                                Padding="14,8"
+                                StrokeShape="RoundRectangle 18"
+                                StrokeThickness="0">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding ModoSlider}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="#C89442" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Border" Binding="{Binding ModoSlider}" Value="False">
+                                    <Setter Property="BackgroundColor" Value="Transparent" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Label Text="⇔ COMPARAR"
+                                   FontSize="10"
+                                   FontAttributes="Bold"
+                                   CharacterSpacing="2"
+                                   VerticalOptions="Center">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding ModoSlider}" Value="True">
+                                        <Setter Property="TextColor" Value="#0A0A0C" />
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label" Binding="{Binding ModoSlider}" Value="False">
+                                        <Setter Property="TextColor" Value="White" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding MudarModoCommand}" CommandParameter="Slider" />
+                            </Border.GestureRecognizers>
+                        </Border>
 
-                    <Border
-                        WidthRequest="100"
-                        HeightRequest="100"
-                        Margin="4"
-                        Stroke="#80602F"
-                        StrokeThickness="1"
-                        StrokeShape="RoundRectangle 12"
-                        BackgroundColor="#111316">
+                        <!-- DEPOIS -->
+                        <Border Grid.Column="2"
+                                Padding="14,8"
+                                StrokeShape="RoundRectangle 18"
+                                StrokeThickness="0">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding ModoDepois}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="#C89442" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Border" Binding="{Binding ModoDepois}" Value="False">
+                                    <Setter Property="BackgroundColor" Value="Transparent" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Label Text="DEPOIS"
+                                   FontSize="10"
+                                   FontAttributes="Bold"
+                                   CharacterSpacing="2"
+                                   VerticalOptions="Center">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding ModoDepois}" Value="True">
+                                        <Setter Property="TextColor" Value="#0A0A0C" />
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label" Binding="{Binding ModoDepois}" Value="False">
+                                        <Setter Property="TextColor" Value="White" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding MudarModoCommand}" CommandParameter="Depois" />
+                            </Border.GestureRecognizers>
+                        </Border>
 
+                    </Grid>
+                </Border>
+
+                <!-- ═══ IMAGEM PRINCIPAL ═══ -->
+                <Border
+                    Margin="18,4,18,10"
+                    HeightRequest="440"
+                    Stroke="#80602F"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 22"
+                    BackgroundColor="#111316">
+
+                    <Grid>
+                        <!-- FOTO ORIGINAL (só antes de gerar) -->
                         <Image
-                            Source="{Binding FotoResultadoUrl}"
-                            Aspect="AspectFit" />
-                    </Border>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+                            Source="{Binding FotoExibicao}"
+                            Aspect="AspectFit"
+                            IsVisible="{Binding TemResultado, Converter={StaticResource InverseBoolConverter}}" />
 
-        <!-- PERSONALIZAÇÃO -->
-        <ScrollView
-            Grid.Row="3"
-            Padding="18,8">
+                        <!-- CAIXA DE RESULTADOS (só após gerar) -->
+                        <Grid IsVisible="{Binding TemResultado}">
 
-            <VerticalStackLayout Spacing="13">
+                            <!-- Modo Antes -->
+                            <Image
+                                Source="{Binding FotoExibicao}"
+                                Aspect="AspectFit"
+                                IsVisible="{Binding ModoAntes}" />
 
-                <Label
-                    Text="PERSONALIZE SEU VISUAL"
-                    FontSize="17"
-                    FontAttributes="Bold"
-                    TextColor="#E4C187" />
+                            <!-- Modo Depois -->
+                            <Image
+                                Source="{Binding FotoResultadoUrl}"
+                                Aspect="AspectFit"
+                                IsVisible="{Binding ModoDepois}" />
 
-                <Grid
-                    ColumnDefinitions="*,*"
-                    RowDefinitions="Auto,Auto"
-                    ColumnSpacing="10"
-                    RowSpacing="10">
+                            <!-- Modo Slider Comparador -->
+                            <components:BeforeAfterSlider
+                                BeforeSource="{Binding FotoExibicao}"
+                                AfterSource="{Binding FotoResultadoUrl}"
+                                IsVisible="{Binding ModoSlider}" />
 
-                    <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="3">
-                        <Label Text="Comprimento" FontSize="11" TextColor="#A9A5A0" />
-                        <Picker
-                            ItemsSource="{Binding Comprimentos}"
-                            SelectedItem="{Binding ComprimentoSelecionado}"
-                            TextColor="White"
-                            TitleColor="#77788B"
-                            BackgroundColor="#1A1D2A" />
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- ═══ HISTÓRICO ═══ -->
+                <Border
+                    Margin="18,4,18,10"
+                    Padding="12"
+                    BackgroundColor="#111316"
+                    Stroke="#292A2E"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 14"
+                    IsVisible="{Binding TemHistorico}">
+
+                    <VerticalStackLayout Spacing="10">
+
+                        <!-- Cabeçalho -->
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Label Text="📸"
+                                   FontSize="14"
+                                   VerticalOptions="Center" />
+                            <Label Grid.Column="1"
+                                   Text="SUAS SIMULAÇÕES"
+                                   FontSize="11"
+                                   FontAttributes="Bold"
+                                   CharacterSpacing="3"
+                                   TextColor="White"
+                                   VerticalOptions="Center"
+                                   Margin="8,0,0,0" />
+                            <Label Grid.Column="2"
+                                   Text="{Binding Historico.Count, StringFormat='{0} salvas'}"
+                                   FontSize="10"
+                                   TextColor="#A9A5A0"
+                                   VerticalOptions="Center" />
+                        </Grid>
+
+                        <!-- Miniaturas horizontais -->
+                        <ScrollView Orientation="Horizontal"
+                                    HorizontalScrollBarVisibility="Never">
+                            <HorizontalStackLayout Spacing="10"
+                                                   BindableLayout.ItemsSource="{Binding Historico}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="models:SimulacaoResponse">
+                                        <Border WidthRequest="85"
+                                                HeightRequest="115"
+                                                StrokeShape="RoundRectangle 10"
+                                                Stroke="#292A2E"
+                                                StrokeThickness="1"
+                                                BackgroundColor="#1A1D2A"
+                                                Padding="0">
+                                            <Grid RowDefinitions="*,Auto">
+                                                <Image Grid.Row="0"
+                                                       Source="{Binding FotoResultadoUrl}"
+                                                       Aspect="AspectFill" />
+                                                <Border Grid.Row="1"
+                                                        BackgroundColor="#0A0A0C"
+                                                        Padding="5,4">
+                                                    <VerticalStackLayout Spacing="1">
+                                                        <Label Text="{Binding Comprimento}"
+                                                               FontSize="9"
+                                                               FontAttributes="Bold"
+                                                               TextColor="#E4C187"
+                                                               HorizontalOptions="Center" />
+                                                        <Label Text="{Binding Cor}"
+                                                               FontSize="8"
+                                                               TextColor="White"
+                                                               HorizontalOptions="Center" />
+                                                    </VerticalStackLayout>
+                                                </Border>
+                                            </Grid>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding BindingContext.SelecionarDoHistoricoCommand, Source={x:Reference RootView}}"
+                                                    CommandParameter="{Binding .}" />
+                                            </Border.GestureRecognizers>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+
                     </VerticalStackLayout>
+                </Border>
 
-                    <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="3">
-                        <Label Text="Cor" FontSize="11" TextColor="#A9A5A0" />
-                        <Picker
-                            ItemsSource="{Binding Cores}"
-                            SelectedItem="{Binding CorSelecionada}"
+                <!-- ═══ PERSONALIZAÇÃO ═══ -->
+                <VerticalStackLayout Padding="18,8" Spacing="13">
+
+                    <Label
+                        Text="PERSONALIZE SEU VISUAL"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="#E4C187" />
+
+                    <Grid
+                        ColumnDefinitions="*,*"
+                        RowDefinitions="Auto,Auto"
+                        ColumnSpacing="10"
+                        RowSpacing="10">
+
+                        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="3">
+                            <Label Text="Comprimento" FontSize="11" TextColor="#A9A5A0" />
+                            <Picker
+                                ItemsSource="{Binding Comprimentos}"
+                                SelectedItem="{Binding ComprimentoSelecionado}"
+                                TextColor="White"
+                                TitleColor="#77788B"
+                                BackgroundColor="#1A1D2A" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="3">
+                            <Label Text="Cor" FontSize="11" TextColor="#A9A5A0" />
+                            <Picker
+                                ItemsSource="{Binding Cores}"
+                                SelectedItem="{Binding CorSelecionada}"
+                                TextColor="White"
+                                TitleColor="#77788B"
+                                BackgroundColor="#1A1D2A" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="3">
+                            <Label Text="Tipo" FontSize="11" TextColor="#A9A5A0" />
+                            <Picker
+                                ItemsSource="{Binding TiposCabelo}"
+                                SelectedItem="{Binding TipoCabeloSelecionado}"
+                                TextColor="White"
+                                TitleColor="#77788B"
+                                BackgroundColor="#1A1D2A" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="3">
+                            <Label Text="Método" FontSize="11" TextColor="#A9A5A0" />
+                            <Picker
+                                ItemsSource="{Binding Metodos}"
+                                SelectedItem="{Binding MetodoSelecionado}"
+                                TextColor="White"
+                                TitleColor="#77788B"
+                                BackgroundColor="#1A1D2A" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Button
+                        Text="CRIAR MEU NOVO VISUAL"
+                        FontAttributes="Bold"
+                        HeightRequest="55"
+                        CornerRadius="27"
+                        BackgroundColor="#C89442"
+                        TextColor="White"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
+                        Command="{Binding GerarSimulacaoCommand}" />
+
+                </VerticalStackLayout>
+
+                <!-- ═══ ORÇAMENTO ═══ -->
+                <Border
+                    Margin="18,10,18,25"
+                    Padding="16"
+                    BackgroundColor="#151619"
+                    Stroke="#80602F"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 15"
+                    IsVisible="{Binding TemResultado}">
+
+                    <Grid ColumnDefinitions="*,Auto">
+
+                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                            <Label
+                                Text="VALOR ESTIMADO"
+                                FontSize="10"
+                                CharacterSpacing="2"
+                                TextColor="#AAA5A0" />
+
+                            <Label
+                                Text="{Binding ValorAtual, StringFormat='R$ {0:N2}'}"
+                                FontSize="24"
+                                FontAttributes="Bold"
+                                TextColor="#E4C187" />
+                        </VerticalStackLayout>
+
+                        <Button
+                            Grid.Column="1"
+                            Text="AGENDAR"
+                            BackgroundColor="#C89442"
                             TextColor="White"
-                            TitleColor="#77788B"
-                            BackgroundColor="#1A1D2A" />
-                    </VerticalStackLayout>
+                            FontAttributes="Bold"
+                            CornerRadius="22"
+                            HeightRequest="44"
+                            WidthRequest="130"
+                            Command="{Binding VerOrcamentoCommand}" />
+                    </Grid>
+                </Border>
 
-                    <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="3">
-                        <Label Text="Tipo" FontSize="11" TextColor="#A9A5A0" />
-                        <Picker
-                            ItemsSource="{Binding TiposCabelo}"
-                            SelectedItem="{Binding TipoCabeloSelecionado}"
-                            TextColor="White"
-                            TitleColor="#77788B"
-                            BackgroundColor="#1A1D2A" />
-                    </VerticalStackLayout>
-
-                    <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="3">
-                        <Label Text="Método" FontSize="11" TextColor="#A9A5A0" />
-                        <Picker
-                            ItemsSource="{Binding Metodos}"
-                            SelectedItem="{Binding MetodoSelecionado}"
-                            TextColor="White"
-                            TitleColor="#77788B"
-                            BackgroundColor="#1A1D2A" />
-                    </VerticalStackLayout>
-                </Grid>
-
-                <Button
-                    Text="CRIAR MEU NOVO VISUAL"
-                    FontAttributes="Bold"
-                    HeightRequest="55"
-                    CornerRadius="27"
-                    BackgroundColor="#C89442"
-                    TextColor="White"
-                    Command="{Binding GerarSimulacaoCommand}" />
-
-                <ActivityIndicator
-                    IsRunning="{Binding IsBusy}"
-                    IsVisible="{Binding IsBusy}"
-                    Color="#E4C187" />
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- ORÇAMENTO -->
-        <Border
-            Grid.Row="4"
-            Padding="16"
-            BackgroundColor="#151619"
-            Stroke="#80602F"
-            IsVisible="{Binding TemResultado}">
+        <!-- ═══════════════ OVERLAY DE LOADING ═══════════════ -->
+        <components:LoadingOverlay IsLoading="{Binding IsBusy}" />
 
-            <Grid ColumnDefinitions="*,Auto">
-
-                <VerticalStackLayout Grid.Column="0">
-                    <Label
-                        Text="VALOR ESTIMADO"
-                        FontSize="10"
-                        TextColor="#AAA5A0" />
-
-                    <Label
-                        Text="{Binding ValorAtual, StringFormat='R$ {0:N2}'}"
-                        FontSize="24"
-                        FontAttributes="Bold"
-                        TextColor="#E4C187" />
-                </VerticalStackLayout>
-
-                <Button
-                    Grid.Column="1"
-                    Text="AGENDAR"
-                    BackgroundColor="#C89442"
-                    TextColor="White"
-                    FontAttributes="Bold"
-                    CornerRadius="22"
-                    HeightRequest="44"
-                    WidthRequest="130"
-                    Command="{Binding VerOrcamentoCommand}" />
-            </Grid>
-        </Border>
     </Grid>
 </ContentView>

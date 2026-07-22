@@ -10,34 +10,20 @@
     <Grid>
 
         <!-- CONTEÚDO CENTRAL -->
-        <VerticalStackLayout Spacing="35"
+        <VerticalStackLayout Spacing="30"
                              VerticalOptions="Center"
                              HorizontalOptions="Center"
                              Padding="40">
 
-            <!-- Logo -->
-            <Label Text="✦"
-                   FontSize="55"
-                   TextColor="{StaticResource GoldPrimary}"
-                   HorizontalOptions="Center" />
-
-            <!-- Nome principal -->
-            <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
-                <Label Text="Tati Mega Hair"
-                       FontSize="52"
-                       FontAttributes="Bold"
-                       CharacterSpacing="15"
-                       TextColor="{StaticResource GoldPrimary}"
-                       HorizontalOptions="Center" />
-
-                <Label Text="By Tatiane Tognasca"
-                       FontSize="11"
-                       CharacterSpacing="8"
-                       TextColor="{StaticResource TextSecondary}"
-                       HorizontalOptions="Center" />
-            </VerticalStackLayout>
-
-            <!-- Divisor -->
+            <!-- ═══ LOGO TATI MEGA HAIR ═══ -->
+            <Image Source="logo_tati.png"
+       HeightRequest="300"
+       MaximumHeightRequest="320"
+       Aspect="AspectFit"
+       HorizontalOptions="Center"
+       Margin="0,-20,0,0"/>
+           
+            <!-- Divisor dourado -->
             <BoxView HeightRequest="1"
                      WidthRequest="80"
                      Color="{StaticResource GoldPrimary}"
