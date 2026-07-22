@@ -3,25 +3,17 @@
        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
        xmlns:views="clr-namespace:SimuladorMegaHair.App.Views"
        x:Class="SimuladorMegaHair.App.AppShell"
-       Shell.FlyoutBehavior="Disabled">
+       Shell.FlyoutBehavior="Disabled"
+       Shell.NavBarIsVisible="False"
+       Shell.BackgroundColor="{StaticResource PageBackgroundColor}">
 
-    <ShellContent Title="Início"
-                  ContentTemplate="{DataTemplate views:HomePage}"
-                  Route="HomePage" />
+    <ShellContent Title="Início" ContentTemplate="{DataTemplate views:HomePage}" Route="HomePage" />
+    <ShellContent Title="Captura" ContentTemplate="{DataTemplate views:CapturePage}" Route="CapturePage" />
+    <ShellContent Title="Simulação" ContentTemplate="{DataTemplate views:StyleSelectionPage}" Route="StyleSelectionPage" />
+    <ShellContent Title="Orçamento" ContentTemplate="{DataTemplate views:BudgetPage}" Route="BudgetPage" />
+    <ShellContent Title="Configurações" ContentTemplate="{DataTemplate views:SettingsPage}" Route="SettingsPage" />
+    <ShellContent Title="Catálogo" ContentTemplate="{DataTemplate views:CatalogoPage}" Route="CatalogoPage" />
+    <ShellContent Title="Clientes" ContentTemplate="{DataTemplate views:ClientesPage}" Route="ClientesPage" />
+    <ShellContent Title="Orçamentos" ContentTemplate="{DataTemplate views:OrcamentosPage}" Route="OrcamentosPage" />
 
-    <ShellContent Title="Captura"
-                  ContentTemplate="{DataTemplate views:CapturePage}"
-                  Route="CapturePage" />
-
-    <ShellContent Title="Estilo"
-                  ContentTemplate="{DataTemplate views:StyleSelectionPage}"
-                  Route="StyleSelectionPage" />
-
-    <ShellContent Title="Resultado"
-                  ContentTemplate="{DataTemplate views:ResultPage}"
-                  Route="ResultPage" />
-
-    <ShellContent Title="Orçamento"
-                  ContentTemplate="{DataTemplate views:BudgetPage}"
-                  Route="BudgetPage" />
 </Shell>

@@ -1,0 +1,197 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentView
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+    xmlns:models="clr-namespace:SimuladorMegaHair.App.Models"
+    x:Class="SimuladorMegaHair.App.Views.Layouts.PortraitExperienceView"
+    x:DataType="vm:StyleSelectionViewModel">
+
+    <Grid
+        BackgroundColor="#08090B"
+        RowDefinitions="Auto,*,Auto,Auto,Auto">
+
+        <!-- CABEÇALHO -->
+        <VerticalStackLayout
+            Grid.Row="0"
+            Padding="20,24,20,12">
+
+            <Label
+                Text="TATI MEGA HAIR"
+                FontSize="26"
+                CharacterSpacing="5"
+                TextColor="#D8B27A"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="Sua nova versão começa aqui"
+                FontSize="12"
+                TextColor="#A9A5A0"
+                HorizontalOptions="Center" />
+        </VerticalStackLayout>
+
+        <!-- IMAGEM PRINCIPAL -->
+        <Border
+            Grid.Row="1"
+            Margin="18,8"
+            Stroke="#80602F"
+            StrokeThickness="2"
+            StrokeShape="RoundRectangle 22"
+            BackgroundColor="#111316">
+
+            <Grid>
+                <Image
+                    Source="{Binding FotoExibicao}"
+                    Aspect="AspectFit"
+                    IsVisible="{Binding TemResultado, Converter={StaticResource InverseBoolConverter}}" />
+
+                <Image
+                    Source="{Binding FotoResultadoUrl}"
+                    Aspect="AspectFit"
+                    IsVisible="{Binding TemResultado}" />
+            </Grid>
+        </Border>
+
+        <!-- MINIATURAS DO HISTÓRICO -->
+        <CollectionView
+            Grid.Row="2"
+            HeightRequest="110"
+            Margin="18,8"
+            ItemsLayout="HorizontalList"
+            ItemsSource="{Binding Historico}"
+            SelectionMode="None">
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:SimulacaoResponse">
+
+                    <Border
+                        WidthRequest="100"
+                        HeightRequest="100"
+                        Margin="4"
+                        Stroke="#80602F"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12"
+                        BackgroundColor="#111316">
+
+                        <Image
+                            Source="{Binding FotoResultadoUrl}"
+                            Aspect="AspectFit" />
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- PERSONALIZAÇÃO -->
+        <ScrollView
+            Grid.Row="3"
+            Padding="18,8">
+
+            <VerticalStackLayout Spacing="13">
+
+                <Label
+                    Text="PERSONALIZE SEU VISUAL"
+                    FontSize="17"
+                    FontAttributes="Bold"
+                    TextColor="#E4C187" />
+
+                <Grid
+                    ColumnDefinitions="*,*"
+                    RowDefinitions="Auto,Auto"
+                    ColumnSpacing="10"
+                    RowSpacing="10">
+
+                    <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="3">
+                        <Label Text="Comprimento" FontSize="11" TextColor="#A9A5A0" />
+                        <Picker
+                            ItemsSource="{Binding Comprimentos}"
+                            SelectedItem="{Binding ComprimentoSelecionado}"
+                            TextColor="White"
+                            TitleColor="#77788B"
+                            BackgroundColor="#1A1D2A" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="3">
+                        <Label Text="Cor" FontSize="11" TextColor="#A9A5A0" />
+                        <Picker
+                            ItemsSource="{Binding Cores}"
+                            SelectedItem="{Binding CorSelecionada}"
+                            TextColor="White"
+                            TitleColor="#77788B"
+                            BackgroundColor="#1A1D2A" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="3">
+                        <Label Text="Tipo" FontSize="11" TextColor="#A9A5A0" />
+                        <Picker
+                            ItemsSource="{Binding TiposCabelo}"
+                            SelectedItem="{Binding TipoCabeloSelecionado}"
+                            TextColor="White"
+                            TitleColor="#77788B"
+                            BackgroundColor="#1A1D2A" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="3">
+                        <Label Text="Método" FontSize="11" TextColor="#A9A5A0" />
+                        <Picker
+                            ItemsSource="{Binding Metodos}"
+                            SelectedItem="{Binding MetodoSelecionado}"
+                            TextColor="White"
+                            TitleColor="#77788B"
+                            BackgroundColor="#1A1D2A" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <Button
+                    Text="CRIAR MEU NOVO VISUAL"
+                    FontAttributes="Bold"
+                    HeightRequest="55"
+                    CornerRadius="27"
+                    BackgroundColor="#C89442"
+                    TextColor="White"
+                    Command="{Binding GerarSimulacaoCommand}" />
+
+                <ActivityIndicator
+                    IsRunning="{Binding IsBusy}"
+                    IsVisible="{Binding IsBusy}"
+                    Color="#E4C187" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ORÇAMENTO -->
+        <Border
+            Grid.Row="4"
+            Padding="16"
+            BackgroundColor="#151619"
+            Stroke="#80602F"
+            IsVisible="{Binding TemResultado}">
+
+            <Grid ColumnDefinitions="*,Auto">
+
+                <VerticalStackLayout Grid.Column="0">
+                    <Label
+                        Text="VALOR ESTIMADO"
+                        FontSize="10"
+                        TextColor="#AAA5A0" />
+
+                    <Label
+                        Text="{Binding ValorAtual, StringFormat='R$ {0:N2}'}"
+                        FontSize="24"
+                        FontAttributes="Bold"
+                        TextColor="#E4C187" />
+                </VerticalStackLayout>
+
+                <Button
+                    Grid.Column="1"
+                    Text="AGENDAR"
+                    BackgroundColor="#C89442"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="22"
+                    HeightRequest="44"
+                    WidthRequest="130"
+                    Command="{Binding VerOrcamentoCommand}" />
+            </Grid>
+        </Border>
+    </Grid>
+</ContentView>

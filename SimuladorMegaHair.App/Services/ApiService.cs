@@ -1,5 +1,5 @@
-﻿using SimuladorMegaHair.App.Models;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
+using SimuladorMegaHair.App.Models;
 
 namespace SimuladorMegaHair.App.Services;
 
@@ -12,10 +12,6 @@ public class ApiService
         _httpClient = httpClient;
     }
 
-    /// <summary>
-    /// Envia a foto original para o servidor.
-    /// Retorna o caminho relativo salvo no backend.
-    /// </summary>
     public async Task<string> UploadFotoAsync(string filePath)
     {
         using var form = new MultipartFormDataContent();
@@ -28,19 +24,26 @@ public class ApiService
         response.EnsureSuccessStatusCode();
 
         var caminho = await response.Content.ReadAsStringAsync();
-
-        // Retorna sem aspas
         return caminho.Trim('"');
     }
 
-    /// <summary>
-    /// Cria a simulação chamando a IA no backend.
-    /// </summary>
     public async Task<SimulacaoResponse?> CriarSimulacaoAsync(CriarSimulacaoRequest request)
     {
         var response = await _httpClient.PostAsJsonAsync("api/simulacoes", request);
         response.EnsureSuccessStatusCode();
-
         return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();
+    }
+
+    public async Task<List<SimulacaoResponse>> GetHistoricoAsync(string? fotoOriginalPath = null)
+    {
+        var url = "api/simulacoes/historico";
+        if (!string.IsNullOrWhiteSpace(fotoOriginalPath))
+            url += $"?fotoOriginalPath={Uri.EscapeDataString(fotoOriginalPath)}";
+
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<List<SimulacaoResponse>>()
+            ?? new List<SimulacaoResponse>();
     }
 }

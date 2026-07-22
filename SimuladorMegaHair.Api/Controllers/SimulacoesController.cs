@@ -1,10 +1,10 @@
-﻿using SimuladorMegaHair.Domain.DTOs;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SimuladorMegaHair.Domain.DTOs;
 using SimuladorMegaHair.Domain.Entities;
 using SimuladorMegaHair.Domain.Interfaces;
 using SimuladorMegaHair.Infrastructure.Data;
 using SimuladorMegaHair.Infrastructure.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace SimuladorMegaHair.Api.Controllers;
 
@@ -29,7 +29,6 @@ public class SimulacoesController : ControllerBase
         _env = env;
     }
 
-    // POST api/simulacoes/upload
     [HttpPost("upload")]
     public async Task<ActionResult<string>> Upload(
         IFormFile file,
@@ -42,7 +41,7 @@ public class SimulacoesController : ControllerBase
         var extensao = Path.GetExtension(file.FileName).ToLowerInvariant();
 
         if (!extensoesPermitidas.Contains(extensao))
-            return BadRequest("Formato não permitido. Use JPG, PNG ou WEBP.");
+            return BadRequest("Formato não permitido.");
 
         var uploadsFolder = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads");
         Directory.CreateDirectory(uploadsFolder);
@@ -56,7 +55,6 @@ public class SimulacoesController : ControllerBase
         return Ok(@$"wwwroot\uploads\{fileName}");
     }
 
-    // POST api/simulacoes
     [HttpPost]
     public async Task<ActionResult<SimulacaoResponse>> Criar(
         [FromBody] CriarSimulacaoRequest request,
@@ -65,6 +63,35 @@ public class SimulacoesController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.FotoOriginalPath))
             return BadRequest("Caminho da foto é obrigatório.");
 
+        // Verifica se já existe simulação idêntica com a mesma foto (cache)
+        var existente = await _dbContext.Simulacoes
+            .Where(s => s.FotoOriginalPath == request.FotoOriginalPath
+                     && s.Comprimento == request.Comprimento
+                     && s.Cor == request.Cor
+                     && s.TipoCabelo == request.TipoCabelo
+                     && s.MetodoMegaHair == request.MetodoMegaHair)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+
+        // Se já existe, retorna a mesma sem gastar IA
+        if (existente is not null)
+        {
+            return Ok(new SimulacaoResponse
+            {
+                Id = existente.Id,
+                FotoOriginalUrl = $"{baseUrl}/{existente.FotoOriginalPath}",
+                FotoResultadoUrl = $"{baseUrl}/{existente.FotoResultadoPath}",
+                ValorEstimado = existente.ValorEstimado,
+                Comprimento = existente.Comprimento,
+                Cor = existente.Cor,
+                TipoCabelo = existente.TipoCabelo,
+                MetodoMegaHair = existente.MetodoMegaHair,
+                CriadoEm = existente.CriadoEm
+            });
+        }
+
+        // Se não existe, chama a IA
         var resultadoPath = await _imageSimulationService.GerarSimulacaoAsync(
             request.FotoOriginalPath,
             request.Comprimento,
@@ -97,35 +124,50 @@ public class SimulacoesController : ControllerBase
         _dbContext.Simulacoes.Add(simulacao);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-
         return Ok(new SimulacaoResponse
         {
             Id = simulacao.Id,
             FotoOriginalUrl = $"{baseUrl}/{simulacao.FotoOriginalPath}",
             FotoResultadoUrl = $"{baseUrl}/{simulacao.FotoResultadoPath}",
-            ValorEstimado = simulacao.ValorEstimado
+            ValorEstimado = simulacao.ValorEstimado,
+            Comprimento = simulacao.Comprimento,
+            Cor = simulacao.Cor,
+            TipoCabelo = simulacao.TipoCabelo,
+            MetodoMegaHair = simulacao.MetodoMegaHair,
+            CriadoEm = simulacao.CriadoEm
         });
     }
 
-    // GET api/simulacoes
-    [HttpGet]
-    public async Task<ActionResult<List<SimulacaoResponse>>> Listar(
+    [HttpGet("historico")]
+    public async Task<ActionResult<List<SimulacaoResponse>>> ObterHistorico(
+        [FromQuery] string? fotoOriginalPath,
         CancellationToken cancellationToken)
     {
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
-        var simulacoes = await _dbContext.Simulacoes
+        var query = _dbContext.Simulacoes.AsQueryable();
+
+        // Se passar a foto, filtra só simulações daquela foto
+        if (!string.IsNullOrWhiteSpace(fotoOriginalPath))
+            query = query.Where(s => s.FotoOriginalPath == fotoOriginalPath);
+
+        var historico = await query
             .OrderByDescending(s => s.CriadoEm)
+            .Take(20)
             .Select(s => new SimulacaoResponse
             {
                 Id = s.Id,
                 FotoOriginalUrl = $"{baseUrl}/{s.FotoOriginalPath}",
                 FotoResultadoUrl = $"{baseUrl}/{s.FotoResultadoPath}",
-                ValorEstimado = s.ValorEstimado
+                ValorEstimado = s.ValorEstimado,
+                Comprimento = s.Comprimento,
+                Cor = s.Cor,
+                TipoCabelo = s.TipoCabelo,
+                MetodoMegaHair = s.MetodoMegaHair,
+                CriadoEm = s.CriadoEm
             })
             .ToListAsync(cancellationToken);
 
-        return Ok(simulacoes);
+        return Ok(historico);
     }
 }

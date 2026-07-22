@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Hosting;
 using SimuladorMegaHair.App.Services;
 using SimuladorMegaHair.App.ViewModels;
 using SimuladorMegaHair.App.Views;
@@ -20,14 +21,26 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        // HttpClient configurado para a API local
-        builder.Services.AddSingleton(sp => new HttpClient
+        builder.Services.AddSingleton(sp =>
         {
-            // ⚠️ IMPORTANTE:
-            // Se rodar como Windows App: use "https://localhost:7064/"
-            // Se rodar em Android emulador: use "https://10.0.2.2:7064/"
-            // Se for tablet físico: use IP da máquina, ex: "http://192.168.0.100:5185/"
-            BaseAddress = new Uri("https://localhost:7064/")
+#if DEBUG
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
+            return new HttpClient(handler)
+            {
+                BaseAddress = new Uri("http://localhost:5185/"),
+                Timeout = TimeSpan.FromMinutes(5)
+            };
+#else
+            return new HttpClient
+            {
+                BaseAddress = new Uri("http://localhost:5185/"),
+                Timeout = TimeSpan.FromMinutes(5)
+            };
+#endif
         });
 
         // Services
@@ -38,15 +51,21 @@ public static class MauiProgram
         builder.Services.AddTransient<HomeViewModel>();
         builder.Services.AddTransient<CaptureViewModel>();
         builder.Services.AddTransient<StyleSelectionViewModel>();
-        builder.Services.AddTransient<ResultViewModel>();
         builder.Services.AddTransient<BudgetViewModel>();
+        builder.Services.AddTransient<SettingsViewModel>();
+        builder.Services.AddTransient<CatalogoViewModel>();
+        builder.Services.AddTransient<ClientesViewModel>();
+        builder.Services.AddTransient<OrcamentosViewModel>();
 
         // Pages
         builder.Services.AddTransient<HomePage>();
         builder.Services.AddTransient<CapturePage>();
         builder.Services.AddTransient<StyleSelectionPage>();
-        builder.Services.AddTransient<ResultPage>();
         builder.Services.AddTransient<BudgetPage>();
+        builder.Services.AddTransient<SettingsPage>();
+        builder.Services.AddTransient<CatalogoPage>();
+        builder.Services.AddTransient<ClientesPage>();
+        builder.Services.AddTransient<OrcamentosPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

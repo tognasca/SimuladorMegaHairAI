@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+             xmlns:components="clr-namespace:SimuladorMegaHair.App.Views.Components"
+             x:Class="SimuladorMegaHair.App.Views.ClientesPage"
+             x:DataType="vm:ClientesViewModel"
+             BackgroundColor="{StaticResource PageBackgroundColor}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid ColumnDefinitions="220, *">
+        <components:SidebarMenu Grid.Column="0" />
+
+        <VerticalStackLayout Grid.Column="1" Padding="40" Spacing="20" VerticalOptions="Center" HorizontalOptions="Center">
+            <Label Text="♙" FontSize="60" TextColor="{StaticResource GoldPrimary}" HorizontalOptions="Center" />
+            <Label Text="CLIENTES"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   CharacterSpacing="6"
+                   TextColor="{StaticResource GoldPrimary}"
+                   HorizontalOptions="Center" />
+            <Label Text="Gerencie seus atendimentos"
+                   FontSize="14"
+                   TextColor="{StaticResource TextSecondary}"
+                   HorizontalOptions="Center" />
+            <Label Text="Em breve..."
+                   FontSize="12"
+                   FontAttributes="Italic"
+                   TextColor="{StaticResource TextMuted}"
+                   HorizontalOptions="Center" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

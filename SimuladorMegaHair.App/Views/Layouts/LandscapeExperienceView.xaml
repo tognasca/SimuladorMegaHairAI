@@ -1,0 +1,197 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentView
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+    xmlns:models="clr-namespace:SimuladorMegaHair.App.Models"
+    x:Class="SimuladorMegaHair.App.Views.Layouts.LandscapeExperienceView"
+    x:DataType="vm:StyleSelectionViewModel">
+
+    <Grid
+        BackgroundColor="#08090B"
+        RowDefinitions="Auto,*,Auto"
+        ColumnDefinitions="220,*,380">
+
+        <!-- MENU LATERAL -->
+        <Border
+            Grid.RowSpan="3"
+            Grid.Column="0"
+            BackgroundColor="#0B0D10"
+            Stroke="#292A2E"
+            Padding="20">
+
+            <VerticalStackLayout Spacing="24">
+
+                <Label
+                    Text="Tati Mega Hair"
+                    FontSize="34"
+                    CharacterSpacing="8"
+                    TextColor="#D8B27A" />
+
+                <Label Text="⌂   INÍCIO"       TextColor="White" FontSize="14" />
+                <Label Text="✧   SIMULAÇÃO"    TextColor="White" FontSize="14" />
+                <Label Text="▣   CATÁLOGO"     TextColor="White" FontSize="14" />
+                <Label Text="♙   CLIENTES"     TextColor="White" FontSize="14" />
+                <Label Text="▤   ORÇAMENTOS"   TextColor="White" FontSize="14" />
+                <Label Text="⚙   CONFIGURAÇÕES" TextColor="White" FontSize="14" />
+
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- CABEÇALHO -->
+        <Grid
+            Grid.Column="1"
+            Grid.ColumnSpan="2"
+            Grid.Row="0"
+            Padding="25,18">
+
+            <Label
+                Text="SUA NOVA VERSÃO, ANTES DE REALIZAR"
+                FontSize="24"
+                CharacterSpacing="6"
+                TextColor="#F5EEE4"
+                HorizontalOptions="Center" />
+        </Grid>
+
+        <!-- ÁREA PRINCIPAL -->
+        <Border
+            Grid.Row="1"
+            Grid.Column="1"
+            Margin="18"
+            Stroke="#80602F"
+            StrokeThickness="1"
+            StrokeShape="RoundRectangle 20"
+            BackgroundColor="#111316">
+
+            <Grid>
+                <Image
+                    Source="{Binding FotoExibicao}"
+                    Aspect="AspectFit"
+                    IsVisible="{Binding TemResultado, Converter={StaticResource InverseBoolConverter}}" />
+
+                <Image
+                    Source="{Binding FotoResultadoUrl}"
+                    Aspect="AspectFit"
+                    IsVisible="{Binding TemResultado}" />
+            </Grid>
+        </Border>
+
+        <!-- PAINEL DIREITO -->
+        <ScrollView
+            Grid.Row="1"
+            Grid.Column="2"
+            Padding="10,18,18,18">
+
+            <VerticalStackLayout Spacing="16">
+
+                <Label
+                    Text="MEGA HAIR"
+                    FontSize="22"
+                    TextColor="#E4C187" />
+
+                <Label Text="COMPRIMENTO" FontSize="11" TextColor="#A9A5A0" />
+                <Picker
+                    ItemsSource="{Binding Comprimentos}"
+                    SelectedItem="{Binding ComprimentoSelecionado}"
+                    TextColor="White"
+                    TitleColor="#77788B"
+                    BackgroundColor="#1A1D2A" />
+
+                <Label Text="COR" FontSize="11" TextColor="#A9A5A0" />
+                <Picker
+                    ItemsSource="{Binding Cores}"
+                    SelectedItem="{Binding CorSelecionada}"
+                    TextColor="White"
+                    TitleColor="#77788B"
+                    BackgroundColor="#1A1D2A" />
+
+                <Label Text="TIPO DE FIO" FontSize="11" TextColor="#A9A5A0" />
+                <Picker
+                    ItemsSource="{Binding TiposCabelo}"
+                    SelectedItem="{Binding TipoCabeloSelecionado}"
+                    TextColor="White"
+                    TitleColor="#77788B"
+                    BackgroundColor="#1A1D2A" />
+
+                <Label Text="MÉTODO" FontSize="11" TextColor="#A9A5A0" />
+                <Picker
+                    ItemsSource="{Binding Metodos}"
+                    SelectedItem="{Binding MetodoSelecionado}"
+                    TextColor="White"
+                    TitleColor="#77788B"
+                    BackgroundColor="#1A1D2A" />
+
+                <Button
+                    Text="GERAR ORÇAMENTO"
+                    FontAttributes="Bold"
+                    BackgroundColor="#C89442"
+                    TextColor="White"
+                    HeightRequest="55"
+                    CornerRadius="27"
+                    Command="{Binding GerarSimulacaoCommand}" />
+
+                <ActivityIndicator
+                    IsRunning="{Binding IsBusy}"
+                    IsVisible="{Binding IsBusy}"
+                    Color="#E4C187" />
+
+                <Label
+                    Text="VALOR ESTIMADO"
+                    FontSize="11"
+                    TextColor="#A9A5A0"
+                    IsVisible="{Binding TemResultado}" />
+
+                <Label
+                    Text="{Binding ValorAtual, StringFormat='R$ {0:N2}'}"
+                    FontSize="26"
+                    FontAttributes="Bold"
+                    TextColor="#E4C187"
+                    IsVisible="{Binding TemResultado}" />
+
+                <Button
+                    Text="AGENDAR"
+                    BackgroundColor="#C89442"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    HeightRequest="50"
+                    CornerRadius="25"
+                    IsVisible="{Binding TemResultado}"
+                    Command="{Binding VerOrcamentoCommand}" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- RODAPÉ -->
+        <Grid
+            Grid.Row="2"
+            Grid.Column="1"
+            Grid.ColumnSpan="2"
+            Padding="20"
+            ColumnDefinitions="*,*,*,*">
+
+            <Label
+                Text="SIMULAÇÃO REALISTA"
+                TextColor="#D8B27A"
+                HorizontalOptions="Center" />
+
+            <Label
+                Grid.Column="1"
+                Text="TEMPO REAL"
+                TextColor="#D8B27A"
+                HorizontalOptions="Center" />
+
+            <Label
+                Grid.Column="2"
+                Text="TECNOLOGIA TATIANE TOGNASCA"
+                TextColor="#D8B27A"
+                HorizontalOptions="Center" />
+
+            <Label
+                Grid.Column="3"
+                Text="SEGURO E PRIVADO"
+                TextColor="#D8B27A"
+                HorizontalOptions="Center" />
+        </Grid>
+    </Grid>
+</ContentView>

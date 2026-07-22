@@ -4,35 +4,106 @@
              xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
              x:Class="SimuladorMegaHair.App.Views.HomePage"
              x:DataType="vm:HomeViewModel"
-             Title="{Binding Title}"
-             BackgroundColor="#FDF6F0">
+             BackgroundColor="{StaticResource PageBackgroundColor}"
+             Shell.NavBarIsVisible="False">
 
-    <Grid RowDefinitions="*, Auto, *" Padding="40">
+    <Grid>
 
-        <VerticalStackLayout Grid.Row="1"
-                             Spacing="30"
-                             HorizontalOptions="Center">
+        <!-- CONTEÚDO CENTRAL -->
+        <VerticalStackLayout Spacing="35"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Padding="40">
 
-            <Label Text="MegaHair AI"
-                   FontSize="42"
-                   FontAttributes="Bold"
-                   TextColor="#8B4513"
+            <!-- Logo -->
+            <Label Text="✦"
+                   FontSize="55"
+                   TextColor="{StaticResource GoldPrimary}"
                    HorizontalOptions="Center" />
 
-            <Label Text="Descubra como você ficaria com o cabelo dos seus sonhos"
-                   FontSize="18"
-                   TextColor="#5C4033"
-                   HorizontalTextAlignment="Center"
-                   MaxLines="3" />
+            <!-- Nome principal -->
+            <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
+                <Label Text="Tati Mega Hair"
+                       FontSize="52"
+                       FontAttributes="Bold"
+                       CharacterSpacing="15"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
 
-            <Button Text="Iniciar simulação"
-                    FontSize="20"
+                <Label Text="By Tatiane Tognasca"
+                       FontSize="11"
+                       CharacterSpacing="8"
+                       TextColor="{StaticResource TextSecondary}"
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+
+            <!-- Divisor -->
+            <BoxView HeightRequest="1"
+                     WidthRequest="80"
+                     Color="{StaticResource GoldPrimary}"
+                     HorizontalOptions="Center"
+                     Opacity="0.5" />
+
+            <!-- Subtítulo -->
+            <Label Text="Veja como você ficaria antes&#10;de fazer o procedimento"
+                   FontSize="15"
+                   TextColor="{StaticResource TextSecondary}"
+                   HorizontalTextAlignment="Center"
+                   LineHeight="1.4" />
+
+            <!-- Botão principal -->
+            <Border Stroke="{StaticResource GoldPrimary}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 32"
+                    BackgroundColor="{StaticResource GoldPrimary}"
                     HeightRequest="60"
-                    WidthRequest="280"
-                    CornerRadius="30"
-                    BackgroundColor="#8B4513"
-                    TextColor="White"
-                    Command="{Binding IniciarSimulacaoCommand}" />
+                    WidthRequest="290"
+                    Margin="0,10,0,0">
+                <Grid>
+                    <Label Text="INICIAR SIMULAÇÃO"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           CharacterSpacing="4"
+                           TextColor="#0A0A0C"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding IniciarSimulacaoCommand}" />
+                    </Grid.GestureRecognizers>
+                </Grid>
+            </Border>
+
+            <!-- Rodapé -->
+            <Label Text="Tecnologia Tatiane Tognasca • Simulação com IA"
+                   FontSize="10"
+                   CharacterSpacing="3"
+                   TextColor="{StaticResource TextMuted}"
+                   HorizontalOptions="Center"
+                   Margin="0,15,0,0" />
+
         </VerticalStackLayout>
+
+        <!-- Botão de Configurações -->
+        <Border Stroke="{StaticResource BorderSoft}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 25"
+                BackgroundColor="{StaticResource CardColor}"
+                WidthRequest="50"
+                HeightRequest="50"
+                HorizontalOptions="End"
+                VerticalOptions="Start"
+                Margin="20">
+            <Grid>
+                <Label Text="⚙"
+                       FontSize="20"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding AbrirConfiguracoesCommand}" />
+                </Grid.GestureRecognizers>
+            </Grid>
+        </Border>
+
     </Grid>
 </ContentPage>

@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.Input;
-using SimuladorMegaHair.App.ViewModels;
 
 namespace SimuladorMegaHair.App.ViewModels;
 
@@ -14,5 +13,11 @@ public partial class HomeViewModel : BaseViewModel
     private async Task IniciarSimulacaoAsync()
     {
         await Shell.Current.GoToAsync("//CapturePage");
+    }
+
+    [RelayCommand]
+    private async Task AbrirConfiguracoesAsync()
+    {
+        await Shell.Current.GoToAsync("//SettingsPage");
     }
 }

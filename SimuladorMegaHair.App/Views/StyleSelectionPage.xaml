@@ -2,69 +2,442 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+             xmlns:models="clr-namespace:SimuladorMegaHair.App.Models"
+             xmlns:components="clr-namespace:SimuladorMegaHair.App.Views.Components"
              x:Class="SimuladorMegaHair.App.Views.StyleSelectionPage"
+             x:Name="Page"
              x:DataType="vm:StyleSelectionViewModel"
-             Title="{Binding Title}"
-             BackgroundColor="#FDF6F0">
+             BackgroundColor="{StaticResource PageBackgroundColor}"
+             Shell.NavBarIsVisible="False">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="30" Spacing="20">
+    <Grid ColumnDefinitions="220, *, 340" RowDefinitions="Auto, *, Auto">
 
-            <Label Text="Escolha o visual dos sonhos"
-                   FontSize="22"
-                   FontAttributes="Bold"
-                   TextColor="#5C4033"
+        <!-- SIDEBAR ESQUERDA -->
+        <components:SidebarMenu Grid.RowSpan="3" Grid.Column="0" />
+
+        <!-- CABEÇALHO CENTRAL -->
+        <VerticalStackLayout Grid.Row="0" Grid.Column="1" Padding="30,25,30,15" Spacing="20">
+            <Label Text="SUA NOVA VERSÃO, ANTES DE REALIZAR"
+                   FontSize="20"
+                   CharacterSpacing="6"
+                   TextColor="{StaticResource TextPrimary}"
                    HorizontalOptions="Center" />
 
-            <Border Stroke="#8B4513"
-                    StrokeThickness="2"
-                    StrokeShape="RoundRectangle 15"
-                    HeightRequest="250"
-                    Padding="5">
-                <Image Source="{Binding FotoPath}" Aspect="AspectFit" />
-            </Border>
+            <Grid ColumnDefinitions="*,*,*,*" HorizontalOptions="Center" WidthRequest="600">
 
-            <Label Text="Comprimento" FontSize="16" TextColor="#5C4033" />
-            <Picker Title="Selecione"
-                    ItemsSource="{Binding Comprimentos}"
-                    SelectedItem="{Binding ComprimentoSelecionado}"
-                    BackgroundColor="White" />
+                <VerticalStackLayout Grid.Column="0" Spacing="4" HorizontalOptions="Center">
+                    <Label Text="📷"
+                           FontSize="18"
+                           HorizontalOptions="Center"
+                           TextColor="{StaticResource TextMuted}" />
+                    <Label Text="1. FOTO"
+                           FontSize="10"
+                           CharacterSpacing="2"
+                           TextColor="{StaticResource TextMuted}" />
+                </VerticalStackLayout>
 
-            <Label Text="Cor" FontSize="16" TextColor="#5C4033" />
-            <Picker Title="Selecione"
-                    ItemsSource="{Binding Cores}"
-                    SelectedItem="{Binding CorSelecionada}"
-                    BackgroundColor="White" />
+                <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="Center">
+                    <Label Text="✂"
+                           FontSize="18"
+                           HorizontalOptions="Center"
+                           TextColor="{StaticResource TextMuted}" />
+                    <Label Text="2. SERVIÇO"
+                           FontSize="10"
+                           CharacterSpacing="2"
+                           TextColor="{StaticResource TextMuted}" />
+                </VerticalStackLayout>
 
-            <Label Text="Tipo de cabelo" FontSize="16" TextColor="#5C4033" />
-            <Picker Title="Selecione"
-                    ItemsSource="{Binding TiposCabelo}"
-                    SelectedItem="{Binding TipoCabeloSelecionado}"
-                    BackgroundColor="White" />
+                <VerticalStackLayout Grid.Column="2" Spacing="4" HorizontalOptions="Center">
+                    <Label Text="◈"
+                           FontSize="18"
+                           HorizontalOptions="Center"
+                           TextColor="{StaticResource GoldPrimary}" />
+                    <Label Text="3. PERSONALIZAR"
+                           FontSize="10"
+                           CharacterSpacing="2"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource GoldPrimary}" />
+                </VerticalStackLayout>
 
-            <Label Text="Método do mega hair" FontSize="16" TextColor="#5C4033" />
-            <Picker Title="Selecione"
-                    ItemsSource="{Binding Metodos}"
-                    SelectedItem="{Binding MetodoSelecionado}"
-                    BackgroundColor="White" />
-
-            <Button Text="✨ Gerar simulação"
-                    FontSize="18"
-                    HeightRequest="60"
-                    CornerRadius="30"
-                    BackgroundColor="#8B4513"
-                    TextColor="White"
-                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
-                    Command="{Binding GerarSimulacaoCommand}" />
-
-            <ActivityIndicator IsRunning="{Binding IsBusy}"
-                               IsVisible="{Binding IsBusy}"
-                               Color="#8B4513" />
-
-            <Label Text="Aguarde, a IA está criando seu novo visual..."
-                   IsVisible="{Binding IsBusy}"
-                   HorizontalOptions="Center"
-                   TextColor="#5C4033" />
+                <VerticalStackLayout Grid.Column="3" Spacing="4" HorizontalOptions="Center">
+                    <Label Text="◉"
+                           FontSize="18"
+                           HorizontalOptions="Center"
+                           TextColor="{StaticResource TextMuted}" />
+                    <Label Text="4. RESULTADO"
+                           FontSize="10"
+                           CharacterSpacing="2"
+                           TextColor="{StaticResource TextMuted}" />
+                </VerticalStackLayout>
+            </Grid>
         </VerticalStackLayout>
-    </ScrollView>
+
+        <!-- ÁREA PRINCIPAL - ANTES / DEPOIS -->
+        <Border Grid.Row="1" Grid.Column="1"
+                Stroke="{StaticResource GoldPrimary}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 20"
+                BackgroundColor="{StaticResource CardColor}"
+                Padding="0"
+                Margin="30,10,15,10">
+
+            <Grid ColumnDefinitions="*,*">
+
+                <!-- ANTES -->
+                <Grid Grid.Column="0">
+                    <Image Source="{Binding FotoExibicao}" Aspect="AspectFill" />
+
+                    <Border HorizontalOptions="Start"
+                            VerticalOptions="Start"
+                            Margin="15"
+                            Padding="12,6"
+                            BackgroundColor="#CC000000"
+                            StrokeThickness="1"
+                            Stroke="{StaticResource GoldPrimary}"
+                            StrokeShape="RoundRectangle 6">
+                        <Label Text="ANTES"
+                               FontSize="10"
+                               CharacterSpacing="3"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource GoldPrimary}" />
+                    </Border>
+                </Grid>
+
+                <!-- Separador -->
+                <BoxView Grid.Column="0"
+                         HorizontalOptions="End"
+                         WidthRequest="2"
+                         Color="{StaticResource GoldPrimary}"
+                         Opacity="0.7" />
+
+                <!-- DEPOIS -->
+                <Grid Grid.Column="1">
+                    <Image Source="{Binding FotoResultadoUrl}"
+                           Aspect="AspectFill"
+                           IsVisible="{Binding TemResultado}" />
+
+                    <Image Source="{Binding FotoExibicao}"
+                           Aspect="AspectFill"
+                           IsVisible="{Binding TemResultado, Converter={StaticResource InverseBoolConverter}}"
+                           Opacity="0.3" />
+
+                    <Border HorizontalOptions="End"
+                            VerticalOptions="Start"
+                            Margin="15"
+                            Padding="12,6"
+                            BackgroundColor="#CC000000"
+                            StrokeThickness="1"
+                            Stroke="{StaticResource GoldPrimary}"
+                            StrokeShape="RoundRectangle 6">
+                        <Label Text="DEPOIS"
+                               FontSize="10"
+                               CharacterSpacing="3"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource GoldPrimary}" />
+                    </Border>
+                </Grid>
+
+                <!-- Ícone central -->
+                <Border Grid.ColumnSpan="2"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        StrokeShape="RoundRectangle 22"
+                        BackgroundColor="{StaticResource GoldPrimary}">
+                    <Label Text="⇔"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="#0A0A0C"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- PAINEL DIREITO - CONTROLES -->
+        <ScrollView Grid.Row="1" Grid.Column="2" Padding="15,10,25,10">
+            <VerticalStackLayout Spacing="15">
+
+                <!-- MEGA HAIR -->
+                <Border BackgroundColor="{StaticResource CardColor}"
+                        Stroke="{StaticResource BorderSoft}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                            <Label Text="♨"
+                                   FontSize="18"
+                                   TextColor="{StaticResource GoldPrimary}"
+                                   VerticalOptions="Center" />
+                            <Label Grid.Column="1"
+                                   Text="MEGA HAIR"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   CharacterSpacing="4"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+
+                        <!-- COMPRIMENTO -->
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="COMPRIMENTO"
+                                   FontSize="10"
+                                   CharacterSpacing="3"
+                                   TextColor="{StaticResource TextSecondary}" />
+
+                            <Border Stroke="{StaticResource BorderSoft}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    BackgroundColor="{StaticResource InputColor}">
+                                <Picker ItemsSource="{Binding Comprimentos}"
+                                        SelectedItem="{Binding ComprimentoSelecionado}"
+                                        TextColor="{StaticResource TextPrimary}"
+                                        TitleColor="{StaticResource TextMuted}"
+                                        BackgroundColor="Transparent"
+                                        FontSize="13"
+                                        HeightRequest="42" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <!-- COR -->
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="COR"
+                                   FontSize="10"
+                                   CharacterSpacing="3"
+                                   TextColor="{StaticResource TextSecondary}" />
+
+                            <Border Stroke="{StaticResource BorderSoft}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    BackgroundColor="{StaticResource InputColor}">
+                                <Picker ItemsSource="{Binding Cores}"
+                                        SelectedItem="{Binding CorSelecionada}"
+                                        TextColor="{StaticResource TextPrimary}"
+                                        TitleColor="{StaticResource TextMuted}"
+                                        BackgroundColor="Transparent"
+                                        FontSize="13"
+                                        HeightRequest="42" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <!-- TIPO DE FIO -->
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="TIPO DE FIO"
+                                   FontSize="10"
+                                   CharacterSpacing="3"
+                                   TextColor="{StaticResource TextSecondary}" />
+
+                            <Border Stroke="{StaticResource BorderSoft}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    BackgroundColor="{StaticResource InputColor}">
+                                <Picker ItemsSource="{Binding TiposCabelo}"
+                                        SelectedItem="{Binding TipoCabeloSelecionado}"
+                                        TextColor="{StaticResource TextPrimary}"
+                                        TitleColor="{StaticResource TextMuted}"
+                                        BackgroundColor="Transparent"
+                                        FontSize="13"
+                                        HeightRequest="42" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <!-- MÉTODO -->
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="MÉTODO"
+                                   FontSize="10"
+                                   CharacterSpacing="3"
+                                   TextColor="{StaticResource TextSecondary}" />
+
+                            <Border Stroke="{StaticResource BorderSoft}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    BackgroundColor="{StaticResource InputColor}">
+                                <Picker ItemsSource="{Binding Metodos}"
+                                        SelectedItem="{Binding MetodoSelecionado}"
+                                        TextColor="{StaticResource TextPrimary}"
+                                        TitleColor="{StaticResource TextMuted}"
+                                        BackgroundColor="Transparent"
+                                        FontSize="13"
+                                        HeightRequest="42" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <!-- BOTÃO GERAR -->
+                        <Border Stroke="{StaticResource GoldPrimary}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 25"
+                                BackgroundColor="{StaticResource GoldPrimary}"
+                                HeightRequest="50"
+                                Margin="0,5,0,0">
+                            <Grid>
+                                <Label Text="GERAR SIMULAÇÃO"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       CharacterSpacing="4"
+                                       TextColor="#0A0A0C"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center" />
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding GerarSimulacaoCommand}" />
+                                </Grid.GestureRecognizers>
+                            </Grid>
+                        </Border>
+
+                        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                           IsVisible="{Binding IsBusy}"
+                                           Color="{StaticResource GoldPrimary}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ORÇAMENTO -->
+                <Border BackgroundColor="{StaticResource CardColor}"
+                        Stroke="{StaticResource BorderSoft}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="20"
+                        IsVisible="{Binding TemResultado}">
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="VALOR ESTIMADO"
+                               FontSize="10"
+                               CharacterSpacing="3"
+                               TextColor="{StaticResource TextSecondary}" />
+
+                        <Label FontSize="30"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource GoldPrimary}">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="R$ " FontSize="18" />
+                                    <Span Text="{Binding ValorAtual, StringFormat='{0:N2}'}" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+
+                        <Label Text="Em até 6x sem juros"
+                               FontSize="11"
+                               TextColor="{StaticResource TextMuted}" />
+
+                        <Border Stroke="{StaticResource GoldPrimary}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 25"
+                                BackgroundColor="{StaticResource GoldPrimary}"
+                                HeightRequest="50"
+                                Margin="0,10,0,0">
+                            <Grid>
+                                <Label Text="AGENDAR AGORA"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       CharacterSpacing="4"
+                                       TextColor="#0A0A0C"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center" />
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding VerOrcamentoCommand}" />
+                                </Grid.GestureRecognizers>
+                            </Grid>
+                        </Border>
+
+                        <Border Stroke="{StaticResource BorderSoft}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 25"
+                                BackgroundColor="Transparent"
+                                HeightRequest="50">
+                            <Label Text="FALAR NO WHATSAPP"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   CharacterSpacing="4"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- RODAPÉ -->
+        <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+              ColumnDefinitions="*,*,*,*"
+              Padding="30,20"
+              BackgroundColor="{StaticResource SidebarColor}">
+
+            <VerticalStackLayout Grid.Column="0" Spacing="4" HorizontalOptions="Center">
+                <Label Text="◈"
+                       FontSize="16"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
+                <Label Text="SIMULAÇÃO REALISTA"
+                       FontSize="10"
+                       CharacterSpacing="2"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
+                <Label Text="IA avançada para resultados naturais"
+                       FontSize="9"
+                       TextColor="{StaticResource TextMuted}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="Center">
+                <Label Text="◑"
+                       FontSize="16"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
+                <Label Text="TEMPO REAL"
+                       FontSize="10"
+                       CharacterSpacing="2"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
+                <Label Text="Veja o resultado na hora em alta qualidade"
+                       FontSize="9"
+                       TextColor="{StaticResource TextMuted}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Column="2" Spacing="4" HorizontalOptions="Center">
+                <Label Text="✦"
+                       FontSize="16"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
+                <Label Text="TECNOLOGIA TATIANE TOGNASCA"
+                       FontSize="10"
+                       CharacterSpacing="2"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
+                <Label Text="Exclusividade para transformar"
+                       FontSize="9"
+                       TextColor="{StaticResource TextMuted}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Column="3" Spacing="4" HorizontalOptions="Center">
+                <Label Text="◆"
+                       FontSize="16"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
+                <Label Text="SEGURO E PRIVADO"
+                       FontSize="10"
+                       CharacterSpacing="2"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
+                <Label Text="Suas fotos são protegidas"
+                       FontSize="9"
+                       TextColor="{StaticResource TextMuted}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+        </Grid>
+
+    </Grid>
 </ContentPage>

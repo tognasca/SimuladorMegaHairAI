@@ -9,21 +9,29 @@ public static class PromptBuilder
         string metodoMegaHair)
     {
         return $"""
-            Edit this photo realistically.
+            Professional beauty salon hair simulation.
 
-            Keep exactly:
-            - The person's face, facial identity and expression
-            - The original lighting and framing
-            - Makeup, skin tone and background
+            CRITICAL RULES - DO NOT VIOLATE:
+            - DO NOT change the person's face in any way
+            - DO NOT modify facial features, identity, or expression
+            - DO NOT change skin tone, makeup, or eyes
+            - DO NOT alter the background or lighting
+            - DO NOT change body, clothes or accessories
+            - ONLY modify the hair area
 
-            Apply a mega hair extension simulation with these characteristics:
+            Apply mega hair extensions with these exact characteristics:
             - Length: {comprimento}
-            - Color: {cor}
-            - Hair type: {tipoCabelo}
+            - Color: {cor} (realistic and vibrant)
+            - Hair type/texture: {tipoCabelo}
             - Application method: {metodoMegaHair}
 
-            The result must look natural and professional, as if done in a real beauty salon.
-            Focus only on the hair. Do not change anything else.
+            The result must be:
+            - Photorealistic and high resolution
+            - Natural blend at the roots (no visible transitions)
+            - Professional salon quality
+            - Same facial identity as the original photo
+            
+            Focus 100% on the hair. Everything else stays identical.
             """;
     }
 }

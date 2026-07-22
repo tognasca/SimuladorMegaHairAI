@@ -49,6 +49,19 @@ public partial class CaptureViewModel : BaseViewModel
     {
         if (string.IsNullOrWhiteSpace(FotoPath))
         {
+            if (AppSettings.UsarImagemDeTeste)
+            {
+                var parametrosTeste = new Dictionary<string, object>
+                {
+                    ["FotoPath"] = AppSettings.StaticResultUrl
+                };
+
+                await Shell.Current.GoToAsync(
+                    "//StyleSelectionPage",
+                    parametrosTeste);
+
+                return;
+            }
             await Shell.Current.DisplayAlert("Atenção", "Tire ou selecione uma foto.", "OK");
             return;
         }

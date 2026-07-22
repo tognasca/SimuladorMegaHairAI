@@ -1,0 +1,148 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+             x:Class="SimuladorMegaHair.App.Views.SettingsPage"
+             x:DataType="vm:SettingsViewModel"
+             BackgroundColor="{StaticResource PageBackgroundColor}"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="40,30" Spacing="25" MaximumWidthRequest="700" HorizontalOptions="Center">
+
+            <VerticalStackLayout Spacing="8">
+                <Label Text="✦"
+                       FontSize="30"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
+
+                <Label Text="CONFIGURAÇÕES"
+                       FontSize="22"
+                       FontAttributes="Bold"
+                       CharacterSpacing="6"
+                       TextColor="{StaticResource GoldPrimary}"
+                       HorizontalOptions="Center" />
+
+                <Label Text="Ajuste a experiência do sistema"
+                       FontSize="12"
+                       CharacterSpacing="2"
+                       TextColor="{StaticResource TextSecondary}"
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+
+            <!-- APARÊNCIA -->
+            <Border Stroke="{StaticResource BorderSoft}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 15"
+                    Padding="25"
+                    BackgroundColor="{StaticResource CardColor}">
+
+                <VerticalStackLayout Spacing="18">
+
+                    <Label Text="APARÊNCIA"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           CharacterSpacing="4"
+                           TextColor="{StaticResource GoldPrimary}" />
+
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="ORIENTAÇÃO DA TELA"
+                               FontSize="10"
+                               CharacterSpacing="3"
+                               TextColor="{StaticResource TextSecondary}" />
+
+                        <Border Stroke="{StaticResource BorderSoft}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 8"
+                                BackgroundColor="{StaticResource InputColor}">
+                            <Picker ItemsSource="{Binding LayoutModes}"
+                                    SelectedItem="{Binding LayoutModeSelected}"
+                                    TextColor="{StaticResource TextPrimary}"
+                                    TitleColor="{StaticResource TextMuted}"
+                                    BackgroundColor="Transparent"
+                                    FontSize="13"
+                                    HeightRequest="46" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="MODO DE OPERAÇÃO"
+                               FontSize="10"
+                               CharacterSpacing="3"
+                               TextColor="{StaticResource TextSecondary}" />
+
+                        <Border Stroke="{StaticResource BorderSoft}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 8"
+                                BackgroundColor="{StaticResource InputColor}">
+                            <Picker ItemsSource="{Binding ModosOperacao}"
+                                    SelectedItem="{Binding ModoOperacaoSelecionado}"
+                                    TextColor="{StaticResource TextPrimary}"
+                                    TitleColor="{StaticResource TextMuted}"
+                                    BackgroundColor="Transparent"
+                                    FontSize="13"
+                                    HeightRequest="46" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- IA -->
+            <Border Stroke="{StaticResource BorderSoft}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 15"
+                    Padding="25"
+                    BackgroundColor="{StaticResource CardColor}">
+
+                <VerticalStackLayout Spacing="18">
+
+                    <Label Text="INTELIGÊNCIA ARTIFICIAL"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           CharacterSpacing="4"
+                           TextColor="{StaticResource GoldPrimary}" />
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                            <Label Text="USAR IMAGEM DE TESTE"
+                                   FontSize="13"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="Enquanto ativado, a IA não é chamada"
+                                   FontSize="11"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+
+                        <Switch Grid.Column="1"
+                                IsToggled="{Binding UsarImagemDeTeste}"
+                                OnColor="{StaticResource GoldPrimary}"
+                                ThumbColor="White" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- BOTÃO VOLTAR -->
+            <Border Stroke="{StaticResource GoldPrimary}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 28"
+                    BackgroundColor="{StaticResource GoldPrimary}"
+                    HeightRequest="55">
+                <Grid>
+                    <Label Text="VOLTAR"
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           CharacterSpacing="5"
+                           TextColor="#0A0A0C"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding VoltarCommand}" />
+                    </Grid.GestureRecognizers>
+                </Grid>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
