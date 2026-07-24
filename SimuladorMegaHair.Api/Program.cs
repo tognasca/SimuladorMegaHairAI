@@ -26,7 +26,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Serviços
 builder.Services.AddScoped<IOrcamentoService, OrcamentoService>();
-builder.Services.AddHttpClient<IImageSimulationService, OpenAiImageSimulationService>();
+//builder.Services.AddHttpClient<IImageSimulationService, OpenAiImageSimulationService>();
+
+builder.Services.AddHttpClient<IImageSimulationService, ReplicateImageSimulationService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(3); // Replicate pode demorar
+});
 
 // CORS (para o MAUI acessar a API localmente)
 builder.Services.AddCors(options =>

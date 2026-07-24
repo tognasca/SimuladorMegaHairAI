@@ -269,6 +269,8 @@ public partial class StyleSelectionViewModel : BaseViewModel
     [RelayCommand]
     private async Task GerarSimulacaoAsync()
     {
+
+        Console.WriteLine("[DEBUG] GerarSimulacaoAsync CHAMADO");
         if (string.IsNullOrWhiteSpace(FotoOriginal))
         {
             await Shell.Current.DisplayAlert(
@@ -277,11 +279,15 @@ public partial class StyleSelectionViewModel : BaseViewModel
                 "OK");
             return;
         }
+        IsBusy = true;
+
+        // ⭐ Força a UI a renderizar o loading ANTES de continuar
+        await Task.Yield();
+        await Task.Delay(50);
 
         try
         {
-            IsBusy = true;
-
+           
             SimulacaoResponse resultado;
 
             if (AppSettings.UsarImagemDeTeste)
@@ -327,6 +333,15 @@ public partial class StyleSelectionViewModel : BaseViewModel
                     MetodoMegaHair = MetodoSelecionado
                 };
 
+
+                Console.WriteLine("═══════════════════════════════════════");
+                Console.WriteLine("[DEBUG] GerarSimulacaoAsync CHAMADO!");
+                Console.WriteLine($"[DEBUG] FotoOriginal: {FotoOriginal}");
+                Console.WriteLine($"[DEBUG] Comprimento: {ComprimentoSelecionado}");
+                Console.WriteLine($"[DEBUG] Cor: {CorSelecionada}");
+                Console.WriteLine("═══════════════════════════════════════");
+
+
                 resultado = await _apiService.CriarSimulacaoAsync(request)
                     ?? throw new InvalidOperationException("A API não retornou a simulação.");
 
@@ -349,14 +364,18 @@ public partial class StyleSelectionViewModel : BaseViewModel
             MetodoSelecionado = resultado.MetodoMegaHair;
 
             ModoVisualizacao = "Slider";
+
+            Console.WriteLine("[DEBUG] Simulação concluída com sucesso");
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[ERRO] {ex.Message}");
             await Shell.Current.DisplayAlert("Erro", ex.Message, "OK");
         }
         finally
         {
             IsBusy = false;
+            Console.WriteLine("[DEBUG] IsBusy = false");
         }
     }
 

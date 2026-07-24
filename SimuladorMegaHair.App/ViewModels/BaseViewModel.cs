@@ -9,4 +9,12 @@ public partial class BaseViewModel : ObservableObject
 
     [ObservableProperty]
     private string title = string.Empty;
-}   
+
+    public bool IsNotBusy => !IsBusy;
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsNotBusy));
+        Console.WriteLine($"[BaseViewModel] IsBusy mudou para: {value}");
+    }
+}

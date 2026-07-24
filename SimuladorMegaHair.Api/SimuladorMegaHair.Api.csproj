@@ -14,7 +14,15 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>
 
-  <PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\SimuladorMegaHair.Infrastructure\Models\ultraface.onnx"
+			  Link="Models\ultraface.onnx">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
