@@ -261,10 +261,6 @@ public partial class StyleSelectionViewModel : BaseViewModel
         }
     }
 
-    // ═════════════════════════════════════════════════════════
-    // COMANDOS DE AÇÃO
-    // ═════════════════════════════════════════════════════════
-
 
     [RelayCommand]
     private async Task GerarSimulacaoAsync()

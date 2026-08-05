@@ -1,14 +1,16 @@
+using Microsoft.EntityFrameworkCore;
 using SimuladorMegaHair.Domain.Interfaces;
+using SimuladorMegaHair.Infrastructure.Configuration;
 using SimuladorMegaHair.Infrastructure.Data;
 using SimuladorMegaHair.Infrastructure.Services;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers
-builder.Services.AddControllers();
+// ═══════════════════════════════════════════════════════════
+//  CONTROLLERS + SWAGGER
+// ═══════════════════════════════════════════════════════════
 
-// Swagger
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -20,20 +22,42 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Banco de dados
+// ═══════════════════════════════════════════════════════════
+//  CONFIGURAÇÕES (IOptions)
+// ═══════════════════════════════════════════════════════════
+
+builder.Services.Configure<SimulacaoOptions>(
+    builder.Configuration.GetSection(SimulacaoOptions.Section));
+
+builder.Services.Configure<ReplicateOptions>(
+    builder.Configuration.GetSection(ReplicateOptions.Section));
+
+builder.Services.Configure<OpenAIOptions>(
+    builder.Configuration.GetSection(OpenAIOptions.Section));
+
+// ═══════════════════════════════════════════════════════════
+//  BANCO DE DADOS
+// ═══════════════════════════════════════════════════════════
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Serviços
-builder.Services.AddScoped<IOrcamentoService, OrcamentoService>();
-//builder.Services.AddHttpClient<IImageSimulationService, OpenAiImageSimulationService>();
+// ═══════════════════════════════════════════════════════════
+//  SERVIÇOS DE DOMÍNIO
+// ═══════════════════════════════════════════════════════════
 
-builder.Services.AddHttpClient<IImageSimulationService, ReplicateImageSimulationService>(client =>
+builder.Services.AddScoped<IOrcamentoService, OrcamentoService>();
+
+// Pipeline unificado (Local + Replicate + OpenAI)
+builder.Services.AddHttpClient<IImageSimulationService, SimulacaoPipelineService>(c =>
 {
-    client.Timeout = TimeSpan.FromMinutes(3); // Replicate pode demorar
+    c.Timeout = TimeSpan.FromMinutes(10);
 });
 
-// CORS (para o MAUI acessar a API localmente)
+// ═══════════════════════════════════════════════════════════
+//  CORS
+// ═══════════════════════════════════════════════════════════
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -43,6 +67,10 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+
+// ═══════════════════════════════════════════════════════════
+//  BUILD & PIPELINE
+// ═══════════════════════════════════════════════════════════
 
 var app = builder.Build();
 
@@ -59,7 +87,7 @@ app.UseCors("AllowAll");
 app.UseStaticFiles();
 app.MapControllers();
 
-// Criar banco automaticamente na primeira execução
+// Migração automática do banco
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

@@ -1,12 +1,9 @@
-﻿namespace SimuladorMegaHair.Domain.Interfaces;
-
+﻿
+namespace SimuladorMegaHair.Domain.Interfaces;
+using SimuladorMegaHair.Domain.Models;
 public interface IImageSimulationService
 {
-    Task<string> GerarSimulacaoAsync(
-        string imagemOriginalPath,
-        string comprimento,
-        string cor,
-        string tipoCabelo,
-        string metodoMegaHair,
-        CancellationToken cancellationToken = default);
+    Task<SimulacaoResult> GerarSimulacaoAsync(
+        SimulacaoRequest request,
+        CancellationToken ct = default);
 }

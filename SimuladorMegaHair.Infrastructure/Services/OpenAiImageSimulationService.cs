@@ -1,195 +1,294 @@
 ﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using SimuladorMegaHair.Domain.DTOs;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SimuladorMegaHair.Domain.Interfaces;
+using SimuladorMegaHair.Domain.Models;
+using SimuladorMegaHair.Infrastructure.Configuration;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace SimuladorMegaHair.Infrastructure.Services;
 
-public class OpenAiImageSimulationService : IImageSimulationService
+public sealed class OpenAiImageSimulationService : IImageSimulationService
 {
     private readonly HttpClient _httpClient;
-    private readonly IConfiguration _configuration;
+    private readonly OpenAIOptions _opts;
     private readonly IWebHostEnvironment _env;
+    private readonly ILogger<OpenAiImageSimulationService> _logger;
+
+    private const string OpenAIEditsUrl = "https://api.openai.com/v1/images/edits";
 
     public OpenAiImageSimulationService(
         HttpClient httpClient,
-        IConfiguration configuration,
-        IWebHostEnvironment env)
+        IOptions<OpenAIOptions> opts,
+        IWebHostEnvironment env,
+        ILogger<OpenAiImageSimulationService> logger)
     {
         _httpClient = httpClient;
-        _configuration = configuration;
+        _opts = opts.Value;
         _env = env;
+        _logger = logger;
+
+        ValidarOpcoes();
     }
 
-    public async Task<string> GerarSimulacaoAsync(
-        string imagemOriginalPath,
-        string comprimento,
-        string cor,
-        string tipoCabelo,
-        string metodoMegaHair,
-        CancellationToken cancellationToken = default)
+    // ═══════════════════════════════════════════════════════════
+    //  ENTRADA
+    // ═══════════════════════════════════════════════════════════
+
+    public async Task<SimulacaoResult> GerarSimulacaoAsync(
+        SimulacaoRequest request,
+        CancellationToken ct = default)
     {
-        var apiKey = _configuration["OpenAI:ApiKey"]
-            ?? throw new InvalidOperationException("OpenAI:ApiKey não configurada.");
+        var sw = Stopwatch.StartNew();
+        _logger.LogInformation("═══ SIMULAÇÃO OPENAI INICIADA ═══");
 
-        var prompt = PromptBuilder.Build(comprimento, cor, tipoCabelo, metodoMegaHair);
+        // ── 1. Valida e resolve caminho ─────────────────────
+        var imagemAbs = ResolverCaminho(request.ImagemOriginalPath);
 
-        var absoluteImagePath = Path.IsPathRooted(imagemOriginalPath)
-            ? imagemOriginalPath
-            : Path.Combine(_env.ContentRootPath, imagemOriginalPath);
+        // ── 2. Detecta rosto (best-effort) ──────────────────
+        var rosto = DetectarRostoSeguro(imagemAbs);
 
-        if (!File.Exists(absoluteImagePath))
-            throw new FileNotFoundException("Imagem original não encontrada.", absoluteImagePath);
+        // ── 3. Prepara imagem quadrada para OpenAI ──────────
+        var tempFolder = GarantirPasta("wwwroot", "temp");
+        var imagemPreparada = await ImagePreparer.PrepararParaOpenAiAsync(
+            imagemAbs, tempFolder, 1024);
 
-        // ═══════════════════════════════════════════════════
-        // 1. DETECTA O ROSTO
-        // ═══════════════════════════════════════════════════
-        var modelPath = LocalizarModeloOnnx();
+        // ── 4. Gera máscara do cabelo ───────────────────────
+        var masksFolder = GarantirPasta("wwwroot", "masks");
+        var maskPath = await HairMaskGenerator.GerarMascaraCabeloAsync(
+            imagemPreparada, masksFolder, rosto, ct);
 
-        FaceBox? rosto = null;
         try
         {
-            using var detector = new FaceDetector(modelPath);
-            rosto = detector.DetectarRosto(absoluteImagePath);
+            // ── 5. Envia para OpenAI e obtém imagem ─────────
+            var bytes = await EnviarParaOpenAiAsync(
+                imagemPreparada, maskPath, request, ct);
 
-            if (rosto != null)
-                Console.WriteLine($"[✓] Rosto detectado: {rosto.Confidence:P0}");
-            else
-                Console.WriteLine("[⚠] Nenhum rosto detectado — usando fallback");
+            // ── 6. Salva resultado ──────────────────────────
+            var resultPath = await SalvarResultadoAsync(bytes, ct);
+
+            sw.Stop();
+            _logger.LogInformation(
+                "═══ CONCLUÍDO em {Ms}ms → {Path} ═══",
+                sw.ElapsedMilliseconds, resultPath);
+
+            return new SimulacaoResult
+            {
+                ImagemResultadoPath = resultPath,
+                ProviderUtilizado = "OpenAI",
+                TempoProcessamentoMs = sw.ElapsedMilliseconds,
+                Aviso = null
+            };
         }
-        catch (Exception ex)
+        finally
         {
-            Console.WriteLine($"[✗] Erro na detecção facial: {ex.Message}");
+            LimparArquivosTemp(maskPath, imagemPreparada);
         }
+    }
 
-        // ═══════════════════════════════════════════════════
-        // 2. PREPARA IMAGEM QUADRADA (obrigatório no DALL-E 2)
-        // ═══════════════════════════════════════════════════
-        var tempFolder = Path.Combine(_env.ContentRootPath, "wwwroot", "temp");
-        var imagemPreparada = await ImagePreparer.PrepararParaOpenAiAsync(
-            absoluteImagePath, tempFolder, 1024);
+    // ═══════════════════════════════════════════════════════════
+    //  OPENAI API
+    // ═══════════════════════════════════════════════════════════
 
-        // ═══════════════════════════════════════════════════
-        // 3. GERA MÁSCARA (invertida para DALL-E 2)
-        // ═══════════════════════════════════════════════════
-        var masksFolder = Path.Combine(_env.ContentRootPath, "wwwroot", "masks");
-        var maskPath = await HairMaskGenerator.GerarMascaraCabeloAsync(
-            imagemPreparada,
-            masksFolder,
-            rosto,
-            cancellationToken);
+    private async Task<byte[]> EnviarParaOpenAiAsync(
+        string imagemPath,
+        string maskPath,
+        SimulacaoRequest request,
+        CancellationToken ct)
+    {
+        var prompt = PromptBuilder.BuildOpenAI(
+            request.Comprimento,
+            request.Cor,
+            request.TipoCabelo,
+            request.MetodoMegaHair);
 
-        // ═══════════════════════════════════════════════════
-        // 4. ENVIA PARA OPENAI (DALL-E 2)
-        // ═══════════════════════════════════════════════════
-        await using var imageStream = File.OpenRead(imagemPreparada);
+        _logger.LogDebug("Prompt OpenAI: {P}", prompt);
+
+        await using var imageStream = File.OpenRead(imagemPath);
         await using var maskStream = File.OpenRead(maskPath);
 
         using var form = new MultipartFormDataContent();
 
-        form.Add(new StringContent("dall-e-2"), "model");
+        // Parâmetros do modelo
+        form.Add(new StringContent(_opts.Model), "model");
         form.Add(new StringContent(prompt), "prompt");
-        form.Add(new StringContent("1024x1024"), "size");
+        form.Add(new StringContent(_opts.Size), "size");
         form.Add(new StringContent("1"), "n");
-        // ❌ NÃO envie "response_format" - o DALL-E 2 não aceita esse parâmetro no edits
 
+        // Só envia quality se for gpt-image-1 (DALL-E 2 não suporta)
+        if (_opts.Model.Contains("gpt-image", StringComparison.OrdinalIgnoreCase))
+            form.Add(new StringContent(_opts.Quality), "quality");
+
+        // Imagem original
         var imageContent = new StreamContent(imageStream);
         imageContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
         form.Add(imageContent, "image", "image.png");
 
+        // Máscara
         var maskContent = new StreamContent(maskStream);
         maskContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
         form.Add(maskContent, "mask", "mask.png");
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/images/edits");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        request.Content = form;
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAIEditsUrl);
+        httpRequest.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", _opts.ApiToken);
+        httpRequest.Content = form;
 
-        var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var response = await _httpClient.SendAsync(httpRequest, ct);
 
         if (!response.IsSuccessStatusCode)
         {
-            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
             throw new HttpRequestException(
-                $"Erro na API OpenAI: {response.StatusCode} — {errorBody}");
+                $"Erro OpenAI: {response.StatusCode} — {errorBody}",
+                null, response.StatusCode);
         }
 
-        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(ct);
         using var document = JsonDocument.Parse(json);
 
-        var dataElement = document.RootElement.GetProperty("data")[0];
+        return await ExtrairImagemAsync(document.RootElement, ct);
+    }
 
-        // ═══════════════════════════════════════════════════
-        // 5. BAIXA A IMAGEM (DALL-E 2 retorna URL, não base64)
-        // ═══════════════════════════════════════════════════
-        byte[] bytes;
+    /// <summary>
+    /// Extrai imagem tanto de URL (DALL-E 2) quanto de b64_json (gpt-image-1)
+    /// </summary>
+    private async Task<byte[]> ExtrairImagemAsync(
+        JsonElement root, CancellationToken ct)
+    {
+        var dataElement = root.GetProperty("data")[0];
 
+        // gpt-image-1 sempre retorna b64_json
+        if (dataElement.TryGetProperty("b64_json", out var b64Prop))
+        {
+            var b64 = b64Prop.GetString();
+            if (string.IsNullOrWhiteSpace(b64))
+                throw new InvalidOperationException("b64_json vazio.");
+
+            _logger.LogInformation("[✓] Imagem recebida (base64)");
+            return Convert.FromBase64String(b64);
+        }
+
+        // DALL-E 2 retorna URL
         if (dataElement.TryGetProperty("url", out var urlProp))
         {
             var imageUrl = urlProp.GetString();
             if (string.IsNullOrWhiteSpace(imageUrl))
-                throw new Exception("URL da imagem não retornada pela OpenAI.");
+                throw new InvalidOperationException("URL vazia.");
 
-            Console.WriteLine($"[✓] Imagem gerada: {imageUrl}");
-
-            // Baixa a imagem da URL retornada
-            bytes = await _httpClient.GetByteArrayAsync(imageUrl, cancellationToken);
+            _logger.LogInformation("[✓] Imagem gerada: {Url}", imageUrl);
+            return await _httpClient.GetByteArrayAsync(imageUrl, ct);
         }
-        else if (dataElement.TryGetProperty("b64_json", out var b64Prop))
+
+        throw new InvalidOperationException(
+            "Resposta da OpenAI não contém 'url' nem 'b64_json'.");
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  HELPERS
+    // ═══════════════════════════════════════════════════════════
+
+    private string ResolverCaminho(string path)
+    {
+        var abs = Path.IsPathRooted(path)
+            ? path
+            : Path.Combine(_env.ContentRootPath, path);
+
+        if (!File.Exists(abs))
+            throw new FileNotFoundException("Imagem não encontrada.", abs);
+
+        return abs;
+    }
+
+    private FaceBox? DetectarRostoSeguro(string imagemPath)
+    {
+        try
         {
-            var b64 = b64Prop.GetString();
-            if (string.IsNullOrWhiteSpace(b64))
-                throw new Exception("Imagem base64 não retornada pela OpenAI.");
+            var modelPath = LocalizarModeloOnnx();
+            using var detector = new FaceDetector(modelPath);
+            var rosto = detector.DetectarRosto(imagemPath);
 
-            bytes = Convert.FromBase64String(b64);
+            _logger.LogInformation(rosto != null
+                ? "Rosto detectado ({C:P0})"
+                : "Rosto não detectado — usando fallback",
+                rosto?.Confidence);
+
+            return rosto;
         }
-        else
+        catch (Exception ex)
         {
-            throw new Exception("Resposta da OpenAI não contém 'url' nem 'b64_json'.");
+            _logger.LogWarning(ex, "Falha na detecção — prosseguindo sem ela");
+            return null;
         }
+    }
 
-        // ═══════════════════════════════════════════════════
-        // 6. SALVA O RESULTADO
-        // ═══════════════════════════════════════════════════
-        var outputFolder = Path.Combine(_env.ContentRootPath, "wwwroot", "resultados");
-        Directory.CreateDirectory(outputFolder);
+    private async Task<string> SalvarResultadoAsync(
+        byte[] bytes, CancellationToken ct)
+    {
+        var pasta = GarantirPasta("wwwroot", "resultados");
+        var nome = $"{Guid.NewGuid()}.png";
+        var full = Path.Combine(pasta, nome);
 
-        var fileName = $"{Guid.NewGuid()}.png";
-        var outputPath = Path.Combine(outputFolder, fileName);
+        await File.WriteAllBytesAsync(full, bytes, ct);
+        return $"resultados/{nome}";
+    }
 
-        await File.WriteAllBytesAsync(outputPath, bytes, cancellationToken);
-
-        // Limpar arquivos temporários
-        try { File.Delete(maskPath); } catch { /* ignore */ }
-        try { File.Delete(imagemPreparada); } catch { /* ignore */ }
-
-        return $"resultados/{fileName}";
+    private string GarantirPasta(params string[] partes)
+    {
+        var caminho = Path.Combine(
+            new[] { _env.ContentRootPath }.Concat(partes).ToArray());
+        Directory.CreateDirectory(caminho);
+        return caminho;
     }
 
     private string LocalizarModeloOnnx()
     {
-        const string nomeModelo = "ultraface.onnx";
+        const string nome = "ultraface.onnx";
 
-        var possiveisCaminhos = new[]
+        var candidatos = new[]
         {
-            Path.Combine(AppContext.BaseDirectory, "Models", nomeModelo),
-            Path.Combine(_env.ContentRootPath, "Models", nomeModelo),
-            Path.Combine(_env.ContentRootPath, "..", "SimuladorMegaHair.Infrastructure", "Models", nomeModelo),
-            Path.Combine(_env.ContentRootPath, "wwwroot", "Models", nomeModelo),
-            Path.Combine(Directory.GetCurrentDirectory(), "Models", nomeModelo),
+            Path.Combine(AppContext.BaseDirectory,     "Models", nome),
+            Path.Combine(_env.ContentRootPath,         "Models", nome),
+            Path.Combine(_env.ContentRootPath, "..",
+                "SimuladorMegaHair.Infrastructure",    "Models", nome),
+            Path.Combine(_env.ContentRootPath, "wwwroot",  "Models", nome),
+            Path.Combine(Directory.GetCurrentDirectory(),  "Models", nome),
         };
 
-        foreach (var caminho in possiveisCaminhos)
+        foreach (var c in candidatos)
         {
-            var caminhoNormalizado = Path.GetFullPath(caminho);
-            if (File.Exists(caminhoNormalizado))
-                return caminhoNormalizado;
+            var norm = Path.GetFullPath(c);
+            if (File.Exists(norm)) return norm;
         }
 
-        var tentativas = string.Join("\n  - ", possiveisCaminhos.Select(Path.GetFullPath));
+        var tentativas = string.Join("\n  - ", candidatos.Select(Path.GetFullPath));
         throw new FileNotFoundException(
-            $"Modelo {nomeModelo} não encontrado. Locais verificados:\n  - {tentativas}");
+            $"Modelo '{nome}' não encontrado. Locais verificados:\n  - {tentativas}");
+    }
+
+    private void LimparArquivosTemp(params string[] caminhos)
+    {
+        foreach (var c in caminhos)
+        {
+            try
+            {
+                if (File.Exists(c)) File.Delete(c);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Não foi possível deletar: {Path}", c);
+            }
+        }
+    }
+
+    private void ValidarOpcoes()
+    {
+        if (string.IsNullOrWhiteSpace(_opts.ApiToken))
+            throw new InvalidOperationException("OpenAI:ApiToken não configurada.");
+
+        if (string.IsNullOrWhiteSpace(_opts.Model))
+            throw new InvalidOperationException("OpenAI:Model não configurada.");
     }
 }

@@ -6,7 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.26">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -16,8 +16,7 @@
 
 
 	<ItemGroup>
-		<None Include="..\SimuladorMegaHair.Infrastructure\Models\ultraface.onnx"
-			  Link="Models\ultraface.onnx">
+		<None Include="..\SimuladorMegaHair.Infrastructure\Models\ultraface.onnx" Link="Models\ultraface.onnx">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>

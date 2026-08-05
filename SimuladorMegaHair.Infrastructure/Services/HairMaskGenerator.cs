@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿using Microsoft.Extensions.Logging;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace SimuladorMegaHair.Infrastructure.Services;
@@ -96,7 +97,39 @@ public static class HairMaskGenerator
 
         return maskPath;
     }
+    private static void LogarEstatisticasMascara(string maskPath, ILogger logger)
+    {
+        try
+        {
+            using var img = SixLabors.ImageSharp.Image.Load<Rgba32>(maskPath);
+            var totalPixels = img.Width * img.Height;
+            var pixelsBrancos = 0;
 
+            img.ProcessPixelRows(acc =>
+            {
+                for (int y = 0; y < acc.Height; y++)
+                {
+                    var row = acc.GetRowSpan(y);
+                    foreach (ref var pixel in row)
+                        if (pixel.R > 128) pixelsBrancos++;
+                }
+            });
+
+            var percentual = (double)pixelsBrancos / totalPixels * 100;
+            logger.LogInformation(
+                "Máscara: {P:F1}% da imagem será substituído",
+                percentual);
+
+            // Se > 60%, a máscara está muito grande (pode estar pegando pescoço/corpo)
+            if (percentual > 60)
+                logger.LogWarning(
+                    "⚠️ Máscara muito grande ({P:F1}%) — risco de NSFW", percentual);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Não foi possível analisar máscara");
+        }
+    }
 
     /// <summary>
     /// Máscara para Replicate/SDXL/Flux inpainting:
