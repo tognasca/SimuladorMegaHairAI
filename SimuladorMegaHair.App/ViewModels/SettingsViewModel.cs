@@ -52,7 +52,7 @@ public partial class SettingsViewModel : BaseViewModel
 
         usarImagemDeTeste = Preferences.Get(
             "UsarImagemDeTeste",
-            true);
+            false);
 
         imagemDeTesteSelecionada = Preferences.Get(
             "ImagemDeTeste",

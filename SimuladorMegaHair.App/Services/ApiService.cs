@@ -27,6 +27,14 @@ public class ApiService
         return caminho.Trim('"');
     }
 
+    public async Task<List<Domain.DTOs.ProviderInfoResponse>> GetProvidersAsync()
+    {
+        var response = await _httpClient.GetAsync("api/simulacoes/providers");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<Domain.DTOs.ProviderInfoResponse>>()
+            ?? new List<Domain.DTOs.ProviderInfoResponse>();
+    }
+
     public async Task<SimulacaoResponse?> CriarSimulacaoAsync(CriarSimulacaoRequest request)
     {
         var response = await _httpClient.PostAsJsonAsync("api/simulacoes", request);

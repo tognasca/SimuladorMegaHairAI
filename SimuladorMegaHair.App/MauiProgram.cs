@@ -32,13 +32,13 @@ public static class MauiProgram
             return new HttpClient(handler)
             {
                 BaseAddress = new Uri("http://localhost:5185/"),
-                Timeout = TimeSpan.FromMinutes(5)
+                Timeout = TimeSpan.FromMinutes(10)
             };
 #else
             return new HttpClient
             {
                 BaseAddress = new Uri("http://localhost:5185/"),
-                Timeout = TimeSpan.FromMinutes(5)
+                Timeout = TimeSpan.FromMinutes(10)
             };
 #endif
         });

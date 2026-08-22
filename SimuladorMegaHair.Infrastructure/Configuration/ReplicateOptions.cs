@@ -19,8 +19,13 @@ public sealed class ReplicateOptions
 
     // ── Inferência ───────────────────────────────────────────
     public int FluxSteps { get; set; } = 28;
-    public double FluxGuidance { get; set; } = 30;
-    public int ImageSize { get; set; } = 512;
+    public double FluxGuidance { get; set; } = 22;
+    public int ImageSize { get; set; } = 1024;
+
+    /// <summary>
+    /// Raio do blur na máscara antes do composite (borda do cabelo).
+    /// </summary>
+    public double MaskFeatherSigma { get; set; } = 4;
 
     // ── Polling ──────────────────────────────────────────────
     public int MaxPollAttempts { get; set; } = 90;

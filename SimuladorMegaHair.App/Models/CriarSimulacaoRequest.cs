@@ -8,4 +8,5 @@ public class CriarSimulacaoRequest
     public string Cor { get; set; } = string.Empty;
     public string TipoCabelo { get; set; } = string.Empty;
     public string MetodoMegaHair { get; set; } = string.Empty;
+    public string Provider { get; set; } = "Replicate";
 }

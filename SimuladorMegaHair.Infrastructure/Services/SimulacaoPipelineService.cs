@@ -5,6 +5,7 @@ using SimuladorMegaHair.Domain.Enums;
 using SimuladorMegaHair.Domain.Interfaces;
 using SimuladorMegaHair.Domain.Models;
 using SimuladorMegaHair.Infrastructure.Configuration;
+using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
@@ -63,13 +64,18 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         var imagemPrep = await ImagePreparer.PrepararParaOpenAiAsync(
             imagemAbs, tempFolder, _rep.ImageSize);
 
-        // 2. Detecta rosto (best-effort)
-        var rosto = DetectarRostoSeguro(imagemAbs);
+        // 2. Detecta rosto na imagem já recortada (mesmas coordenadas da máscara)
+        var rosto = DetectarRostoSeguro(imagemPrep);
 
         // 3. Gera máscara (MediaPipe → SAM2 ou fallback local)
         var masksFolder = GarantirPasta("wwwroot", "masks");
         var maskPath = await HairMaskGenerator.GerarMascaraCabeloReplicateAsync(
             imagemPrep, masksFolder, rosto, ct);
+
+        var auditOverlay = await HairMaskAudit.SalvarAsync(
+            imagemPrep, maskPath,
+            GarantirPasta("wwwroot", "masks", "audit"),
+            _logger, ct);
 
         // 4. Escolhe pipeline
         var (resultadoUrl, aviso) = req.Provider switch
@@ -99,7 +105,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
             ImagemResultadoPath = path,
             ProviderUtilizado = req.Provider.ToString(),
             TempoProcessamentoMs = sw.ElapsedMilliseconds,
-            Aviso = aviso
+            Aviso = CombinarAvisos(aviso, $"Máscara (vermelho = área gerada): {auditOverlay}")
         };
     }
 
@@ -154,7 +160,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
 
     // ═══════════════════════════════════════════════════════════
     //  PIPELINE REPLICATE (pago)
-    //  Flux Fill → InsightFace → CodeFormer
+    //  Flux Fill → freeze de identidade (pixels originais fora da máscara)
     // ═══════════════════════════════════════════════════════════
 
     private async Task<(string url, string? aviso)> PipelineReplicateAsync(
@@ -165,37 +171,28 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
     {
         _logger.LogInformation("[REPLICATE] Iniciando pipeline pago...");
 
-        // Busca versões em paralelo
-        var (fluxVer, codeformerVer) = await BuscarVersoesReplicateAsync(ct);
+        var fluxVer = await ObterVersaoAsync(_rep.FluxFillOwner, _rep.FluxFillName, ct);
 
-        // ── Etapa 1: Flux Fill (inpainting) ──
         _logger.LogInformation("[1/2] Flux Fill — gerando novo cabelo...");
         var fluxUrl = await ExecutarFluxFillAsync(
             imagemPath, maskPath, req, fluxVer, ct);
 
-        // ── Etapa 2: CodeFormer (restauração de rosto) ──
-        _logger.LogInformation("[2/2] CodeFormer — restaurando qualidade...");
-
-        // Baixa resultado intermediário
+        _logger.LogInformation("[2/2] Freeze — restaurando rosto, roupa e fundo da foto original...");
         var tempFolder = GarantirPasta("wwwroot", "temp");
-        var interPath = await BaixarParaTempAsync(fluxUrl, tempFolder, ct);
+        var geradaPath = await BaixarParaTempAsync(fluxUrl, tempFolder, ct);
 
-        var finalUrl = await ExecutarCodeFormerAsync(interPath, codeformerVer, ct);
+        var composto = await IdentityCompositor.ComporPreservandoIdentidadeAsync(
+            imagemPath,
+            geradaPath,
+            maskPath,
+            GarantirPasta("wwwroot", "resultados"),
+            (float)_rep.MaskFeatherSigma,
+            ct);
 
-        LimparArquivosTemp(interPath);
+        LimparArquivosTemp(geradaPath);
 
         _logger.LogInformation("[REPLICATE] ✓ Concluído");
-        return (finalUrl, null);
-    }
-
-    private async Task<(string flux, string codeformer)> BuscarVersoesReplicateAsync(
-        CancellationToken ct)
-    {
-        var tasks = await Task.WhenAll(
-            ObterVersaoAsync(_rep.FluxFillOwner, _rep.FluxFillName, ct),
-            ObterVersaoAsync(_rep.CodeFormerOwner, _rep.CodeFormerName, ct));
-
-        return (tasks[0], tasks[1]);
+        return (composto, null);
     }
 
     private async Task<string> ExecutarFluxFillAsync(
@@ -245,27 +242,6 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         throw new InvalidOperationException(
             "Imagem bloqueada pelo filtro de segurança. " +
             "Use uma foto com boa iluminação e fundo neutro.", ultimo);
-    }
-
-    private async Task<string> ExecutarCodeFormerAsync(
-        string imagemPath, string versao, CancellationToken ct)
-    {
-        var imagemB64 = ConverterBase64(imagemPath);
-
-        var body = new
-        {
-            version = versao,
-            input = new
-            {
-                image = imagemB64,
-                codeformer_fidelity = 0.7,   // 0 = qualidade, 1 = fidelidade
-                background_enhance = true,
-                face_upsample = true,
-                upscale = 2
-            }
-        };
-
-        return await ExecutarComRetryRateLimitAsync(body, ct);
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -345,8 +321,18 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         await File.WriteAllBytesAsync(fullPath,
             Convert.FromBase64String(b64), ct);
 
+        var composto = await IdentityCompositor.ComporPreservandoIdentidadeAsync(
+            imagemPath,
+            fullPath,
+            maskPath,
+            pasta,
+            (float)_rep.MaskFeatherSigma,
+            ct);
+
+        LimparArquivosTemp(fullPath);
+
         _logger.LogInformation("[OPENAI] ✓ Concluído");
-        return ($"resultados/{nome}", null);
+        return (composto, null);
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -486,7 +472,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
             {
                 var start = idx + "\"retry_after\":".Length;
                 var span = msg.AsSpan(start).TrimStart();
-                var end = span.IndexOfAny('}', ',', '\n', ' ');
+                var end = span.IndexOfAny("},\n ".AsSpan());
                 if (end > 0 && int.TryParse(span[..end].Trim(), out var s)) return s;
             }
         }
@@ -608,4 +594,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
     private static bool IsNsfw(Exception ex) =>
         ex.Message.Contains("NSFW", StringComparison.OrdinalIgnoreCase) ||
         ex.Message.Contains("safety", StringComparison.OrdinalIgnoreCase);
+
+    private static string CombinarAvisos(string? a, string b) =>
+        string.IsNullOrWhiteSpace(a) ? b : $"{a} {b}";
 }

@@ -61,7 +61,7 @@ public class SimulacoesController : ControllerBase
             {
                 Id         = ImageProvider.Replicate.ToString(),
                 Label      = "Avançado",
-                Descricao  = "Alta qualidade com Flux Fill + CodeFormer",
+                Descricao  = "Flux Fill só no cabelo + freeze do rosto original",
                 Gratuito   = false,
                 Habilitado = _simOpts.HabilitarProviderReplicate,
                 Padrao     = _simOpts.DefaultProvider == ImageProvider.Replicate
