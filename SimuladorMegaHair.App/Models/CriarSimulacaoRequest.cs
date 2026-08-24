@@ -1,4 +1,6 @@
-﻿namespace SimuladorMegaHair.App.Models;
+﻿using SimuladorMegaHair.Domain.Enums;
+
+namespace SimuladorMegaHair.App.Models;
 
 public class CriarSimulacaoRequest
 {
@@ -8,5 +10,5 @@ public class CriarSimulacaoRequest
     public string Cor { get; set; } = string.Empty;
     public string TipoCabelo { get; set; } = string.Empty;
     public string MetodoMegaHair { get; set; } = string.Empty;
-    public string Provider { get; set; } = "Replicate";
+    public ImageProvider Provider { get; set; } = ImageProvider.Local;
 }

@@ -191,7 +191,7 @@ public class SimulacoesController : ControllerBase
                 request.Comprimento, request.Cor, request.TipoCabelo),
 
             _ => PromptBuilder.BuildInpainting(
-                request.Comprimento, request.Cor, request.TipoCabelo)
+                request.Comprimento, request.Cor, request.TipoCabelo, HairEditMode.Extend)
         };
 
         // ── Persiste ────────────────────────────────────────

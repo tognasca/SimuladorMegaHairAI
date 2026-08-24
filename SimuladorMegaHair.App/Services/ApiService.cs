@@ -38,6 +38,15 @@ public class ApiService
     public async Task<SimulacaoResponse?> CriarSimulacaoAsync(CriarSimulacaoRequest request)
     {
         var response = await _httpClient.PostAsJsonAsync("api/simulacoes", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"[ERRO API] {(int)response.StatusCode} - {body}");
+            // Isso vai imprimir exatamente: "Caminho da foto é obrigatório."
+            // ou: {"erro":"Provider 'Local' não está habilitado."}
+            // ou: {"type":"...","title":"One or more validation errors occurred.",...}
+        }
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();
     }

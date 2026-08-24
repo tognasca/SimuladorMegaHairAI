@@ -1,262 +1,184 @@
-﻿using Microsoft.Extensions.Logging;
-using SixLabors.ImageSharp;
+﻿using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SimuladorMegaHair.Domain.Enums;
+using SimuladorMegaHair.Domain.Models;
 
 namespace SimuladorMegaHair.Infrastructure.Services;
 
-/// <summary>
-/// Gera máscara PNG para DALL-E 2:
-/// - TRANSPARENTE = área que a IA EDITA (cabelo)
-/// - OPACO        = área que a IA PRESERVA (rosto, pescoço, corpo)
-/// </summary>
 public static class HairMaskGenerator
 {
-    public static async Task<string> GerarMascaraCabeloAsync(
+    public static async Task<(string maskPath, HairEditMode modoUtilizado)> GerarMascaraInteligenteAsync(
         string imagemOriginalPath,
         string outputFolder,
         FaceBox? rostoDetectado,
-        CancellationToken cancellationToken = default)
+        string comprimentoDesejado,
+        CancellationToken ct = default)
     {
-        using var imagemOriginal = await Image.LoadAsync<Rgba32>(imagemOriginalPath, cancellationToken);
+        using var img = await Image.LoadAsync<Rgba32>(imagemOriginalPath, ct);
+        int w = img.Width;
+        int h = img.Height;
 
-        int width = imagemOriginal.Width;
-        int height = imagemOriginal.Height;
-
-        // Começa TUDO OPACO (preserva tudo por padrão no DALL-E 2)
-        using var mascara = new Image<Rgba32>(width, height, new Rgba32(255, 255, 255, 255));
-
-        // Define área do rosto
-        float centroX, centroY, raioX, raioY;
-        int pescocoY1;
-
+        // 1. Define o Rosto
+        float fx, fy, frx, fry, faceTop, faceBottom;
         if (rostoDetectado != null)
         {
-            var face = rostoDetectado;
-            float expandX = face.Width * 0.15f;
-            float expandY = face.Height * 0.15f;
-
-            float x1 = face.X - expandX;
-            float y1 = face.Y - expandY;
-            float x2 = face.X + face.Width + expandX;
-            float y2 = face.Y + face.Height + expandY;
-
-            centroX = (x1 + x2) / 2f;
-            centroY = (y1 + y2) / 2f;
-            raioX = (x2 - x1) / 2f;
-            raioY = (y2 - y1) / 2f;
-            pescocoY1 = (int)y2;
+            fx = rostoDetectado.X + rostoDetectado.Width / 2f;
+            fy = rostoDetectado.Y + rostoDetectado.Height / 2f;
+            frx = rostoDetectado.Width / 2f;
+            fry = rostoDetectado.Height / 2f;
+            faceTop = rostoDetectado.Y;
+            faceBottom = rostoDetectado.Y + rostoDetectado.Height;
         }
         else
         {
-            centroX = width * 0.5f;
-            centroY = height * 0.42f;
-            raioX = width * 0.22f;
-            raioY = height * 0.28f;
-            pescocoY1 = (int)(height * 0.65f);
+            fx = w * 0.5f; fy = h * 0.40f;
+            frx = w * 0.16f; fry = h * 0.20f;
+            faceTop = fy - fry; faceBottom = fy + fry;
         }
 
-        int pescocoX1 = Math.Max(0, (int)(centroX - raioX * 1.2f));
-        int pescocoX2 = Math.Min(width, (int)(centroX + raioX * 1.2f));
+        // 2. Detecta se a pessoa atualmente JÁ TEM cabelo longo
+        bool cabeloAtualLongo = DetectarSeCabeloLongoAtual(img, fx, faceBottom, frx, fry);
 
-        mascara.ProcessPixelRows(accessor =>
+        // 3. Resolve o Modo de Edição
+        var modo = ResolverModo(comprimentoDesejado, cabeloAtualLongo);
+
+        // 4. Cria a máscara inicial (PRETO = preservar, BRANCO = editar)
+        using var mask = new Image<Rgba32>(w, h, new Rgba32(0, 0, 0, 255));
+
+        // Zonas de Proteção do Rosto (NUNCA editar olhos, nariz, boca, barba)
+        float protectRx = frx * 1.08f;
+        float protectRy = fry * 1.15f;
+        float chinProtect = faceBottom + fry * 0.30f; // Protege queixo e barba
+
+        // Configuração de Altura conforme o modo
+        float hairTop = Math.Max(0, faceTop - fry * 1.8f);
+        float hairBottomMax = modo switch
         {
-            for (int y = 0; y < accessor.Height; y++)
+            HairEditMode.Extend => Math.Min(h - 1, faceBottom + fry * 5.0f),  // Alongar muito
+            HairEditMode.Shorten => Math.Min(h - 1, faceBottom + fry * 4.5f), // Cobrir todo longo
+            _ => Math.Min(h - 1, faceBottom + fry * 3.5f)                      // Recolorir existente
+        };
+
+        float hairRx = frx * (modo == HairEditMode.Extend ? 3.0f : 2.5f);
+
+        mask.ProcessPixelRows(accessor =>
+        {
+            for (int y = 0; y < h; y++)
             {
-                Span<Rgba32> row = accessor.GetRowSpan(y);
+                var row = accessor.GetRowSpan(y);
 
-                for (int x = 0; x < row.Length; x++)
+                for (int x = 0; x < w; x++)
                 {
-                    // Distância normalizada ao rosto
-                    float dx = (x - centroX) / raioX;
-                    float dy = (y - centroY) / raioY;
-                    float distOval = MathF.Sqrt(dx * dx + dy * dy);
+                    // --- A. Checa se está no ROSTO/BARBA (NÃO PODE EDITAR) ---
+                    float pdx = (x - fx) / protectRx;
+                    float pdy = (y - fy) / protectRy;
+                    bool noRosto = (pdx * pdx + pdy * pdy) <= 1.0f && y <= chinProtect;
 
-                    // Está no rosto → OPACO (preserva)
-                    if (distOval <= 1.0f)
+                    if (noRosto)
                     {
-                        row[x] = new Rgba32(255, 255, 255, 255);
+                        row[x] = new Rgba32(0, 0, 0, 255);
                         continue;
                     }
 
-                    // Está no pescoço/ombros → OPACO (preserva)
-                    if (x >= pescocoX1 && x <= pescocoX2 && y >= pescocoY1)
-                    {
-                        row[x] = new Rgba32(255, 255, 255, 255);
-                        continue;
-                    }
+                    // --- B. Checa se é pixel de cabelo no topo/laterais do crânio ---
+                    bool noCranio = y >= hairTop && y <= faceBottom + fry * 0.5f &&
+                                    MathF.Abs(x - fx) <= hairRx;
 
-                    // Área do cabelo → TRANSPARENTE (IA edita)
-                    row[x] = new Rgba32(0, 0, 0, 0);
+                    // --- C. Checa se é mecha de cabelo longo nos ombros/peito ---
+                    // CORRIGIDO AQUI: leitura direta com img[x, y]
+                    bool mechaOmbro = y > faceBottom && y <= hairBottomMax &&
+                                      PareceCabelo(img[x, y]);
+
+                    // --- D. Zona de Crescimento (Espaço Vazio para Mega Hair) ---
+                    bool zonaMegaHair = modo == HairEditMode.Extend &&
+                                        y > faceBottom && y <= hairBottomMax &&
+                                        MathF.Abs(x - fx) <= hairRx &&
+                                        !EPeitoCentro(x, y, fx, faceBottom, frx, fry);
+
+                    // --- LÓGICA FINAL POR MODO ---
+                    bool editar = modo switch
+                    {
+                        HairEditMode.Shorten => noCranio || mechaOmbro, // COBRE TUDO para apagar
+                        HairEditMode.Recolor => noCranio || mechaOmbro, // COBRE TUDO existente
+                        HairEditMode.Extend => noCranio || mechaOmbro || zonaMegaHair, // Existente + Novo Espaço
+                        _ => noCranio
+                    };
+
+                    row[x] = editar ? new Rgba32(255, 255, 255, 255) : new Rgba32(0, 0, 0, 255);
                 }
             }
         });
 
+        // 5. Suavização leve das bordas (Feather)
+        mask.Mutate(c => c.GaussianBlur(2.0f));
+
         Directory.CreateDirectory(outputFolder);
-        var maskPath = Path.Combine(outputFolder, $"mask_{Guid.NewGuid()}.png");
-        await mascara.SaveAsPngAsync(maskPath, cancellationToken);
+        var maskPath = Path.Combine(outputFolder, $"mask_{modo}_{Guid.NewGuid()}.png");
+        await mask.SaveAsPngAsync(maskPath, ct);
 
-        return maskPath;
-    }
-    private static void LogarEstatisticasMascara(string maskPath, ILogger logger)
-    {
-        try
-        {
-            using var img = SixLabors.ImageSharp.Image.Load<Rgba32>(maskPath);
-            var totalPixels = img.Width * img.Height;
-            var pixelsBrancos = 0;
-
-            img.ProcessPixelRows(acc =>
-            {
-                for (int y = 0; y < acc.Height; y++)
-                {
-                    var row = acc.GetRowSpan(y);
-                    foreach (ref var pixel in row)
-                        if (pixel.R > 128) pixelsBrancos++;
-                }
-            });
-
-            var percentual = (double)pixelsBrancos / totalPixels * 100;
-            logger.LogInformation(
-                "Máscara: {P:F1}% da imagem será substituído",
-                percentual);
-
-            // Se > 60%, a máscara está muito grande (pode estar pegando pescoço/corpo)
-            if (percentual > 60)
-                logger.LogWarning(
-                    "⚠️ Máscara muito grande ({P:F1}%) — risco de NSFW", percentual);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Não foi possível analisar máscara");
-        }
+        return (maskPath, modo);
     }
 
-    /// <summary>
-    /// Máscara para Replicate/SDXL/Flux inpainting:
-    /// - BRANCO = área que a IA edita (cabelo)
-    /// - PRETO  = área que a IA preserva (rosto, corpo)
-    /// </summary>
-    /// <summary>
-    /// Máscara PRECISA para Replicate/SDXL inpainting:
-    /// - BRANCO = área do CABELO (topo + laterais da cabeça)
-    /// - PRETO  = rosto, ombros, fundo (tudo preservado)
-    /// </summary>
-    public static async Task<string> GerarMascaraCabeloReplicateAsync(
-        string imagemOriginalPath,
-        string outputFolder,
-        FaceBox? rostoDetectado,
-        CancellationToken cancellationToken = default)
+    private static HairEditMode ResolverModo(string comprimentoDesejado, bool cabeloAtualLongo)
     {
-        using var imagemOriginal = await Image.LoadAsync<Rgba32>(imagemOriginalPath, cancellationToken);
+        var comp = comprimentoDesejado?.Trim().ToLowerInvariant() ?? "";
+        bool querCurto = comp is "curto" or "short" or "medio" or "médio" or "medium";
+        bool querLongo = comp.Contains("longo") || comp.Contains("long");
 
-        int width = imagemOriginal.Width;
-        int height = imagemOriginal.Height;
+        if (cabeloAtualLongo && querCurto)
+            return HairEditMode.Shorten;
 
-        // Começa TUDO PRETO (preserva tudo por padrão)
-        using var mascara = new Image<Rgba32>(width, height, new Rgba32(0, 0, 0, 255));
+        if (querLongo)
+            return HairEditMode.Extend;
 
-        // Define região do rosto
-        float faceCenterX, faceCenterY, faceRaioX, faceRaioY;
-        float faceTopo, faceBase;
+        return HairEditMode.Recolor;
+    }
 
-        if (rostoDetectado != null)
+    private static bool DetectarSeCabeloLongoAtual(
+        Image<Rgba32> img, float fx, float faceBottom, float frx, float fry)
+    {
+        int startY = (int)faceBottom;
+        int endY = Math.Min(img.Height - 1, (int)(faceBottom + fry * 2.5f));
+        int startX = Math.Max(0, (int)(fx - frx * 2.2f));
+        int endX = Math.Min(img.Width - 1, (int)(fx + frx * 2.2f));
+
+        int totalAmostras = 0;
+        int pixelsCabelo = 0;
+
+        for (int y = startY; y < endY; y += 4)
         {
-            var face = rostoDetectado;
-            faceCenterX = face.X + face.Width / 2f;
-            faceCenterY = face.Y + face.Height / 2f;
-            faceRaioX = face.Width / 2f;
-            faceRaioY = face.Height / 2f;
-            faceTopo = face.Y;
-            faceBase = face.Y + face.Height;
-        }
-        else
-        {
-            // Fallback (retrato frontal)
-            faceCenterX = width * 0.5f;
-            faceCenterY = height * 0.42f;
-            faceRaioX = width * 0.18f;
-            faceRaioY = height * 0.22f;
-            faceTopo = faceCenterY - faceRaioY;
-            faceBase = faceCenterY + faceRaioY;
-        }
-
-        // ═══════════════════════════════════════════════════
-        // ÁREA DO CABELO — bem definida
-        // ═══════════════════════════════════════════════════
-        // O cabelo fica ACIMA e nas LATERAIS PRÓXIMAS da cabeça
-
-        // Topo da área do cabelo (acima da cabeça)
-        float cabeloTopo = Math.Max(0, faceTopo - faceRaioY * 1.5f);
-
-        // Base do cabelo (até onde cai o cabelo — geralmente até o meio do peito)
-        float cabeloBase = Math.Min(height, faceBase + faceRaioY * 3.5f);
-
-        // Largura do cabelo (não pode ser muito larga)
-        float cabeloLargura = faceRaioX * 3.5f;
-        float cabeloEsquerda = Math.Max(0, faceCenterX - cabeloLargura);
-        float cabeloDireita = Math.Min(width, faceCenterX + cabeloLargura);
-
-        // Centro e raio do OVAL DO CABELO
-        float cabeloCentroX = faceCenterX;
-        float cabeloCentroY = (cabeloTopo + cabeloBase) / 2f;
-        float cabeloRaioX = (cabeloDireita - cabeloEsquerda) / 2f;
-        float cabeloRaioY = (cabeloBase - cabeloTopo) / 2f;
-
-        mascara.ProcessPixelRows(accessor =>
-        {
-            for (int y = 0; y < accessor.Height; y++)
+            for (int x = startX; x < endX; x += 4)
             {
-                Span<Rgba32> row = accessor.GetRowSpan(y);
-
-                for (int x = 0; x < row.Length; x++)
-                {
-                    // 1. Está dentro do OVAL DO CABELO?
-                    float dxC = (x - cabeloCentroX) / cabeloRaioX;
-                    float dyC = (y - cabeloCentroY) / cabeloRaioY;
-                    float distCabelo = MathF.Sqrt(dxC * dxC + dyC * dyC);
-
-                    bool dentroDoCabelo = distCabelo <= 1.0f;
-
-                    // 2. Está dentro do OVAL DO ROSTO?
-                    float dxF = (x - faceCenterX) / (faceRaioX * 1.15f);   // expande 15%
-                    float dyF = (y - faceCenterY) / (faceRaioY * 1.15f);
-                    float distRosto = MathF.Sqrt(dxF * dxF + dyF * dyF);
-
-                    bool dentroDoRosto = distRosto <= 1.0f;
-
-                    // 3. Está no PESCOÇO/OMBROS/COLO? (proteger)
-                    bool dentroDoColo = y > faceBase + faceRaioY * 0.3f;
-
-                    // ═══ LÓGICA FINAL ═══
-                    // BRANCO (edita) só se:
-                    // - Está na área do cabelo
-                    // - E NÃO está no rosto
-                    // - E NÃO está muito abaixo (colo/ombros)
-
-                    if (dentroDoCabelo && !dentroDoRosto)
-                    {
-                        // Se está muito abaixo, protege (ombros/colo)
-                        if (dentroDoColo && y > faceBase + faceRaioY * 1.5f)
-                        {
-                            row[x] = new Rgba32(0, 0, 0, 255); // preto = preserva
-                        }
-                        else
-                        {
-                            row[x] = new Rgba32(255, 255, 255, 255); // branco = edita
-                        }
-                    }
-                    else
-                    {
-                        row[x] = new Rgba32(0, 0, 0, 255); // preto = preserva
-                    }
-                }
+                totalAmostras++;
+                if (PareceCabelo(img[x, y]))
+                    pixelsCabelo++;
             }
-        });
+        }
 
-        Directory.CreateDirectory(outputFolder);
-        var maskPath = Path.Combine(outputFolder, $"mask_{Guid.NewGuid()}.png");
-        await mascara.SaveAsPngAsync(maskPath, cancellationToken);
+        if (totalAmostras == 0) return false;
 
-        return maskPath;
+        float taxaCabelo = (float)pixelsCabelo / totalAmostras;
+        return taxaCabelo > 0.07f;
+    }
+
+    private static bool PareceCabelo(Rgba32 p)
+    {
+        int max = Math.Max(p.R, Math.Max(p.G, p.B));
+        int min = Math.Min(p.R, Math.Min(p.G, p.B));
+        int sat = max == 0 ? 0 : (max - min) * 255 / max;
+
+        bool escuro = max < 110;
+        bool colorido = sat > 35 && max < 210;
+
+        bool eTomPele = p.R > 80 && p.G > 50 && p.B > 35 &&
+                        p.R > p.B && (p.R - p.G) < 80 && Math.Abs(p.R - p.G) > 8;
+
+        return (escuro || colorido) && !eTomPele;
+    }
+
+    private static bool EPeitoCentro(float x, float y, float fx, float faceBottom, float frx, float fry)
+    {
+        return y > faceBottom + fry * 2.0f && MathF.Abs(x - fx) < frx * 0.7f;
     }
 }

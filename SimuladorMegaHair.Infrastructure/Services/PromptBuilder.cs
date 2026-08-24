@@ -1,125 +1,114 @@
-﻿// SimuladorMegaHair.Infrastructure/Services/PromptBuilder.cs
+﻿using SimuladorMegaHair.Domain.Enums;
+
 namespace SimuladorMegaHair.Infrastructure.Services;
 
 public static class PromptBuilder
 {
-    // ── Flux Fill / SD Inpainting ────────────────────────────
-
     public static string BuildInpainting(
-        string comprimento, string cor, string tipoCabelo)
+        string comprimento,
+        string cor,
+        string tipoCabelo,
+        HairEditMode modo)
     {
         var corEn = TraduzirCor(cor);
         var tipoEn = TraduzirTipo(tipoCabelo);
         var compEn = TraduzirComprimento(comprimento);
 
-        // Focado SÓ no cabelo — sem mencionar pessoa ou corpo
-        return
-            $"{corEn} {tipoEn} hair, {compEn}, " +
-            "hair only, detailed individual hair strands, " +
-            "natural hair texture, glossy healthy hair, " +
-            "professional hair salon photography, " +
-            "sharp focus, studio lighting, photorealistic, 8k";
+        return modo switch
+        {
+            HairEditMode.Shorten =>
+                $"{corEn} hair, {compEn}, {tipoEn} haircut, " +
+                $"replace all hair with {corEn} {tipoEn} {compEn}, " +
+                $"solid {corEn} color from roots to tips, no long hair, no hair on shoulders, " +
+                "clean nape, natural hairline, realistic individual strands, photorealistic",
+
+            HairEditMode.Recolor =>
+                $"{corEn} hair, recolor all hair to {corEn}, " +
+                $"uniform {corEn} color from roots to tips, no other hair color, " +
+                $"healthy {tipoEn} texture, realistic strands, soft shine, photorealistic",
+
+            _ => // Extend / Mega Hair
+                $"{corEn} hair, pure {corEn} color, " +
+                $"{corEn} {tipoEn} mega hair extensions, {compEn}, " +
+                $"uniform {corEn} color from roots to tips, " +
+                "seamless blend with natural hair, realistic density, " +
+                "individual strands, salon quality, photorealistic"
+        };
     }
 
-    public static string BuildInpaintingNegative() =>
-        "person, face, body, skin, neck, shoulders, nude, naked, " +
-        "nsfw, explicit, revealing, " +
-        "cartoon, anime, illustration, painting, " +
-        "blurry, deformed, ugly, watermark, text, logo, " +
-        "extra fingers, bad anatomy";
-
-    // ── OpenAI GPT Image Edit ────────────────────────────────
-
-    public static string BuildOpenAI(
-        string comprimento, string cor, string tipoCabelo, string metodo)
+    public static string BuildInpaintingNegative(string? corOriginal = null)
     {
-        var corPt = cor;
-        var tipoPt = tipoCabelo;
-        var compEn = TraduzirComprimento(comprimento);
-        var corEn = TraduzirCor(cor);
-        var tipoEn = TraduzirTipo(tipoCabelo);
+        var neg = "different person, altered face, deformed face, " +
+                  "wig, helmet hair, plastic hair, wax hair, " +
+                  "two-tone hair, patchy color, faded roots, " +
+                  "blurry, cartoon, illustration, CGI, 3d render";
 
-        // OpenAI aceita prompt descritivo em inglês
-        return
-            $"Replace only the hair area with {corEn} {tipoEn} hair extensions, " +
-            $"{compEn}. " +
-            "Keep the person face, skin tone, expression and clothing exactly the same. " +
-            "Natural realistic hair texture, individual strands visible, " +
-            "salon quality, professional photo. " +
-            "Do not change anything except the hair.";
+        if (!string.IsNullOrWhiteSpace(corOriginal))
+        {
+            var corAntigaEn = TraduzirCor(corOriginal);
+            neg = $"{corAntigaEn} hair, {corAntigaEn} strands, " + neg;
+        }
+
+        return neg;
     }
 
-    // ── Local (descrição para log) ───────────────────────────
-
-    public static string BuildLocal(
-        string comprimento, string cor, string tipoCabelo) =>
-        $"[LOCAL] {TraduzirCor(cor)} {TraduzirTipo(tipoCabelo)} hair, " +
-        $"{TraduzirComprimento(comprimento)}";
-
-    // ── Fallbacks progressivos (anti-NSFW) ──────────────────
-
-    public static (string prompt, string negative)[] BuildFallbacks(
-        string comprimento, string cor, string tipoCabelo)
+    public static IEnumerable<(string prompt, string negative)> BuildFallbacks(
+        string comprimento, string cor, string tipoCabelo, HairEditMode modo)
     {
-        var corEn = TraduzirCor(cor);
-        var tipoEn = TraduzirTipo(tipoCabelo);
-        var compEn = TraduzirComprimento(comprimento);
+        var p1 = BuildInpainting(comprimento, cor, tipoCabelo, modo);
+        var neg = BuildInpaintingNegative();
 
-        return new[]
-        {
-            (
-                prompt:
-                    $"{corEn} {tipoEn} hair, {compEn}, " +
-                    "hair only, natural texture, salon photo, sharp focus",
-                negative:
-                    BuildInpaintingNegative()
-            ),
-            (
-                prompt:   $"{corEn} hair extensions, {compEn}, product photo",
-                negative: "nsfw, nude, naked, person, face, body, cartoon, blurry"
-            ),
-            (
-                prompt:   "hair, natural texture, studio lighting",
-                negative: "nsfw, nude, person, body, cartoon"
-            )
-        };
+        yield return (p1, neg);
+
+        // Fallback 2: Mais direto e imperativo
+        yield return (
+            $"realistic {TraduzirCor(cor)} {TraduzirTipo(tipoCabelo)} hair, " +
+            $"{TraduzirComprimento(comprimento)}, solid {TraduzirCor(cor)} color, photorealistic hair only",
+            neg);
     }
 
-    // ── Tradutores ───────────────────────────────────────────
+    public static string BuildOpenAI(string comprimento, string cor, string tipoCabelo, string metodo)
+    {
+        return BuildInpainting(comprimento, cor, tipoCabelo, HairEditMode.Extend);
+    }
 
-    public static string TraduzirCor(string? cor) =>
-        cor?.ToLowerInvariant() switch
-        {
-            "preto" => "black",
-            "castanho" => "dark brown",
-            "chocolate" => "chocolate brown",
-            "loiro" => "blonde",
-            "mel" => "honey blonde",
-            "ruivo" => "auburn red",
-            "platinado" => "platinum blonde",
-            "rosa" => "rose pink",
-            "azul" => "blue",
-            _ => "brown"
-        };
+    public static string BuildLocal(string comprimento, string cor, string tipoCabelo)
+    {
+        return BuildInpainting(comprimento, cor, tipoCabelo, HairEditMode.Extend);
+    }
 
-    public static string TraduzirTipo(string? tipo) =>
-        tipo?.ToLowerInvariant() switch
-        {
-            "liso" => "straight",
-            "ondulado" => "wavy",
-            "cacheado" => "curly",
-            "crespo" => "coily",
-            _ => "straight"
-        };
+    // --- TRADUÇÕES DE ALTO IMPACTO PARA FLUX FILL ---
 
-    public static string TraduzirComprimento(string? comprimento) =>
-        comprimento?.ToLowerInvariant() switch
-        {
-            "45 cm" => "shoulder length",
-            "55 cm" => "chest length",
-            "65 cm" => "long",
-            "75 cm" => "very long",
-            "85 cm" => "extra long, below waist",
-            _ => "long"
-        };
+    private static string TraduzirCor(string cor) => cor?.Trim().ToLowerInvariant() switch
+    {
+        "preto" or "black" => "jet black",
+        "castanho escuro" => "dark chocolate brown",
+        "castanho" or "castanho medio" => "medium chestnut brown",
+        "castanho claro" => "light brown",
+        "loiro escuro" => "dark blonde",
+        "loiro" or "loiro medio" => "golden blonde",
+        "loiro claro" or "platinado" => "platinum blonde",
+        "ruivo" => "vibrant auburn red",
+        "vermelho" => "vivid red",
+        "iluminado" or "luzes" or "morena iluminada" => "brown hair with warm blonde highlights",
+        _ => "dark brown"
+    };
+
+    private static string TraduzirComprimento(string c) => c?.Trim().ToLowerInvariant() switch
+    {
+        "curto" or "short" => "short hair above the shoulders, pixie-to-chin length",
+        "medio" or "médio" or "medium" => "shoulder-length hair",
+        "longo" or "long" => "long hair down to mid-back",
+        "extra longo" or "extra-longo" => "very long waist-length hair",
+        _ => "long hair to mid-back"
+    };
+
+    private static string TraduzirTipo(string t) => t?.Trim().ToLowerInvariant() switch
+    {
+        "liso" or "straight" => "straight",
+        "ondulado" or "wavy" => "wavy",
+        "cacheado" or "curly" => "curly",
+        "crespo" or "coily" => "coily",
+        _ => "straight"
+    };
 }

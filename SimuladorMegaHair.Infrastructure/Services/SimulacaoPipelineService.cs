@@ -69,8 +69,8 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
 
         // 3. Gera máscara (MediaPipe → SAM2 ou fallback local)
         var masksFolder = GarantirPasta("wwwroot", "masks");
-        var maskPath = await HairMaskGenerator.GerarMascaraCabeloReplicateAsync(
-            imagemPrep, masksFolder, rosto, ct);
+        var (maskPath, modoEdit) = await HairMaskGenerator.GerarMascaraInteligenteAsync(
+            imagemPrep, masksFolder, rosto, req.Comprimento, ct);
 
         var auditOverlay = await HairMaskAudit.SalvarAsync(
             imagemPrep, maskPath,
@@ -80,15 +80,11 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         // 4. Escolhe pipeline
         var (resultadoUrl, aviso) = req.Provider switch
         {
-            ImageProvider.Local => await PipelineLocalAsync(
-                                           imagemPrep, maskPath, req, ct),
-            ImageProvider.Replicate => await PipelineReplicateAsync(
-                                           imagemPrep, maskPath, req, ct),
-            ImageProvider.OpenAI => await PipelineOpenAIAsync(
-                                           imagemPrep, maskPath, req, ct),
+            ImageProvider.Local => await PipelineLocalAsync(imagemPrep, maskPath, req, ct),
+            ImageProvider.Replicate => await PipelineReplicateAsync(imagemPrep, maskPath, req, modoEdit, ct),
+            ImageProvider.OpenAI => await PipelineOpenAIAsync(imagemPrep, maskPath, req, ct),
             _ => throw new ArgumentOutOfRangeException(nameof(req.Provider))
         };
-
         // 5. Salva resultado
         var path = await SalvarResultadoAsync(resultadoUrl, ct);
 
@@ -163,21 +159,99 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
     //  Flux Fill → freeze de identidade (pixels originais fora da máscara)
     // ═══════════════════════════════════════════════════════════
 
+    //private async Task<(string url, string? aviso)> PipelineReplicateAsync(
+    //    string imagemPath,
+    //    string maskPath,
+    //    SimulacaoRequest req,
+    //    CancellationToken ct)
+    //{
+    //    _logger.LogInformation("[REPLICATE] Iniciando pipeline pago...");
+
+    //    var fluxVer = await ObterVersaoAsync(_rep.FluxFillOwner, _rep.FluxFillName, ct);
+
+    //    _logger.LogInformation("[1/2] Flux Fill — gerando novo cabelo...");
+    //    var fluxUrl = await ExecutarFluxFillAsync(
+    //        imagemPath, maskPath, req, fluxVer, ct);
+
+    //    _logger.LogInformation("[2/2] Freeze — restaurando rosto, roupa e fundo da foto original...");
+    //    var tempFolder = GarantirPasta("wwwroot", "temp");
+    //    var geradaPath = await BaixarParaTempAsync(fluxUrl, tempFolder, ct);
+
+    //    var composto = await IdentityCompositor.ComporPreservandoIdentidadeAsync(
+    //        imagemPath,
+    //        geradaPath,
+    //        maskPath,
+    //        GarantirPasta("wwwroot", "resultados"),
+    //        (float)_rep.MaskFeatherSigma,
+    //        ct);
+
+    //    LimparArquivosTemp(geradaPath);
+
+    //    _logger.LogInformation("[REPLICATE] ✓ Concluído");
+    //    return (composto, null);
+    //}
+
+    //private async Task<(string url, string? aviso)> PipelineReplicateAsync(
+    //string imagemPath,
+    //string maskPath,
+    //SimulacaoRequest req,
+    //CancellationToken ct)
+    //{
+    //    _logger.LogInformation("[REPLICATE] Iniciando pipeline pago...");
+    //    //var fluxVer = await ObterVersaoAsync(_rep.FluxFillOwner, _rep.FluxFillName, ct);
+    //    _logger.LogInformation(
+    //        "[1/2] FLUX Fill Dev — gerando novo cabelo...");
+
+    //    var fluxUrl = await ExecutarFluxFillAsync(
+    //        imagemPath,
+    //        maskPath,
+    //        req,
+    //        ct);
+
+    //    _logger.LogInformation(
+    //        "[2/2] Freeze — restaurando rosto, roupa e fundo...");
+
+    //    var tempFolder = GarantirPasta("wwwroot", "temp");
+
+    //    var geradaPath = await BaixarParaTempAsync(
+    //        fluxUrl,
+    //        tempFolder,
+    //        ct);
+
+    //    var composto =
+    //        await IdentityCompositor.ComporPreservandoIdentidadeAsync(
+    //            imagemPath,
+    //            geradaPath,
+    //            maskPath,
+    //            GarantirPasta("wwwroot", "resultados"),
+    //            (float)_rep.MaskFeatherSigma,
+    //            ct);
+
+    //    LimparArquivosTemp(geradaPath);
+
+    //    _logger.LogInformation("[REPLICATE] ✓ Concluído");
+
+    //    return (composto, null);
+    //}
+
     private async Task<(string url, string? aviso)> PipelineReplicateAsync(
-        string imagemPath,
-        string maskPath,
-        SimulacaoRequest req,
-        CancellationToken ct)
+     string imagemPath,
+     string maskPath,
+     SimulacaoRequest req,
+     HairEditMode modoEdit,
+     CancellationToken ct)
     {
-        _logger.LogInformation("[REPLICATE] Iniciando pipeline pago...");
+        _logger.LogInformation("[REPLICATE] Iniciando pipeline FLUX Fill (Modo: {Modo})...", modoEdit);
 
-        var fluxVer = await ObterVersaoAsync(_rep.FluxFillOwner, _rep.FluxFillName, ct);
-
-        _logger.LogInformation("[1/2] Flux Fill — gerando novo cabelo...");
         var fluxUrl = await ExecutarFluxFillAsync(
-            imagemPath, maskPath, req, fluxVer, ct);
+            imagemPath,
+            maskPath,
+            req,
+            modoEdit,
+            ct);
 
-        _logger.LogInformation("[2/2] Freeze — restaurando rosto, roupa e fundo da foto original...");
+        _logger.LogInformation("[2/2] Freeze — restaurando rosto e fundo...");
+
         var tempFolder = GarantirPasta("wwwroot", "temp");
         var geradaPath = await BaixarParaTempAsync(fluxUrl, tempFolder, ct);
 
@@ -191,19 +265,69 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
 
         LimparArquivosTemp(geradaPath);
 
-        _logger.LogInformation("[REPLICATE] ✓ Concluído");
         return (composto, null);
     }
 
+    //private async Task<string> ExecutarFluxFillAsync(
+    //    string imagemPath,
+    //    string maskPath,
+    //    SimulacaoRequest req,
+    //    string versao,
+    //    CancellationToken ct)
+    //{
+    //    var fallbacks = PromptBuilder.BuildFallbacks(
+    //        req.Comprimento, req.Cor, req.TipoCabelo);
+
+    //    Exception? ultimo = null;
+
+    //    foreach (var (prompt, negative) in fallbacks)
+    //    {
+    //        try
+    //        {
+    //            _logger.LogDebug("Prompt: {P}", prompt);
+
+    //            var body = new
+    //            {
+    //                version = versao,
+    //                input = new
+    //                {
+    //                    image = ConverterBase64(imagemPath),
+    //                    mask = ConverterBase64(maskPath),
+    //                    prompt = prompt,
+    //                    steps = _rep.FluxSteps,
+    //                    guidance = _rep.FluxGuidance,
+    //                    output_format = "png",
+    //                    output_quality = 90,
+    //                    seed = _rng.Next(1, 999_999)
+    //                }
+    //            };
+
+    //            return await ExecutarComRetryRateLimitAsync(body, ct);
+    //        }
+    //        catch (InvalidOperationException ex) when (IsNsfw(ex))
+    //        {
+    //            ultimo = ex;
+    //            _logger.LogWarning("NSFW — tentando próximo prompt...");
+    //            await Task.Delay(2_000, ct);
+    //        }
+    //    }
+
+    //    throw new InvalidOperationException(
+    //        "Imagem bloqueada pelo filtro de segurança. " +
+    //        "Use uma foto com boa iluminação e fundo neutro.", ultimo);
+    //}
     private async Task<string> ExecutarFluxFillAsync(
-        string imagemPath,
-        string maskPath,
-        SimulacaoRequest req,
-        string versao,
-        CancellationToken ct)
+    string imagemPath,
+    string maskPath,
+    SimulacaoRequest req,
+    HairEditMode modoEdit,
+    CancellationToken ct)
     {
         var fallbacks = PromptBuilder.BuildFallbacks(
-            req.Comprimento, req.Cor, req.TipoCabelo);
+            req.Comprimento,
+            req.Cor,
+            req.TipoCabelo,
+            modoEdit);
 
         Exception? ultimo = null;
 
@@ -211,20 +335,24 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         {
             try
             {
-                _logger.LogDebug("Prompt: {P}", prompt);
+                _logger.LogDebug("[FLUX-FILL] Prompt ({Modo}): {Prompt}", modoEdit, prompt);
 
                 var body = new
                 {
-                    version = versao,
                     input = new
                     {
                         image = ConverterBase64(imagemPath),
                         mask = ConverterBase64(maskPath),
+
                         prompt = prompt,
-                        steps = _rep.FluxSteps,
-                        guidance = _rep.FluxGuidance,
+
+                        // FLUX Fill Pro utiliza guidance alto para rigor de cor e estilo
+                        num_inference_steps = _rep.FluxSteps > 0 ? _rep.FluxSteps : 30,
+                        guidance = _rep.FluxGuidance > 0 ? _rep.FluxGuidance : 30,
+
+                        num_outputs = 1,
                         output_format = "png",
-                        output_quality = 90,
+                        output_quality = 95,
                         seed = _rng.Next(1, 999_999)
                     }
                 };
@@ -234,14 +362,14 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
             catch (InvalidOperationException ex) when (IsNsfw(ex))
             {
                 ultimo = ex;
-                _logger.LogWarning("NSFW — tentando próximo prompt...");
+                _logger.LogWarning("[FLUX-FILL] NSFW — tentando próximo prompt...");
                 await Task.Delay(2_000, ct);
             }
         }
 
         throw new InvalidOperationException(
-            "Imagem bloqueada pelo filtro de segurança. " +
-            "Use uma foto com boa iluminação e fundo neutro.", ultimo);
+            "Imagem bloqueada pelo filtro de segurança. Use uma foto com boa iluminação.",
+            ultimo);
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -395,10 +523,15 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
     {
         var json = JsonSerializer.Serialize(body);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var url =
+           $"https://api.replicate.com/v1/models/" +
+           $"{_rep.FluxFillOwner}/" +
+           $"{_rep.FluxFillName}/predictions";
 
         using var req = CriarReplicateRequest(
-            HttpMethod.Post, $"{ReplicateBaseUrl}/predictions");
-        req.Content = content;
+            HttpMethod.Post, url);
+        req.Content = content;      
+
 
         using var resp = await _http.SendAsync(req, ct);
 

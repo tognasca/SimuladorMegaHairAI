@@ -24,7 +24,7 @@ public static class ImagePreparer
             ctx.Resize(new ResizeOptions
             {
                 Size = new Size(tamanho, tamanho),
-                Mode = ResizeMode.Crop,
+                Mode = ResizeMode.Max,
                 Position = AnchorPositionMode.Center
             });
         });

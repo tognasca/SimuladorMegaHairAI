@@ -4,6 +4,7 @@ using Microsoft.Maui.Controls;
 using Microsoft.Maui.Storage;
 using SimuladorMegaHair.App.Models;
 using SimuladorMegaHair.App.Services;
+using SimuladorMegaHair.Domain.Enums;
 using System.Collections.ObjectModel;
 
 namespace SimuladorMegaHair.App.ViewModels;
@@ -326,7 +327,8 @@ public partial class StyleSelectionViewModel : BaseViewModel
                     Comprimento = ComprimentoSelecionado,
                     Cor = CorSelecionada,
                     TipoCabelo = TipoCabeloSelecionado,
-                    MetodoMegaHair = MetodoSelecionado
+                    MetodoMegaHair = MetodoSelecionado,
+                    Provider = ImageProvider.Replicate
                 };
 
 
