@@ -9,6 +9,32 @@
     x:Name="RootView"
     x:DataType="vm:StyleSelectionViewModel">
 
+    <!-- ═══════════════ RECURSOS LOCAIS ═══════════════ -->
+    <ContentView.Resources>
+        <Style x:Key="VolumeBtnBase" TargetType="Border">
+            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 20" />
+            <Setter Property="StrokeThickness" Value="1.5" />
+            <Setter Property="Stroke" Value="#2A2B30" />
+            <Setter Property="BackgroundColor" Value="Transparent" />
+            <Setter Property="VerticalOptions" Value="Center" />
+        </Style>
+
+        <Style x:Key="VolumeLabelBase" TargetType="Label">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="CharacterSpacing" Value="1" />
+            <Setter Property="HorizontalOptions" Value="Center" />
+            <Setter Property="VerticalOptions" Value="Center" />
+            <Setter Property="TextColor" Value="#8F9199" />
+        </Style>
+
+        <Color x:Key="GoldActive">#D4A143</Color>
+        <Color x:Key="TextActive">#0A0A0C</Color>
+        <Color x:Key="BgInactive">Transparent</Color>
+        <Color x:Key="TextInactive">#FFFFFF</Color>
+    </ContentView.Resources>
+
     <!-- Grid raiz: conteúdo + overlay de loading -->
     <Grid>
 
@@ -18,56 +44,43 @@
 
                 <!-- ═══ CABEÇALHO ═══ -->
                 <VerticalStackLayout Padding="20,24,20,12" Spacing="6">
-
                     <Image Source="logo_tati.png"
                            HeightRequest="90"
                            Aspect="AspectFit"
                            HorizontalOptions="Center" />
 
-                    <Label
-                        Text="Sua nova versão começa aqui"
-                        FontSize="12"
-                        TextColor="#A9A5A0"
-                        HorizontalOptions="Center" />
+                    <Label Text="Sua nova versão começa aqui"
+                           FontSize="12"
+                           TextColor="#A9A5A0"
+                           HorizontalOptions="Center" />
                 </VerticalStackLayout>
 
                 <!-- ═══ SELETOR DE MODO (Antes/Comparar/Depois) ═══ -->
-                <Border
-                    Padding="4"
-                    Margin="0,4,0,8"
-                    HorizontalOptions="Center"
-                    StrokeShape="RoundRectangle 22"
-                    BackgroundColor="#111316"
-                    Stroke="#292A2E"
-                    StrokeThickness="1"
-                    IsVisible="{Binding TemResultado}">
+                <Border Padding="4"
+                        Margin="0,4,0,8"
+                        HorizontalOptions="Center"
+                        StrokeShape="RoundRectangle 22"
+                        BackgroundColor="#111316"
+                        Stroke="#292A2E"
+                        StrokeThickness="1"
+                        IsVisible="{Binding TemResultado}">
 
                     <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="4">
 
                         <!-- ANTES -->
-                        <Border Grid.Column="0"
-                                Padding="14,8"
-                                StrokeShape="RoundRectangle 18"
-                                StrokeThickness="0">
+                        <Border Grid.Column="0" Style="{StaticResource VolumeBtnBase}">
                             <Border.Triggers>
                                 <DataTrigger TargetType="Border" Binding="{Binding ModoAntes}" Value="True">
-                                    <Setter Property="BackgroundColor" Value="#C89442" />
-                                </DataTrigger>
-                                <DataTrigger TargetType="Border" Binding="{Binding ModoAntes}" Value="False">
-                                    <Setter Property="BackgroundColor" Value="Transparent" />
+                                    <Setter Property="BackgroundColor" Value="{StaticResource GoldActive}" />
                                 </DataTrigger>
                             </Border.Triggers>
-                            <Label Text="ANTES"
-                                   FontSize="10"
-                                   FontAttributes="Bold"
-                                   CharacterSpacing="2"
-                                   VerticalOptions="Center">
+                            <Label Text="ANTES" Style="{StaticResource VolumeLabelBase}">
                                 <Label.Triggers>
                                     <DataTrigger TargetType="Label" Binding="{Binding ModoAntes}" Value="True">
-                                        <Setter Property="TextColor" Value="#0A0A0C" />
+                                        <Setter Property="TextColor" Value="{StaticResource TextActive}" />
                                     </DataTrigger>
                                     <DataTrigger TargetType="Label" Binding="{Binding ModoAntes}" Value="False">
-                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="TextColor" Value="{StaticResource TextInactive}" />
                                     </DataTrigger>
                                 </Label.Triggers>
                             </Label>
@@ -77,29 +90,19 @@
                         </Border>
 
                         <!-- COMPARAR -->
-                        <Border Grid.Column="1"
-                                Padding="14,8"
-                                StrokeShape="RoundRectangle 18"
-                                StrokeThickness="0">
+                        <Border Grid.Column="1" Style="{StaticResource VolumeBtnBase}">
                             <Border.Triggers>
                                 <DataTrigger TargetType="Border" Binding="{Binding ModoSlider}" Value="True">
-                                    <Setter Property="BackgroundColor" Value="#C89442" />
-                                </DataTrigger>
-                                <DataTrigger TargetType="Border" Binding="{Binding ModoSlider}" Value="False">
-                                    <Setter Property="BackgroundColor" Value="Transparent" />
+                                    <Setter Property="BackgroundColor" Value="{StaticResource GoldActive}" />
                                 </DataTrigger>
                             </Border.Triggers>
-                            <Label Text="⇔ COMPARAR"
-                                   FontSize="10"
-                                   FontAttributes="Bold"
-                                   CharacterSpacing="2"
-                                   VerticalOptions="Center">
+                            <Label Text="⇔ COMPARAR" Style="{StaticResource VolumeLabelBase}">
                                 <Label.Triggers>
                                     <DataTrigger TargetType="Label" Binding="{Binding ModoSlider}" Value="True">
-                                        <Setter Property="TextColor" Value="#0A0A0C" />
+                                        <Setter Property="TextColor" Value="{StaticResource TextActive}" />
                                     </DataTrigger>
                                     <DataTrigger TargetType="Label" Binding="{Binding ModoSlider}" Value="False">
-                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="TextColor" Value="{StaticResource TextInactive}" />
                                     </DataTrigger>
                                 </Label.Triggers>
                             </Label>
@@ -109,29 +112,19 @@
                         </Border>
 
                         <!-- DEPOIS -->
-                        <Border Grid.Column="2"
-                                Padding="14,8"
-                                StrokeShape="RoundRectangle 18"
-                                StrokeThickness="0">
+                        <Border Grid.Column="2" Style="{StaticResource VolumeBtnBase}">
                             <Border.Triggers>
                                 <DataTrigger TargetType="Border" Binding="{Binding ModoDepois}" Value="True">
-                                    <Setter Property="BackgroundColor" Value="#C89442" />
-                                </DataTrigger>
-                                <DataTrigger TargetType="Border" Binding="{Binding ModoDepois}" Value="False">
-                                    <Setter Property="BackgroundColor" Value="Transparent" />
+                                    <Setter Property="BackgroundColor" Value="{StaticResource GoldActive}" />
                                 </DataTrigger>
                             </Border.Triggers>
-                            <Label Text="DEPOIS"
-                                   FontSize="10"
-                                   FontAttributes="Bold"
-                                   CharacterSpacing="2"
-                                   VerticalOptions="Center">
+                            <Label Text="DEPOIS" Style="{StaticResource VolumeLabelBase}">
                                 <Label.Triggers>
                                     <DataTrigger TargetType="Label" Binding="{Binding ModoDepois}" Value="True">
-                                        <Setter Property="TextColor" Value="#0A0A0C" />
+                                        <Setter Property="TextColor" Value="{StaticResource TextActive}" />
                                     </DataTrigger>
                                     <DataTrigger TargetType="Label" Binding="{Binding ModoDepois}" Value="False">
-                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="TextColor" Value="{StaticResource TextInactive}" />
                                     </DataTrigger>
                                 </Label.Triggers>
                             </Label>
@@ -144,55 +137,259 @@
                 </Border>
 
                 <!-- ═══ IMAGEM PRINCIPAL ═══ -->
-                <Border
-                    Margin="18,4,18,10"
-                    HeightRequest="440"
-                    Stroke="#80602F"
-                    StrokeThickness="2"
-                    StrokeShape="RoundRectangle 22"
-                    BackgroundColor="#111316">
+                <Border Margin="18,4,18,10"
+                        HeightRequest="440"
+                        Stroke="#80602F"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 22"
+                        BackgroundColor="#111316">
 
                     <Grid>
                         <!-- FOTO ORIGINAL (só antes de gerar) -->
-                        <Image
-                            Source="{Binding FotoExibicao}"
-                            Aspect="AspectFit"
-                            IsVisible="{Binding TemResultado, Converter={StaticResource InverseBoolConverter}}" />
+                        <Image Source="{Binding FotoExibicao}"
+                               Aspect="AspectFit"
+                               IsVisible="{Binding TemResultado, Converter={StaticResource InverseBoolConverter}}" />
 
                         <!-- CAIXA DE RESULTADOS (só após gerar) -->
                         <Grid IsVisible="{Binding TemResultado}">
 
                             <!-- Modo Antes -->
-                            <Image
-                                Source="{Binding FotoExibicao}"
-                                Aspect="AspectFit"
-                                IsVisible="{Binding ModoAntes}" />
+                            <Image Source="{Binding FotoExibicao}"
+                                   Aspect="AspectFit"
+                                   IsVisible="{Binding ModoAntes}" />
 
-                            <!-- Modo Depois -->
-                            <Image
-                                Source="{Binding FotoResultadoUrl}"
-                                Aspect="AspectFit"
-                                IsVisible="{Binding ModoDepois}" />
+                            <!-- Modo Depois (Usa FotoVolumeUrl se existir, senão FotoResultadoUrl) -->
+                            <Image Source="{Binding FotoVolumeAtiva}"
+                                   Aspect="AspectFit"
+                                   IsVisible="{Binding ModoDepois}" />
 
                             <!-- Modo Slider Comparador -->
-                            <components:BeforeAfterSlider
+                            <components:BeforeAfterSlider 
                                 BeforeSource="{Binding FotoExibicao}"
-                                AfterSource="{Binding FotoResultadoUrl}"
+                                AfterSource="{Binding FotoVolumeAtiva}"
                                 IsVisible="{Binding ModoSlider}" />
 
                         </Grid>
+
+                        <!-- Overlay de carregamento específico para volume -->
+                        <BoxView Color="#000000" Opacity="0.7" 
+                                 IsVisible="{Binding AjustandoVolume}" />
+                        <ActivityIndicator IsRunning="{Binding AjustandoVolume}"
+                                           Color="#D4A143"
+                                           HeightRequest="40"
+                                           WidthRequest="40"
+                                           VerticalOptions="Center"
+                                           HorizontalOptions="Center"
+                                           IsVisible="{Binding AjustandoVolume}" />
                     </Grid>
                 </Border>
 
+                <!-- ==================== NOVO: CONTROLE DE VOLUME/GRAMAS ==================== -->
+
+                <Border Margin="20,2,20,12"
+                        Padding="16,14"
+                        BackgroundColor="#111316"
+                        Stroke="#292A2E"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 16"
+                        IsVisible="{Binding TemResultado}">
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <!-- Header do Volume -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label Text="💇‍♀️ VOLUME MEGA HAIR"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       CharacterSpacing="1"
+                                       TextColor="#FFFFFF" />
+                                <Label Text="Ajuste a densidade do seu novo cabelo"
+                                       FontSize="10"
+                                       TextColor="#6B6D74" />
+                            </VerticalStackLayout>
+
+                            <!-- Valor das gramas atual -->
+                            <Border Grid.Column="1"
+                                    Padding="10,6"
+                                    BackgroundColor="#1A1D24"
+                                    StrokeShape="RoundRectangle 12"
+                                    VerticalOptions="Center">
+                                <Label Text="{Binding GramasAtuais, StringFormat='{0}g'}"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       TextColor="#D4A143"
+                                       HorizontalOptions="Center" />
+                            </Border>
+                        </Grid>
+
+                        <!-- Botões de Seleção Rápida (Stepper Visual) -->
+                        <Grid ColumnDefinitions="*,*,*,*"
+                              ColumnSpacing="8">
+
+                            <!-- 100g / Leve -->
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource VolumeBtnBase}">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding VolumeSelecionado}" Value="1">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource GoldActive}" />
+                                        <Setter Property="Stroke" Value="{StaticResource GoldActive}" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
+                                    <Label Text="100g" Style="{StaticResource VolumeLabelBase}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="1">
+                                                <Setter Property="TextColor" Value="{StaticResource TextActive}" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="1" >
+                                                <Setter Property="TextColor" Value="{StaticResource TextInactive}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <Label Text="Natural"
+                                           FontSize="8"
+                                           TextColor="#555760"
+                                           HorizontalOptions="Center">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="1">
+                                                <Setter Property="TextColor" Value="#0A0A0C" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding AjustarVolumeCommand}" CommandParameter="1" />
+                                </Border.GestureRecognizers>
+                            </Border>
+
+                            <!-- 200g / Cheio -->
+                            <Border Grid.Column="1"
+                                    Style="{StaticResource VolumeBtnBase}">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding VolumeSelecionado}" Value="2">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource GoldActive}" />
+                                        <Setter Property="Stroke" Value="{StaticResource GoldActive}" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
+                                    <Label Text="200g" Style="{StaticResource VolumeLabelBase}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="2">
+                                                <Setter Property="TextColor" Value="{StaticResource TextActive}" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="2" >
+                                                <Setter Property="TextColor" Value="{StaticResource TextInactive}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <Label Text="Cheio"
+                                           FontSize="8"
+                                           TextColor="#555760"
+                                           HorizontalOptions="Center">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="2">
+                                                <Setter Property="TextColor" Value="#0A0A0C" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding AjustarVolumeCommand}" CommandParameter="2" />
+                                </Border.GestureRecognizers>
+                            </Border>
+
+                            <!-- 300g / Extra -->
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource VolumeBtnBase}">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding VolumeSelecionado}" Value="3">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource GoldActive}" />
+                                        <Setter Property="Stroke" Value="{StaticResource GoldActive}" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
+                                    <Label Text="300g" Style="{StaticResource VolumeLabelBase}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="3">
+                                                <Setter Property="TextColor" Value="{StaticResource TextActive}" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="3" >
+                                                <Setter Property="TextColor" Value="{StaticResource TextInactive}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <Label Text="Extra"
+                                           FontSize="8"
+                                           TextColor="#555760"
+                                           HorizontalOptions="Center">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="3">
+                                                <Setter Property="TextColor" Value="#0A0A0C" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding AjustarVolumeCommand}" CommandParameter="3" />
+                                </Border.GestureRecognizers>
+                            </Border>
+
+                            <!-- 400g / Máximo -->
+                            <Border Grid.Column="3"
+                                    Style="{StaticResource VolumeBtnBase}">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding VolumeSelecionado}" Value="4">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource GoldActive}" />
+                                        <Setter Property="Stroke" Value="{StaticResource GoldActive}" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
+                                    <Label Text="400g" Style="{StaticResource VolumeLabelBase}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="4">
+                                                <Setter Property="TextColor" Value="{StaticResource TextActive}" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="4" >
+                                                <Setter Property="TextColor" Value="{StaticResource TextInactive}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <Label Text="Máximo"
+                                           FontSize="8"
+                                           TextColor="#555760"
+                                           HorizontalOptions="Center">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding VolumeSelecionado}" Value="4">
+                                                <Setter Property="TextColor" Value="#0A0A0C" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding AjustarVolumeCommand}" CommandParameter="4" />
+                                </Border.GestureRecognizers>
+                            </Border>
+
+                        </Grid>
+
+                        <!-- Barra de Progresso Visual (preenchimento conforme gramas) -->
+                        <BoxView HeightRequest="4"
+                                 CornerRadius="2"
+                                 BackgroundColor="#222430"
+                                 HorizontalOptions="Fill" />
+
+                    </VerticalStackLayout>
+                </Border>
+
                 <!-- ═══ HISTÓRICO ═══ -->
-                <Border
-                    Margin="18,4,18,10"
-                    Padding="12"
-                    BackgroundColor="#111316"
-                    Stroke="#292A2E"
-                    StrokeThickness="1"
-                    StrokeShape="RoundRectangle 14"
-                    IsVisible="{Binding TemHistorico}">
+                <Border Margin="18,4,18,10"
+                        Padding="12"
+                        BackgroundColor="#111316"
+                        Stroke="#292A2E"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 14"
+                        IsVisible="{Binding TemHistorico}">
 
                     <VerticalStackLayout Spacing="10">
 
@@ -251,7 +448,7 @@
                                                 </Border>
                                             </Grid>
                                             <Border.GestureRecognizers>
-                                                <TapGestureRecognizer
+                                                <TapGestureRecognizer 
                                                     Command="{Binding BindingContext.SelecionarDoHistoricoCommand, Source={x:Reference RootView}}"
                                                     CommandParameter="{Binding .}" />
                                             </Border.GestureRecognizers>
@@ -267,114 +464,110 @@
                 <!-- ═══ PERSONALIZAÇÃO ═══ -->
                 <VerticalStackLayout Padding="18,8" Spacing="13">
 
-                    <Label
-                        Text="PERSONALIZE SEU VISUAL"
-                        FontSize="17"
-                        FontAttributes="Bold"
-                        TextColor="#E4C187" />
+                    <Label Text="PERSONALIZE SEU VISUAL"
+                           FontSize="17"
+                           FontAttributes="Bold"
+                           TextColor="#E4C187" />
 
-                    <Grid
-                        ColumnDefinitions="*,*"
-                        RowDefinitions="Auto,Auto"
-                        ColumnSpacing="10"
-                        RowSpacing="10">
+                    <Grid ColumnDefinitions="*,*"
+                          RowDefinitions="Auto,Auto"
+                          ColumnSpacing="10"
+                          RowSpacing="10">
 
                         <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="3">
                             <Label Text="Comprimento" FontSize="11" TextColor="#A9A5A0" />
-                            <Picker
-                                ItemsSource="{Binding Comprimentos}"
-                                SelectedItem="{Binding ComprimentoSelecionado}"
-                                TextColor="White"
-                                TitleColor="#77788B"
-                                BackgroundColor="#1A1D2A" />
+                            <Picker ItemsSource="{Binding Comprimentos}"
+                                    SelectedItem="{Binding ComprimentoSelecionado}"
+                                    TextColor="White"
+                                    TitleColor="#77788B"
+                                    BackgroundColor="#1A1D2A" />
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="3">
                             <Label Text="Cor" FontSize="11" TextColor="#A9A5A0" />
-                            <Picker
-                                ItemsSource="{Binding Cores}"
-                                SelectedItem="{Binding CorSelecionada}"
-                                TextColor="White"
-                                TitleColor="#77788B"
-                                BackgroundColor="#1A1D2A" />
+                            <Picker ItemsSource="{Binding Cores}"
+                                    SelectedItem="{Binding CorSelecionada}"
+                                    TextColor="White"
+                                    TitleColor="#77788B"
+                                    BackgroundColor="#1A1D2A" />
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="3">
                             <Label Text="Tipo" FontSize="11" TextColor="#A9A5A0" />
-                            <Picker
-                                ItemsSource="{Binding TiposCabelo}"
-                                SelectedItem="{Binding TipoCabeloSelecionado}"
-                                TextColor="White"
-                                TitleColor="#77788B"
-                                BackgroundColor="#1A1D2A" />
+                            <Picker ItemsSource="{Binding TiposCabelo}"
+                                    SelectedItem="{Binding TipoCabeloSelecionado}"
+                                    TextColor="White"
+                                    TitleColor="#77788B"
+                                    BackgroundColor="#1A1D2A" />
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="3">
                             <Label Text="Método" FontSize="11" TextColor="#A9A5A0" />
-                            <Picker
-                                ItemsSource="{Binding Metodos}"
-                                SelectedItem="{Binding MetodoSelecionado}"
-                                TextColor="White"
-                                TitleColor="#77788B"
-                                BackgroundColor="#1A1D2A" />
+                            <Picker ItemsSource="{Binding Metodos}"
+                                    SelectedItem="{Binding MetodoSelecionado}"
+                                    TextColor="White"
+                                    TitleColor="#77788B"
+                                    BackgroundColor="#1A1D2A" />
                         </VerticalStackLayout>
                     </Grid>
 
-                    <Button
-                        Text="CRIAR MEU NOVO VISUAL"
-                        FontAttributes="Bold"
-                        HeightRequest="55"
-                        CornerRadius="27"
-                        BackgroundColor="#C89442"
-                        TextColor="White"
-                        IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
-                        Command="{Binding GerarSimulacaoCommand}" />
+                    <Button Text="CRIAR MEU NOVO VISUAL"
+                            FontAttributes="Bold"
+                            HeightRequest="55"
+                            CornerRadius="27"
+                            BackgroundColor="#C89442"
+                            TextColor="White"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
+                            Command="{Binding GerarSimulacaoCommand}" />
 
                 </VerticalStackLayout>
 
                 <!-- ═══ ORÇAMENTO ═══ -->
-                <Border
-                    Margin="18,10,18,25"
-                    Padding="16"
-                    BackgroundColor="#151619"
-                    Stroke="#80602F"
-                    StrokeThickness="1"
-                    StrokeShape="RoundRectangle 15"
-                    IsVisible="{Binding TemResultado}">
+                <Border Margin="18,10,18,25"
+                        Padding="16"
+                        BackgroundColor="#151619"
+                        Stroke="#80602F"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 15"
+                        IsVisible="{Binding TemResultado}">
 
                     <Grid ColumnDefinitions="*,Auto">
 
                         <VerticalStackLayout Grid.Column="0" Spacing="2">
-                            <Label
-                                Text="VALOR ESTIMADO"
-                                FontSize="10"
-                                CharacterSpacing="2"
-                                TextColor="#AAA5A0" />
+                            <Label Text="VALOR ESTIMADO"
+                                   FontSize="10"
+                                   CharacterSpacing="2"
+                                   TextColor="#AAA5A0" />
 
-                            <Label
-                                Text="{Binding ValorAtual, StringFormat='R$ {0:N2}'}"
-                                FontSize="24"
-                                FontAttributes="Bold"
-                                TextColor="#E4C187" />
+                            <Label Text="{Binding ValorAtual, StringFormat='R$ {0:N2}'}"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="#E4C187" />
+
+                            <!-- Info extra sobre o volume selecionado (opcional) -->
+                            <Label Text="{Binding VolumeTexto}"
+       TextColor="White"
+       FontSize="14"
+       HorizontalOptions="Center"
+       Margin="0,5"/>
                         </VerticalStackLayout>
 
-                        <Button
-                            Grid.Column="1"
-                            Text="AGENDAR"
-                            BackgroundColor="#C89442"
-                            TextColor="White"
-                            FontAttributes="Bold"
-                            CornerRadius="22"
-                            HeightRequest="44"
-                            WidthRequest="130"
-                            Command="{Binding VerOrcamentoCommand}" />
+                        <Button Grid.Column="1"
+                                Text="AGENDAR"
+                                BackgroundColor="#C89442"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="22"
+                                HeightRequest="44"
+                                WidthRequest="130"
+                                Command="{Binding VerOrcamentoCommand}" />
                     </Grid>
                 </Border>
 
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- ═══════════════ OVERLAY DE LOADING ═══════════════ -->
+        <!-- ═══════════════ OVERLAY DE LOADING GERAL ═══════════════ -->
         <components:LoadingOverlay IsLoading="{Binding IsBusy}" />
 
     </Grid>

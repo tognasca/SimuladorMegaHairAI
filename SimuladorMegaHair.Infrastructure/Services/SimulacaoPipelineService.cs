@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SimuladorMegaHair.Domain.DTOs;
 using SimuladorMegaHair.Domain.Enums;
 using SimuladorMegaHair.Domain.Interfaces;
 using SimuladorMegaHair.Domain.Models;
@@ -26,7 +27,6 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
 
     private static readonly Random _rng = new();
     private const string ReplicateBaseUrl = "https://api.replicate.com/v1";
-    private const string OpenAIBaseUrl = "https://api.openai.com/v1";
 
     public SimulacaoPipelineService(
         HttpClient http,
@@ -55,8 +55,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         var sw = Stopwatch.StartNew();
         _b64Cache.Clear();
 
-        _logger.LogInformation(
-            "═══ SIMULAÇÃO [{Provider}] ═══", req.Provider);
+        _logger.LogInformation("═══ SIMULAÇÃO [{Provider}] ═══", req.Provider);
 
         // 1. Resolve e prepara imagem
         var imagemAbs = ResolverCaminho(req.ImagemOriginalPath);
@@ -80,11 +79,10 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         // 4. Escolhe pipeline
         var (resultadoUrl, aviso) = req.Provider switch
         {
-            ImageProvider.Local => await PipelineLocalAsync(imagemPrep, maskPath, req, ct),
             ImageProvider.Replicate => await PipelineReplicateAsync(imagemPrep, maskPath, req, modoEdit, ct),
-            ImageProvider.OpenAI => await PipelineOpenAIAsync(imagemPrep, maskPath, req, ct),
             _ => throw new ArgumentOutOfRangeException(nameof(req.Provider))
         };
+
         // 5. Salva resultado
         var path = await SalvarResultadoAsync(resultadoUrl, ct);
 
@@ -106,140 +104,24 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  PIPELINE LOCAL (gratuito)
-    //  Flux Fill local via ONNX / Stable Diffusion local
+    //  AJUSTE DE VOLUME (Corrigido para bater com a Interface)
     // ═══════════════════════════════════════════════════════════
+    public async Task<string> AjustarVolumeAsync(
+    AjustarVolumeRequest req,
+    CancellationToken ct = default)
+    {
+        _logger.LogInformation("[VOLUME] Ajustando volume para nível {Nivel}...", req.Nivel);
 
-    private async Task<(string url, string? aviso)> PipelineLocalAsync(
+        var outputFolder = GarantirPasta("wwwroot", "resultados");
+        return await HairVolumeAdjuster.Aplicar(req, _logger, outputFolder, ct);
+    }
+
+    private async Task<(string url, string? aviso)> PipelineReplicateAsync(
         string imagemPath,
         string maskPath,
         SimulacaoRequest req,
+        HairEditMode modoEdit,
         CancellationToken ct)
-    {
-        _logger.LogInformation("[LOCAL] Iniciando pipeline gratuito...");
-
-        // Tenta usar modelo local ONNX
-        // Se não tiver modelo local, faz inpainting simples com ImageSharp
-        try
-        {
-            var resultPath = await LocalHairInpainter.AplicarCabeloAsync(
-                imagemPath,
-                maskPath,
-                req.Cor,
-                req.TipoCabelo,
-                req.Comprimento,
-                GarantirPasta("wwwroot", "resultados"),
-                ct);
-
-            _logger.LogInformation("[LOCAL] ✓ Concluído");
-
-            // Retorna path local como "url"
-            return (resultPath, "Simulação local — qualidade básica.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex,
-                "[LOCAL] Falha no inpainting local — fazendo fallback para sobreposição de cor");
-
-            var resultPath = await LocalHairColorizer.AplicarCorAsync(
-                imagemPath,
-                maskPath,
-                req.Cor,
-                GarantirPasta("wwwroot", "resultados"),
-                ct);
-
-            return (resultPath,
-                "Simulação básica de cor — para resultado mais realista, " +
-                "use o provider Replicate.");
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    //  PIPELINE REPLICATE (pago)
-    //  Flux Fill → freeze de identidade (pixels originais fora da máscara)
-    // ═══════════════════════════════════════════════════════════
-
-    //private async Task<(string url, string? aviso)> PipelineReplicateAsync(
-    //    string imagemPath,
-    //    string maskPath,
-    //    SimulacaoRequest req,
-    //    CancellationToken ct)
-    //{
-    //    _logger.LogInformation("[REPLICATE] Iniciando pipeline pago...");
-
-    //    var fluxVer = await ObterVersaoAsync(_rep.FluxFillOwner, _rep.FluxFillName, ct);
-
-    //    _logger.LogInformation("[1/2] Flux Fill — gerando novo cabelo...");
-    //    var fluxUrl = await ExecutarFluxFillAsync(
-    //        imagemPath, maskPath, req, fluxVer, ct);
-
-    //    _logger.LogInformation("[2/2] Freeze — restaurando rosto, roupa e fundo da foto original...");
-    //    var tempFolder = GarantirPasta("wwwroot", "temp");
-    //    var geradaPath = await BaixarParaTempAsync(fluxUrl, tempFolder, ct);
-
-    //    var composto = await IdentityCompositor.ComporPreservandoIdentidadeAsync(
-    //        imagemPath,
-    //        geradaPath,
-    //        maskPath,
-    //        GarantirPasta("wwwroot", "resultados"),
-    //        (float)_rep.MaskFeatherSigma,
-    //        ct);
-
-    //    LimparArquivosTemp(geradaPath);
-
-    //    _logger.LogInformation("[REPLICATE] ✓ Concluído");
-    //    return (composto, null);
-    //}
-
-    //private async Task<(string url, string? aviso)> PipelineReplicateAsync(
-    //string imagemPath,
-    //string maskPath,
-    //SimulacaoRequest req,
-    //CancellationToken ct)
-    //{
-    //    _logger.LogInformation("[REPLICATE] Iniciando pipeline pago...");
-    //    //var fluxVer = await ObterVersaoAsync(_rep.FluxFillOwner, _rep.FluxFillName, ct);
-    //    _logger.LogInformation(
-    //        "[1/2] FLUX Fill Dev — gerando novo cabelo...");
-
-    //    var fluxUrl = await ExecutarFluxFillAsync(
-    //        imagemPath,
-    //        maskPath,
-    //        req,
-    //        ct);
-
-    //    _logger.LogInformation(
-    //        "[2/2] Freeze — restaurando rosto, roupa e fundo...");
-
-    //    var tempFolder = GarantirPasta("wwwroot", "temp");
-
-    //    var geradaPath = await BaixarParaTempAsync(
-    //        fluxUrl,
-    //        tempFolder,
-    //        ct);
-
-    //    var composto =
-    //        await IdentityCompositor.ComporPreservandoIdentidadeAsync(
-    //            imagemPath,
-    //            geradaPath,
-    //            maskPath,
-    //            GarantirPasta("wwwroot", "resultados"),
-    //            (float)_rep.MaskFeatherSigma,
-    //            ct);
-
-    //    LimparArquivosTemp(geradaPath);
-
-    //    _logger.LogInformation("[REPLICATE] ✓ Concluído");
-
-    //    return (composto, null);
-    //}
-
-    private async Task<(string url, string? aviso)> PipelineReplicateAsync(
-     string imagemPath,
-     string maskPath,
-     SimulacaoRequest req,
-     HairEditMode modoEdit,
-     CancellationToken ct)
     {
         _logger.LogInformation("[REPLICATE] Iniciando pipeline FLUX Fill (Modo: {Modo})...", modoEdit);
 
@@ -268,65 +150,18 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         return (composto, null);
     }
 
-    //private async Task<string> ExecutarFluxFillAsync(
-    //    string imagemPath,
-    //    string maskPath,
-    //    SimulacaoRequest req,
-    //    string versao,
-    //    CancellationToken ct)
-    //{
-    //    var fallbacks = PromptBuilder.BuildFallbacks(
-    //        req.Comprimento, req.Cor, req.TipoCabelo);
-
-    //    Exception? ultimo = null;
-
-    //    foreach (var (prompt, negative) in fallbacks)
-    //    {
-    //        try
-    //        {
-    //            _logger.LogDebug("Prompt: {P}", prompt);
-
-    //            var body = new
-    //            {
-    //                version = versao,
-    //                input = new
-    //                {
-    //                    image = ConverterBase64(imagemPath),
-    //                    mask = ConverterBase64(maskPath),
-    //                    prompt = prompt,
-    //                    steps = _rep.FluxSteps,
-    //                    guidance = _rep.FluxGuidance,
-    //                    output_format = "png",
-    //                    output_quality = 90,
-    //                    seed = _rng.Next(1, 999_999)
-    //                }
-    //            };
-
-    //            return await ExecutarComRetryRateLimitAsync(body, ct);
-    //        }
-    //        catch (InvalidOperationException ex) when (IsNsfw(ex))
-    //        {
-    //            ultimo = ex;
-    //            _logger.LogWarning("NSFW — tentando próximo prompt...");
-    //            await Task.Delay(2_000, ct);
-    //        }
-    //    }
-
-    //    throw new InvalidOperationException(
-    //        "Imagem bloqueada pelo filtro de segurança. " +
-    //        "Use uma foto com boa iluminação e fundo neutro.", ultimo);
-    //}
     private async Task<string> ExecutarFluxFillAsync(
-    string imagemPath,
-    string maskPath,
-    SimulacaoRequest req,
-    HairEditMode modoEdit,
-    CancellationToken ct)
+        string imagemPath,
+        string maskPath,
+        SimulacaoRequest req,
+        HairEditMode modoEdit,
+        CancellationToken ct)
     {
         var fallbacks = PromptBuilder.BuildFallbacks(
             req.Comprimento,
             req.Cor,
             req.TipoCabelo,
+            req.MetodoMegaHair,
             modoEdit);
 
         Exception? ultimo = null;
@@ -335,7 +170,10 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         {
             try
             {
-                _logger.LogDebug("[FLUX-FILL] Prompt ({Modo}): {Prompt}", modoEdit, prompt);
+                Console.WriteLine("==================================================");
+                Console.WriteLine($"[PROMPT ENVIADO À IA]: {prompt}");
+                Console.WriteLine($"[NEGATIVE PROMPT]: {negative}");
+                Console.WriteLine("==================================================");
 
                 var body = new
                 {
@@ -343,13 +181,9 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
                     {
                         image = ConverterBase64(imagemPath),
                         mask = ConverterBase64(maskPath),
-
                         prompt = prompt,
-
-                        // FLUX Fill Pro utiliza guidance alto para rigor de cor e estilo
-                        num_inference_steps = _rep.FluxSteps > 0 ? _rep.FluxSteps : 30,
-                        guidance = _rep.FluxGuidance > 0 ? _rep.FluxGuidance : 30,
-
+                        num_inference_steps = 30,
+                        guidance = 30,
                         num_outputs = 1,
                         output_format = "png",
                         output_quality = 95,
@@ -362,134 +196,16 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
             catch (InvalidOperationException ex) when (IsNsfw(ex))
             {
                 ultimo = ex;
-                _logger.LogWarning("[FLUX-FILL] NSFW — tentando próximo prompt...");
                 await Task.Delay(2_000, ct);
             }
         }
 
-        throw new InvalidOperationException(
-            "Imagem bloqueada pelo filtro de segurança. Use uma foto com boa iluminação.",
-            ultimo);
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    //  PIPELINE OPENAI (pago)
-    //  GPT Image Edit (gpt-image-1)
-    // ═══════════════════════════════════════════════════════════
-
-    private async Task<(string url, string? aviso)> PipelineOpenAIAsync(
-        string imagemPath,
-        string maskPath,
-        SimulacaoRequest req,
-        CancellationToken ct)
-    {
-        _logger.LogInformation("[OPENAI] Iniciando pipeline GPT Image Edit...");
-
-        if (string.IsNullOrWhiteSpace(_oai.ApiToken))
-            throw new InvalidOperationException(
-                "OpenAI:ApiToken não configurada.");
-
-        var prompt = PromptBuilder.BuildOpenAI(
-            req.Comprimento, req.Cor, req.TipoCabelo, req.MetodoMegaHair);
-
-        _logger.LogDebug("Prompt OpenAI: {P}", prompt);
-
-        using var form = new MultipartFormDataContent();
-
-        // Imagem original
-        var imgBytes = await File.ReadAllBytesAsync(imagemPath, ct);
-        var imgContent = new ByteArrayContent(imgBytes);
-        imgContent.Headers.ContentType =
-            new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
-        form.Add(imgContent, "image", "image.png");
-
-        // Máscara
-        var maskBytes = await File.ReadAllBytesAsync(maskPath, ct);
-        var maskContent = new ByteArrayContent(maskBytes);
-        maskContent.Headers.ContentType =
-            new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
-        form.Add(maskContent, "mask", "mask.png");
-
-        form.Add(new StringContent(prompt), "prompt");
-        form.Add(new StringContent(_oai.Model), "model");
-        form.Add(new StringContent("1"), "n");
-        form.Add(new StringContent(_oai.Size), "size");
-        form.Add(new StringContent(_oai.Quality), "quality");
-        form.Add(new StringContent("b64_json"), "response_format");
-
-        using var request = new HttpRequestMessage(
-            HttpMethod.Post, $"{OpenAIBaseUrl}/images/edits");
-        request.Headers.Authorization =
-            new AuthenticationHeaderValue("Bearer", _oai.ApiToken);
-        request.Content = form;
-
-        using var response = await _http.SendAsync(request, ct);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var err = await response.Content.ReadAsStringAsync(ct);
-            throw new HttpRequestException(
-                $"OpenAI retornou {response.StatusCode}: {err}",
-                null, response.StatusCode);
-        }
-
-        var respJson = await response.Content.ReadAsStringAsync(ct);
-        using var doc = JsonDocument.Parse(respJson);
-
-        var b64 = doc.RootElement
-            .GetProperty("data")[0]
-            .GetProperty("b64_json")
-            .GetString()!;
-
-        // Salva diretamente do base64
-        var pasta = GarantirPasta("wwwroot", "resultados");
-        var nome = $"{Guid.NewGuid()}.png";
-        var fullPath = Path.Combine(pasta, nome);
-
-        await File.WriteAllBytesAsync(fullPath,
-            Convert.FromBase64String(b64), ct);
-
-        var composto = await IdentityCompositor.ComporPreservandoIdentidadeAsync(
-            imagemPath,
-            fullPath,
-            maskPath,
-            pasta,
-            (float)_rep.MaskFeatherSigma,
-            ct);
-
-        LimparArquivosTemp(fullPath);
-
-        _logger.LogInformation("[OPENAI] ✓ Concluído");
-        return (composto, null);
+        throw new InvalidOperationException("Erro de filtro de segurança.", ultimo);
     }
 
     // ═══════════════════════════════════════════════════════════
     //  REPLICATE HELPERS
     // ═══════════════════════════════════════════════════════════
-
-    private async Task<string> ObterVersaoAsync(
-        string owner, string name, CancellationToken ct)
-    {
-        using var req = CriarReplicateRequest(HttpMethod.Get,
-            $"{ReplicateBaseUrl}/models/{owner}/{name}");
-        using var resp = await _http.SendAsync(req, ct);
-
-        if (!resp.IsSuccessStatusCode)
-        {
-            var body = await resp.Content.ReadAsStringAsync(ct);
-            throw new InvalidOperationException(
-                $"Modelo '{owner}/{name}' não encontrado ({resp.StatusCode}). {body}");
-        }
-
-        var json = await resp.Content.ReadAsStringAsync(ct);
-        using var doc = JsonDocument.Parse(json);
-
-        if (!doc.RootElement.TryGetProperty("latest_version", out var latest))
-            throw new InvalidOperationException(
-                $"Modelo '{owner}/{name}' sem versão publicada.");
-
-        return latest.GetProperty("id").GetString()!;
-    }
 
     private async Task<string> ExecutarComRetryRateLimitAsync(
         object body, CancellationToken ct)
@@ -528,10 +244,8 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
            $"{_rep.FluxFillOwner}/" +
            $"{_rep.FluxFillName}/predictions";
 
-        using var req = CriarReplicateRequest(
-            HttpMethod.Post, url);
-        req.Content = content;      
-
+        using var req = CriarReplicateRequest(HttpMethod.Post, url);
+        req.Content = content;
 
         using var resp = await _http.SendAsync(req, ct);
 
@@ -644,7 +358,6 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
 
     private async Task<string> SalvarResultadoAsync(string url, CancellationToken ct)
     {
-        // Se for path local (pipeline local), retorna direto
         if (!url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             return url;
 

@@ -1,11 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.Storage;
 using SimuladorMegaHair.App.Models;
 using SimuladorMegaHair.App.Services;
 using SimuladorMegaHair.Domain.Enums;
+using SimuladorMegaHair.Domain.Models;
 using System.Collections.ObjectModel;
+using static SimuladorMegaHair.Api.Controllers.SimulacoesController;
 
 namespace SimuladorMegaHair.App.ViewModels;
 
@@ -18,13 +18,9 @@ public partial class StyleSelectionViewModel : BaseViewModel
     private double _lastHeight;
 
     // ═════════════════════════════════════════════════════════
-    // PROPRIEDADES OBSERVÁVEIS
+    // PROPRIEDADES OBSERVÁVEIS - BÁSICAS
     // ═════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Foto original do usuário (usada como "ANTES" no comparador).
-    /// Nunca é sobrescrita pelo resultado da IA.
-    /// </summary>
     [ObservableProperty]
     private string fotoOriginal = string.Empty;
 
@@ -32,13 +28,13 @@ public partial class StyleSelectionViewModel : BaseViewModel
     private string fotoPath = string.Empty;
 
     /// <summary>
-    /// Foto atualmente exibida (pode ser a original ou uma selecionada do histórico).
+    /// Foto atualmente exibida (pode ser a original ou selecionada do histórico).
     /// </summary>
     [ObservableProperty]
     private string fotoExibicao = AppSettings.StaticResultUrl;
 
     /// <summary>
-    /// URL da imagem gerada pela IA (usada como "DEPOIS" no comparador).
+    /// URL da imagem gerada pela IA (usada como "DEPOIS").
     /// </summary>
     [ObservableProperty]
     private string? fotoResultadoUrl;
@@ -59,7 +55,7 @@ public partial class StyleSelectionViewModel : BaseViewModel
     private string metodoSelecionado = string.Empty;
 
     [ObservableProperty]
-    private string volumeSelecionado = "150 g";
+    private string volumeSelecionado = string.Empty;
 
     [ObservableProperty]
     private decimal valorAtual;
@@ -81,7 +77,61 @@ public partial class StyleSelectionViewModel : BaseViewModel
     private string modoVisualizacao = "Slider";
 
     // ═════════════════════════════════════════════════════════
-    // PROPRIEDADES DERIVADAS
+    // PROPRIEDADES DE VOLUME
+    // ═════════════════════════════════════════════════════════
+
+    private int _volumeNivel = 2; // 1=100g, 2=200g, 3=300g, 4=400g
+
+    /// <summary>
+    /// Nível selecionado (1-4). Controla qual botão fica ativo no UI.
+    /// </summary>
+    [ObservableProperty]
+    private int volumeNivel = 2;
+
+    /// <summary>
+    /// Quantidade em gramas baseada no nível.
+    /// </summary>
+    public int GramasAtuais => VolumeNivel * 100;
+
+    /// <summary>
+    /// Caminho da imagem processada com volume.
+    /// </summary>
+    private string? _fotoVolumeProcessada;
+
+    /// <summary>
+    /// URL final para exibir: preferencialmente a com volume, senão a original da IA.
+    /// </summary>
+    public string FotoVolumeAtiva =>
+        !string.IsNullOrWhiteSpace(_fotoVolumeProcessada)
+            ? $"{AppSettings.ApiBaseUrl}/api/simulacoes/{_fotoVolumeProcessada.TrimStart('/')}"
+            : FotoResultadoUrl ?? string.Empty;
+
+    [ObservableProperty]
+    private bool ajustandoVolume;
+
+    /// <summary>
+    /// Indica se já houve algum ajuste de volume aplicado.
+    /// </summary>
+    public bool TemVolumeAjustado => !string.IsNullOrWhiteSpace(_fotoVolumeProcessada);
+
+    /// <summary>
+    /// Texto descritivo do nível de volume selecionado.
+    /// </summary>
+    [ObservableProperty]
+    private string volumeTexto = "💫 Perfeito para uso diário (200g)";
+
+    public ObservableCollection<VolumeItem> NiveisVolume { get; } = new()
+    {
+        new VolumeItem(1, "✨ Look natural e leve", "100g"),
+        new VolumeItem(2, "💫 Perfeito para uso diário", "200g"),
+        new VolumeItem(3, "🔥 Cabelo cheio e definido", "300g"),
+        new VolumeItem(4, "⭐ Maximum volume", "400g")
+    };
+
+    public record VolumeItem(int Nivel, string Descricao, string Gramas);
+
+    // ═════════════════════════════════════════════════════════
+    // PROPRIEDADES DERIVADAS (Modos de Visualização)
     // ═════════════════════════════════════════════════════════
 
     public bool ModoSlider => ModoVisualizacao == "Slider";
@@ -96,16 +146,27 @@ public partial class StyleSelectionViewModel : BaseViewModel
         OnPropertyChanged(nameof(ModoDepois));
     }
 
+    partial void OnVolumeNivelChanged(int value)
+    {
+        VolumeTexto = NiveisVolume.First(v => v.Nivel == value).Descricao + $" ({value * 100}g)";
+        OnPropertyChanged(nameof(GramasAtuais));
+        OnPropertyChanged(nameof(FotoVolumeAtiva));
+        OnPropertyChanged(nameof(TemVolumeAjustado));
+    }
+
     // ═════════════════════════════════════════════════════════
-    // COLEÇÕES
+    // COLEÇÕES E LISTAS
     // ═════════════════════════════════════════════════════════
 
     public ObservableCollection<string> Comprimentos { get; } = new(OpcoesVisual.Comprimentos);
     public ObservableCollection<string> Cores { get; } = new(OpcoesVisual.Cores);
     public ObservableCollection<string> TiposCabelo { get; } = new(OpcoesVisual.TiposCabelo);
     public ObservableCollection<string> Metodos { get; } = new(OpcoesVisual.Metodos);
-    public ObservableCollection<SimulacaoResponse> Historico { get; } = new();
+
+    // Legacy - mantido por compatibilidade
     public ObservableCollection<string> Volumes { get; } = new() { "100 g", "150 g", "200 g", "250 g" };
+
+    public ObservableCollection<SimulacaoResponse> Historico { get; } = new();
 
     public IReadOnlyList<string> LayoutModes { get; } = new List<string>
     {
@@ -134,6 +195,9 @@ public partial class StyleSelectionViewModel : BaseViewModel
         "Fita", "Micro Cápsula", "Queratina"
     };
 
+    // ID da simulação atual para chamar o endpoint de volume
+    private int _simulacaoAtualId;
+
     // ═════════════════════════════════════════════════════════
     // CONSTRUTOR
     // ═════════════════════════════════════════════════════════
@@ -142,13 +206,12 @@ public partial class StyleSelectionViewModel : BaseViewModel
     {
         _apiService = apiService;
         Title = "SEU NOVO VISUAL";
-        //FotoExibicao = AppSettings.StaticResultUrl;
 
         Historico.CollectionChanged += (_, __) => OnPropertyChanged(nameof(TemHistorico));
     }
 
     // ═════════════════════════════════════════════════════════
-    // COMANDOS DE SELEÇÃO
+    // COMANDOS
     // ═════════════════════════════════════════════════════════
 
     [RelayCommand]
@@ -172,6 +235,63 @@ public partial class StyleSelectionViewModel : BaseViewModel
     [RelayCommand]
     private void MudarModo(string modo) => ModoVisualizacao = modo;
 
+    /// <summary>
+    /// Comando para ajustar volume
+    /// </summary>
+    [RelayCommand(AllowConcurrentExecutions = false)]
+    private async Task AjustarVolume(int nivel)
+    {
+        if (!TemResultado || _simulacaoAtualId <= 0)
+        {
+            await Shell.Current.DisplayAlert("Info",
+                "Gere uma simulação primeiro para ajustar o volume.", "OK");
+            return;
+        }
+
+        if (VolumeNivel == nivel && TemVolumeAjustado)
+            return;
+
+        try
+        {
+            AjustandoVolume = true;
+
+            var request = new AjustarVolumeRequest(nivel)
+            {
+                ImagemOriginalPath = FotoOriginal,
+                ImagemResultadoPath = FotoResultadoUrl
+            };
+
+            var resposta = await _apiService.AjustarVolumeAsync(_simulacaoAtualId, request);
+
+            if (resposta != null && !string.IsNullOrWhiteSpace(resposta.FotoResultadoUrl))
+            {
+                _fotoVolumeProcessada = resposta.FotoResultadoUrl;
+                VolumeNivel = nivel;
+
+                // Força refresh da imagem
+                if (ModoDepois)
+                {
+                    MudarModo("Antes");
+                    await Task.Delay(30);
+                    MudarModo("Depois");
+                }
+            }
+            else
+            {
+                await Shell.Current.DisplayAlert("Aviso",
+                    "Não foi possível aplicar esse volume. Tente novamente.", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Erro", $"Falha ao ajustar volume: {ex.Message}", "OK");
+        }
+        finally
+        {
+            AjustandoVolume = false;
+        }
+    }
+
     // ═════════════════════════════════════════════════════════
     // CALLBACKS DE PROPRIEDADES
     // ═════════════════════════════════════════════════════════
@@ -180,8 +300,8 @@ public partial class StyleSelectionViewModel : BaseViewModel
     {
         if (!string.IsNullOrWhiteSpace(value))
         {
-            FotoExibicao = value;   // ← Mostra a foto real do usuário
-            FotoOriginal = value;   // ← Guarda como "ANTES"
+            FotoExibicao = value;
+            FotoOriginal = value;
         }
 
         if (!AppSettings.UsarImagemDeTeste)
@@ -219,6 +339,14 @@ public partial class StyleSelectionViewModel : BaseViewModel
     public void AtualizarImagemDeTeste()
     {
         FotoExibicao = AppSettings.StaticResultUrl;
+    }
+
+    private void ResetarVolume()
+    {
+        _volumeNivel = 2;
+        VolumeNivel = 2;
+        _fotoVolumeProcessada = null;
+        VolumeTexto = "💫 Perfeito para uso diário (200g)";
     }
 
     // ═════════════════════════════════════════════════════════
@@ -262,12 +390,9 @@ public partial class StyleSelectionViewModel : BaseViewModel
         }
     }
 
-
     [RelayCommand]
     private async Task GerarSimulacaoAsync()
     {
-
-        Console.WriteLine("[DEBUG] GerarSimulacaoAsync CHAMADO");
         if (string.IsNullOrWhiteSpace(FotoOriginal))
         {
             await Shell.Current.DisplayAlert(
@@ -276,15 +401,13 @@ public partial class StyleSelectionViewModel : BaseViewModel
                 "OK");
             return;
         }
-        IsBusy = true;
 
-        // ⭐ Força a UI a renderizar o loading ANTES de continuar
+        IsBusy = true;
         await Task.Yield();
         await Task.Delay(50);
 
         try
         {
-           
             SimulacaoResponse resultado;
 
             if (AppSettings.UsarImagemDeTeste)
@@ -298,7 +421,7 @@ public partial class StyleSelectionViewModel : BaseViewModel
                 resultado = existente ?? new SimulacaoResponse
                 {
                     Id = Guid.NewGuid(),
-                    FotoOriginalUrl = FotoOriginal,                    // ✅ FOTO LOCAL DO USUÁRIO
+                    FotoOriginalUrl = FotoOriginal,
                     FotoResultadoUrl = AppSettings.StaticResultUrl,
                     Comprimento = ComprimentoSelecionado,
                     Cor = CorSelecionada,
@@ -331,153 +454,45 @@ public partial class StyleSelectionViewModel : BaseViewModel
                     Provider = ImageProvider.Replicate
                 };
 
-
-                Console.WriteLine("═══════════════════════════════════════");
-                Console.WriteLine("[DEBUG] GerarSimulacaoAsync CHAMADO!");
-                Console.WriteLine($"[DEBUG] FotoOriginal: {FotoOriginal}");
-                Console.WriteLine($"[DEBUG] Comprimento: {ComprimentoSelecionado}");
-                Console.WriteLine($"[DEBUG] Cor: {CorSelecionada}");
-                Console.WriteLine("═══════════════════════════════════════");
-
-
                 resultado = await _apiService.CriarSimulacaoAsync(request)
                     ?? throw new InvalidOperationException("A API não retornou a simulação.");
 
-                // 🔒 FORÇA a foto original a ser SEMPRE a do usuário
-                // (ignora o que a API retornar)
                 resultado.FotoOriginalUrl = FotoOriginal;
 
                 await CarregarHistoricoAsync();
             }
 
-            // ✅ ANTES = foto do usuário  |  DEPOIS = resultado da IA
-            FotoExibicao = FotoOriginal;                     // ← Sempre a foto local
-            FotoResultadoUrl = resultado.FotoResultadoUrl;   // ← Sempre o resultado da IA
+            // PREENCHE RESULTADOS
+            FotoExibicao = FotoOriginal;
+            FotoResultadoUrl = resultado.FotoResultadoUrl;
             ValorAtual = resultado.ValorEstimado ?? 0;
             TemResultado = true;
+            _simulacaoAtualId = resultado.Id is Guid g ? g.GetHashCode() : resultado.Id.GetHashCode();
 
             ComprimentoSelecionado = resultado.Comprimento;
             CorSelecionada = resultado.Cor;
             TipoCabeloSelecionado = resultado.TipoCabelo;
             MetodoSelecionado = resultado.MetodoMegaHair;
 
-            ModoVisualizacao = "Slider";
+            ResetarVolume();
 
-            Console.WriteLine("[DEBUG] Simulação concluída com sucesso");
+            ModoVisualizacao = "Slider";
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ERRO] {ex.Message}");
             await Shell.Current.DisplayAlert("Erro", ex.Message, "OK");
         }
         finally
         {
             IsBusy = false;
-            Console.WriteLine("[DEBUG] IsBusy = false");
         }
     }
 
-    //[RelayCommand]
-    //private async Task GerarSimulacaoAsync()
-    //{
-    //    // ⚠️ Validação: precisa ter uma foto original
-    //    if (string.IsNullOrWhiteSpace(FotoOriginal))
-    //    {
-    //        await Shell.Current.DisplayAlert(
-    //            "Atenção",
-    //            "Nenhuma foto foi selecionada. Volte e tire/escolha uma foto primeiro.",
-    //            "OK");
-    //        return;
-    //    }
-
-    //    try
-    //    {
-    //        IsBusy = true;
-
-    //        SimulacaoResponse resultado;
-
-    //        if (AppSettings.UsarImagemDeTeste)
-    //        {
-    //            var existente = Historico.FirstOrDefault(x =>
-    //                x.Comprimento == ComprimentoSelecionado &&
-    //                x.Cor == CorSelecionada &&
-    //                x.TipoCabelo == TipoCabeloSelecionado &&
-    //                x.MetodoMegaHair == MetodoSelecionado);
-
-    //            resultado = existente ?? new SimulacaoResponse
-    //            {
-    //                Id = Guid.NewGuid(),
-    //                FotoOriginalUrl = FotoOriginal,                    // ← FOTO REAL DO USUÁRIO
-    //                FotoResultadoUrl = AppSettings.StaticResultUrl,    // ← Resultado simulado da IA
-    //                Comprimento = ComprimentoSelecionado,
-    //                Cor = CorSelecionada,
-    //                TipoCabelo = TipoCabeloSelecionado,
-    //                MetodoMegaHair = MetodoSelecionado,
-    //                ValorEstimado = CalcularValorTeste(),
-    //                CriadoEm = DateTime.Now
-    //            };
-
-    //            await Task.Delay(3000); // Simula tempo de processamento da IA
-
-    //            if (existente is null)
-    //                Historico.Insert(0, resultado);
-    //        }
-    //        else
-    //        {
-    //            if (string.IsNullOrWhiteSpace(_fotoServidorPath))
-    //            {
-    //                await Shell.Current.DisplayAlert("Atenção", "A foto ainda não foi enviada.", "OK");
-    //                return;
-    //            }
-
-    //            var request = new CriarSimulacaoRequest
-    //            {
-    //                FotoOriginalPath = _fotoServidorPath,
-    //                Comprimento = ComprimentoSelecionado,
-    //                Cor = CorSelecionada,
-    //                TipoCabelo = TipoCabeloSelecionado,
-    //                MetodoMegaHair = MetodoSelecionado
-    //            };
-
-    //            resultado = await _apiService.CriarSimulacaoAsync(request)
-    //                ?? throw new InvalidOperationException("A API não retornou a simulação.");
-
-    //            // Se a API não retornar a URL original, usa a que já temos localmente
-    //            if (string.IsNullOrWhiteSpace(resultado.FotoOriginalUrl))
-    //                resultado.FotoOriginalUrl = FotoOriginal;
-
-    //            await CarregarHistoricoAsync();
-    //        }
-
-    //        // ✅ FotoExibicao = foto do usuário (ANTES)
-    //        // ✅ FotoResultadoUrl = resultado da IA (DEPOIS)
-    //        FotoExibicao = resultado.FotoOriginalUrl;
-    //        FotoResultadoUrl = resultado.FotoResultadoUrl;
-    //        ValorAtual = resultado.ValorEstimado ?? 0;
-    //        TemResultado = true;
-
-    //        ComprimentoSelecionado = resultado.Comprimento;
-    //        CorSelecionada = resultado.Cor;
-    //        TipoCabeloSelecionado = resultado.TipoCabelo;
-    //        MetodoSelecionado = resultado.MetodoMegaHair;
-
-    //        ModoVisualizacao = "Slider";
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        await Shell.Current.DisplayAlert("Erro", ex.Message, "OK");
-    //    }
-    //    finally
-    //    {
-    //        IsBusy = false;
-    //    }
-    //}
     [RelayCommand]
     private void SelecionarDoHistorico(SimulacaoResponse item)
     {
         if (item is null) return;
 
-        // ✅ Sempre usa a foto local como ANTES
         FotoExibicao = FotoOriginal;
         FotoResultadoUrl = item.FotoResultadoUrl;
         ValorAtual = item.ValorEstimado ?? 0;
@@ -487,6 +502,9 @@ public partial class StyleSelectionViewModel : BaseViewModel
         TipoCabeloSelecionado = item.TipoCabelo;
         MetodoSelecionado = item.MetodoMegaHair;
         TemResultado = true;
+        _simulacaoAtualId = item.Id is Guid g ? g.GetHashCode() : item.Id.GetHashCode();
+
+        ResetarVolume();
 
         ModoVisualizacao = "Slider";
     }
@@ -498,7 +516,8 @@ public partial class StyleSelectionViewModel : BaseViewModel
         {
             ["ValorEstimado"] = ValorAtual,
             ["Metodo"] = MetodoSelecionado,
-            ["Comprimento"] = ComprimentoSelecionado
+            ["Comprimento"] = ComprimentoSelecionado,
+            ["Gramas"] = GramasAtuais
         };
 
         await Shell.Current.GoToAsync("//BudgetPage", parametros);

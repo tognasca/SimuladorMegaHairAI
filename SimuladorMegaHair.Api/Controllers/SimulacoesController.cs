@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SimuladorMegaHair.Domain.DTOs;
@@ -183,15 +184,15 @@ public class SimulacoesController : ControllerBase
         // ── Prompt para auditoria ───────────────────────────
         var prompt = request.Provider switch
         {
-            ImageProvider.OpenAI => PromptBuilder.BuildOpenAI(
-                request.Comprimento, request.Cor,
-                request.TipoCabelo, request.MetodoMegaHair),
+            //ImageProvider.OpenAI => PromptBuilder.BuildOpenAI(
+            //    request.Comprimento, request.Cor,
+            //    request.TipoCabelo, request.MetodoMegaHair),
 
-            ImageProvider.Local => PromptBuilder.BuildLocal(
-                request.Comprimento, request.Cor, request.TipoCabelo),
+            //ImageProvider.Local => PromptBuilder.BuildLocal(
+            //    request.Comprimento, request.Cor, request.TipoCabelo),
 
             _ => PromptBuilder.BuildInpainting(
-                request.Comprimento, request.Cor, request.TipoCabelo, HairEditMode.Extend)
+                request.Comprimento, request.Cor, request.TipoCabelo, request.MetodoMegaHair, HairEditMode.Extend)
         };
 
         // ── Persiste ────────────────────────────────────────
@@ -251,6 +252,40 @@ public class SimulacoesController : ControllerBase
             .ToList();
 
         return Ok(response);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  AJUSTAR VOLUME PÓS-GERAÇÃO (GRAMAS MEGA HAIR)
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Ajusta o volume/cabelo aparente simulando gramas de mega hair.
+    /// Nível 1 = 100g (leve), Nível 4 = 400g (extravolume).
+    /// Não reprocessa a IA; usa filtros de imagem inteligentes.
+    /// </summary>
+    [HttpPost("{id}/volume")]
+    public async Task<IActionResult> AjustarVolume(
+    int id,
+    [FromBody] AjustarVolumeRequest request,
+    CancellationToken ct)
+    {
+        if (request == null || request.Nivel < 1 || request.Nivel > 4)
+        {
+            return BadRequest("Nível de volume inválido. Escolha entre 1 e 4.");
+        }
+
+        var simulacao = await _dbContext.Simulacoes.FindAsync(id);
+        if (simulacao == null)
+        {
+            return NotFound("Simulação não encontrada.");
+        }
+
+        request.ImagemOriginalPath = simulacao.FotoOriginalPath;
+        request.ImagemResultadoPath = simulacao.FotoResultadoPath;
+
+        var novoPath = await _imageService.AjustarVolumeAsync(request, ct);
+
+        return Ok(new { FotoResultadoPath = novoPath });
     }
 
     // ═══════════════════════════════════════════════════════════

@@ -17,6 +17,7 @@
             <!-- Agora o sistema entende quem é o local -->
             <local:StringToColorConverter x:Key="StringToColorConverter" />
             <toolkit:InvertedBoolConverter x:Key="InverseBoolConverter" />
+            <converters:VolumeToColorConverter x:Key="VolumeToColorConverter"/>
 
             <converters:EqualityConverter x:Key="EqualityConverter" />
             <converters:BoolToStrokeConverter x:Key="BoolToStrokeConverter" />

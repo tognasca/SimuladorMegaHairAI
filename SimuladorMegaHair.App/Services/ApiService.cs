@@ -1,5 +1,7 @@
 ﻿using System.Net.Http.Json;
 using SimuladorMegaHair.App.Models;
+using SimuladorMegaHair.Domain.Models;
+using static SimuladorMegaHair.Api.Controllers.SimulacoesController;
 
 namespace SimuladorMegaHair.App.Services;
 
@@ -35,17 +37,35 @@ public class ApiService
             ?? new List<Domain.DTOs.ProviderInfoResponse>();
     }
 
+    // Dentro da sua classe ApiService:
+    public async Task<SimulacaoResponse?> AjustarVolumeAsync(int simulacaoId, AjustarVolumeRequest request)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(
+                $"/api/simulacoes/{simulacaoId}/volume",
+                request);
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();
+        }
+        catch (Exception ex)
+        {
+            //Debug.WriteLine($"[ApiService] Erro ao ajustar volume: {ex.Message}");
+            throw;
+        }
+    }
+
     public async Task<SimulacaoResponse?> CriarSimulacaoAsync(CriarSimulacaoRequest request)
     {
+        
         var response = await _httpClient.PostAsJsonAsync("api/simulacoes", request);
 
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"[ERRO API] {(int)response.StatusCode} - {body}");
-            // Isso vai imprimir exatamente: "Caminho da foto é obrigatório."
-            // ou: {"erro":"Provider 'Local' não está habilitado."}
-            // ou: {"type":"...","title":"One or more validation errors occurred.",...}
         }
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();

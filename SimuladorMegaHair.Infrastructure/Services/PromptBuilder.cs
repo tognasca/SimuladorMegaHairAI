@@ -1,114 +1,219 @@
 ﻿using SimuladorMegaHair.Domain.Enums;
+using System.Text.RegularExpressions;
 
 namespace SimuladorMegaHair.Infrastructure.Services;
 
 public static class PromptBuilder
 {
+    /// <summary>
+    /// Gera prompt principal para inpainting FLUX Fill.
+    /// Prioriza vocabulário feminino de salão de beleza.
+    /// </summary>
     public static string BuildInpainting(
         string comprimento,
         string cor,
         string tipoCabelo,
+        string metodo,
         HairEditMode modo)
     {
         var corEn = TraduzirCor(cor);
         var tipoEn = TraduzirTipo(tipoCabelo);
-        var compEn = TraduzirComprimento(comprimento);
+        var compEn = TraduzirComprimentoFeminino(comprimento);
+        var metodoEn = TraduzirMetodo(metodo);
 
-        return modo switch
+        if (modo == HairEditMode.Extend || modo == HairEditMode.Recolor)
         {
-            HairEditMode.Shorten =>
-                $"{corEn} hair, {compEn}, {tipoEn} haircut, " +
-                $"replace all hair with {corEn} {tipoEn} {compEn}, " +
-                $"solid {corEn} color from roots to tips, no long hair, no hair on shoulders, " +
-                "clean nape, natural hairline, realistic individual strands, photorealistic",
-
-            HairEditMode.Recolor =>
-                $"{corEn} hair, recolor all hair to {corEn}, " +
-                $"uniform {corEn} color from roots to tips, no other hair color, " +
-                $"healthy {tipoEn} texture, realistic strands, soft shine, photorealistic",
-
-            _ => // Extend / Mega Hair
-                $"{corEn} hair, pure {corEn} color, " +
-                $"{corEn} {tipoEn} mega hair extensions, {compEn}, " +
-                $"uniform {corEn} color from roots to tips, " +
-                "seamless blend with natural hair, realistic density, " +
-                "individual strands, salon quality, photorealistic"
-        };
-    }
-
-    public static string BuildInpaintingNegative(string? corOriginal = null)
-    {
-        var neg = "different person, altered face, deformed face, " +
-                  "wig, helmet hair, plastic hair, wax hair, " +
-                  "two-tone hair, patchy color, faded roots, " +
-                  "blurry, cartoon, illustration, CGI, 3d render";
-
-        if (!string.IsNullOrWhiteSpace(corOriginal))
-        {
-            var corAntigaEn = TraduzirCor(corOriginal);
-            neg = $"{corAntigaEn} hair, {corAntigaEn} strands, " + neg;
+            return
+                $"same woman, same face, same makeup, same expression, " +
+                $"{compEn} {corEn} {tipoEn} hair, " +
+                $"FULL HEAD COVERAGE, every strand colored in uniform {corEn}, " +  // CHAVE
+                $"NO dark roots visible, NO leftover black hair, complete dye job, " +  // ANTI-PRETO
+                $"voluminous dense {corEn} {tipoEn} texture from scalp to tips, " +
+                $"cold tone {corEn} color, not yellow not orange not golden unless specified, " +  // ANTI-AMARELO
+                $"hair draping over shoulders and chest naturally, " +
+                $"seamless blend with scalp, realistic salon result, photorealistic";
         }
 
-        return neg;
+        if (modo == HairEditMode.Shorten)
+        {
+            return
+                $"same woman, same face, " +
+                $"{corEn} hair, {compEn} cut, " +
+                $"trendy {corEn} {tipoEn} haircut, " +
+                $"modern silhouette, clean ends, frame the face, " +
+                $"salon quality, photorealistic";
+        }
+
+        // Recolor
+        return
+            $"same woman, same face, same hairstyle length, " +
+            $"recolor hair to vibrant {corEn}, " +
+            $"uniform {corEn} from roots to tips, " +
+            $"glossy healthy {tipoEn} texture, dimension, shine";
     }
 
     public static IEnumerable<(string prompt, string negative)> BuildFallbacks(
-        string comprimento, string cor, string tipoCabelo, HairEditMode modo)
+        string comprimento, string cor, string tipoCabelo, string metodo, HairEditMode modo)
     {
-        var p1 = BuildInpainting(comprimento, cor, tipoCabelo, modo);
-        var neg = BuildInpaintingNegative();
+        yield return (BuildInpainting(comprimento, cor, tipoCabelo, metodo, modo),
+                      BuildNegative(cor));
 
-        yield return (p1, neg);
-
-        // Fallback 2: Mais direto e imperativo
+        // Fallback 2: Estilo alternativo (mais descritivo para a IA "recuperar")
         yield return (
-            $"realistic {TraduzirCor(cor)} {TraduzirTipo(tipoCabelo)} hair, " +
-            $"{TraduzirComprimento(comprimento)}, solid {TraduzirCor(cor)} color, photorealistic hair only",
-            neg);
+            $"beautiful woman with {TraduzirComprimentoFeminino(comprimento)} {TraduzirCor(cor)} {TraduzirTipo(tipoCabelo)} hair, " +
+            $"{TraduzirMetodo(metodo)}, flowing over shoulders, luxury beauty photo",
+            BuildNegative(cor));
+
+        // Fallback 3: Foco em "seamless integration" (caso o primeiro altere rosto)
+        yield return (
+            $"preserve identity exactly, only change hair to {TraduzirCor(cor)} {TraduzirTipo(tipoCabelo)}, " +
+            $"{TraduzirComprimentoFeminino(comprimento)}, extensions, seamless blend with scalp",
+            BuildNegative(cor));
     }
 
-    public static string BuildOpenAI(string comprimento, string cor, string tipoCabelo, string metodo)
+    public static string BuildNegative(string corDesejada)
     {
-        return BuildInpainting(comprimento, cor, tipoCabelo, HairEditMode.Extend);
+        var corNorm = corDesejada?.ToLowerInvariant() ?? "";
+
+        // Se pedido loiro/platinado: PROIBIR amarelo
+        bool bloqueiaAmarelo = corNorm.Contains("loiro") ||
+                              corNorm.Contains("blonde") ||
+                              corNorm.Contains("platinado");
+
+        string antiAmarelo = bloqueiaAmarelo
+            ? "yellow hair, orange hair, golden yellow, carrot color, brassy tones, highlight streaks only, "
+            : "";
+
+        return
+            antiAmarelo +
+            "dark roots showing, half dyed hair, two tone hair, black hair remaining, " +  // ANTI-MEIO PRETO
+            "short buzzcut, bald, altered face, different person, cartoon, low quality";
     }
 
-    public static string BuildLocal(string comprimento, string cor, string tipoCabelo)
+    // ─── TRADUTORES OTIMIZADOS PARA FEMININO ───
+
+    public static string TraduzirComprimentoFeminino(string c)
     {
-        return BuildInpainting(comprimento, cor, tipoCabelo, HairEditMode.Extend);
+        if (string.IsNullOrWhiteSpace(c)) return "medium-length";
+
+        var texto = c.ToLowerInvariant().Trim();
+        var match = Regex.Match(texto, @"\d+");
+
+        if (match.Success && int.TryParse(match.Value, out int cm))
+        {
+            return cm switch
+            {
+                <= 25 => "very short pixie cut",
+                <= 35 => "short bob haircut",
+                <= 45 => "medium shoulder-length",      // Popular! Lob
+                <= 55 => "medium-long past shoulders",   // Bra-strap
+                <= 65 => "long mid-back length",
+                <= 75 => "extra-long waist-length",
+                _ => "super long floor-length"       // Extremos
+            };
+        }
+
+        if (texto.Contains("curto")) return "short bob";
+        if (texto.Contains("medio") || texto.Contains("médio")) return "medium lob";
+        if (texto.Contains("longo") || texto.Contains("85") || texto.Contains("mega")) return "long waist-length";
+
+        return "medium-length"; // seguro padrão feminino
     }
 
-    // --- TRADUÇÕES DE ALTO IMPACTO PARA FLUX FILL ---
-
-    private static string TraduzirCor(string cor) => cor?.Trim().ToLowerInvariant() switch
+    public static string TraduzirCor(string cor)
     {
-        "preto" or "black" => "jet black",
-        "castanho escuro" => "dark chocolate brown",
-        "castanho" or "castanho medio" => "medium chestnut brown",
-        "castanho claro" => "light brown",
-        "loiro escuro" => "dark blonde",
-        "loiro" or "loiro medio" => "golden blonde",
-        "loiro claro" or "platinado" => "platinum blonde",
-        "ruivo" => "vibrant auburn red",
-        "vermelho" => "vivid red",
-        "iluminado" or "luzes" or "morena iluminada" => "brown hair with warm blonde highlights",
-        _ => "dark brown"
-    };
+        if (string.IsNullOrWhiteSpace(cor)) return "platinum ash blonde"; // PADRÃO MUDOU!
 
-    private static string TraduzirComprimento(string c) => c?.Trim().ToLowerInvariant() switch
-    {
-        "curto" or "short" => "short hair above the shoulders, pixie-to-chin length",
-        "medio" or "médio" or "medium" => "shoulder-length hair",
-        "longo" or "long" => "long hair down to mid-back",
-        "extra longo" or "extra-longo" => "very long waist-length hair",
-        _ => "long hair to mid-back"
-    };
+        var c = cor.ToLowerInvariant().Trim();
 
-    private static string TraduzirTipo(string t) => t?.Trim().ToLowerInvariant() switch
+        // LOIROS: Priorizar tons FRIOS (Platinado/Ash) ao invés de Dourados
+        if (c.Contains("platinado") || c.Contains("platina") || c.Contains("ice") || c.Contains("polar"))
+            return "icy platinum blonde";
+
+        if (c.Contains("loiro") || c.Contains("loira") || c.Contains("blonde"))
+        {
+            // Se especificou DOURADO, permite golden. Senão, Ash default
+            if (c.Contains("dourado") || c.Contains("golden") || c.Contains("mel"))
+                return "warm golden honey blonde";
+
+            // PADRÃO: Loiro Brasileiro = Ash Platinado (não amarelado!)
+            return "platinum ash blonde with cool tones";
+        }
+        // Morenas
+        if (c.Contains("chocolate"))
+            return "rich chocolate brown";
+        if (c.Contains("castanho"))
+        {
+            if (c.Contains("claro") || c.Contains("acastanhado")) return "light chestnut brown";
+            return "medium chestnut brown";
+        }
+        if (c.Contains("preto") || c.Contains("black"))
+            return "jet black";
+
+        // Ruivas/Vermelhos (muito usados em mega hair para destaque)
+        if (c.Contains("ruivo") || c.Contains("vermelho") || c.Contains("ginger"))
+            return "vibrant copper red";
+        if (c.Contains("acobreado") || c.Contains("auburn"))
+            return "deep auburn red";
+
+        // Fantasias/Tendências
+        if (c.Contains("rosa") || c.Contains("pink"))
+            return "rose gold pink";
+        if (c.Contains("azul") || c.Contains("blue"))
+            return "steel blue";
+        if (c.Contains("roxo") || c.Contains("purple"))
+            return "lavender purple";
+        if (c.Contains("cinza") || c.Contains("gray"))
+            return "silver gray";
+
+        // Iluminação / Reflexos
+        if (c.Contains("iluminado") || c.Contains("luzes") || c.Contains("mechas"))
+            return "dark brown with caramel highlights";
+        if (c.Contains("balayage") || c.Contains("ombre"))
+            return "balayage ombre effect dark to light";
+
+        return "honey blonde"; // default seguro e desejado
+    }
+
+    public static string TraduzirTipo(string tipo)
     {
-        "liso" or "straight" => "straight",
-        "ondulado" or "wavy" => "wavy",
-        "cacheado" or "curly" => "curly",
-        "crespo" or "coily" => "coily",
-        _ => "straight"
-    };
+        if (string.IsNullOrWhiteSpace(tipo)) return "straight silky";
+
+        var t = tipo.ToLowerInvariant().Trim();
+
+        if (t.Contains("cacheado") || t.Contains("cacho") || t.Contains("curly"))
+            return "bouncy curly";
+        if (t.Contains("ondulado") || t.Contains("wavy"))
+            return "soft beach waves";
+        if (t.Contains("liso") || t.Contains("straight"))
+            return "pin straight sleek";
+        if (t.Contains("crespo") || t.Contains("coily"))
+            return "tight coily texture";
+        if (t.Contains("afro") || t.Contains("kinky"))
+            return "afro kinky curls";
+        if (t.Contains("vozinho") || t.Contains("volume"))
+            return "big voluminous blowout style";
+
+        return "straight silky";
+    }
+
+    public static string TraduzirMetodo(string metodo)
+    {
+        if (string.IsNullOrWhiteSpace(metodo)) return "tape-in extensions";
+
+        var m = metodo.ToLowerInvariant().Trim();
+
+        if (m.Contains("fita") || m.Contains("tape"))
+            return "tape-in hair extensions";
+        if (m.Contains("capsula") || m.Contains("micro") || m.Contains("microlink"))
+            return "micro-bead extensions";
+        if (m.Contains("queratina") || m.Contains("bond"))
+            return "keratin bond extensions";
+        if (m.Contains("crochet") || m.Contains("trança"))
+            return "crochet braids extensions";
+        if (m.Contains("nano") || m.Contains("nanoring"))
+            return "nano ring extensions";
+
+        return "tape-in hair extensions"; // método mais comum para mega hair brasileiro
+    }
 }
