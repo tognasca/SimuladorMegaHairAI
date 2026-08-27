@@ -25,13 +25,18 @@ public static class PromptBuilder
         {
             return
                 $"same woman, same face, same makeup, same expression, " +
+                $"KEEP EXACT ORIGINAL CLOTHING AND SHIRT UNCHANGED, NO CLEAVAGE, NO EXPOSED CHEST, MODEST OUTFIT, " + // 🔒 TRAVA ANTI-DECOTE
                 $"{compEn} {corEn} {tipoEn} hair, " +
                 $"FULL HEAD COVERAGE, every strand colored in uniform {corEn}, " +  // CHAVE
                 $"NO dark roots visible, NO leftover black hair, complete dye job, " +  // ANTI-PRETO
+                $"luxurious {corEn} {tipoEn} mega hair extensions falling OVER the shoulders and onto front chest, " + // 🔒 FORÇA CAIR PRA FRENTE
                 $"voluminous dense {corEn} {tipoEn} texture from scalp to tips, " +
                 $"cold tone {corEn} color, not yellow not orange not golden unless specified, " +  // ANTI-AMARELO
                 $"hair draping over shoulders and chest naturally, " +
-                $"seamless blend with scalp, realistic salon result, photorealistic";
+                $"seamless blend with scalp, realistic salon result, photorealistic" +
+                $"{metodoEn}, " +
+                $"covering shoulders, replacing all previous hair, " +
+                $"seamless scalp blend, professional salon photo, photorealistic";
         }
 
         if (modo == HairEditMode.Shorten)
@@ -84,10 +89,17 @@ public static class PromptBuilder
             ? "yellow hair, orange hair, golden yellow, carrot color, brassy tones, highlight streaks only, "
             : "";
 
+        string antiCor = "";
+
+        if (corNorm.Contains("loiro") || corNorm.Contains("platinado") || corNorm.Contains("claro"))
+            antiCor = "black hair, dark brown hair, yellow hair, orange hair, ";
+        else if (corNorm.Contains("preto") || corNorm.Contains("castanho") || corNorm.Contains("chocolate"))
+            antiCor = "blonde hair, platinum, ";
+
         return
-            antiAmarelo +
-            "dark roots showing, half dyed hair, two tone hair, black hair remaining, " +  // ANTI-MEIO PRETO
-            "short buzzcut, bald, altered face, different person, cartoon, low quality";
+            antiCor + antiAmarelo +
+            "cleavage, low cut top, naked chest, bare breasts, changed clothing, bra, swimsuit, underwear, " + // 🔒 NEGAÇÃO RÍGIDA DE DECOTE
+            "short buzzcut, bald, altered facial features, different person, distorted face, cartoon, low resolution";
     }
 
     // ─── TRADUTORES OTIMIZADOS PARA FEMININO ───
