@@ -12,4 +12,7 @@ public interface IImageSimulationService
     Task<string> AjustarVolumeAsync(
         AjustarVolumeRequest req,
         CancellationToken ct = default);
+
+    Task<(string url, string? aviso)> PipelineKontextAsync(
+        string imagemPath, SimulacaoRequest req, CancellationToken ct);
 }

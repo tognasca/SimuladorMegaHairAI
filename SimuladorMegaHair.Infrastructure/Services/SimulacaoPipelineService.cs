@@ -47,7 +47,28 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
     // ═══════════════════════════════════════════════════════════
     //  ENTRADA
     // ═══════════════════════════════════════════════════════════
+    public async Task<(string url, string? aviso)> PipelineKontextAsync(
+    string imagemPath, SimulacaoRequest req, CancellationToken ct)
+    {
+        var prompt = PromptBuilder.BuildInstrucao(
+            req.Comprimento, req.Cor, req.TipoCabelo);
 
+        var body = new
+        {
+            input = new
+            {
+                prompt,
+                input_image = ConverterBase64(imagemPath),
+                output_format = "png",
+                safety_tolerance = 2
+            }
+        };
+
+        var url = $"{ReplicateBaseUrl}/models/black-forest-labs/flux-kontext-pro/predictions";
+        var resultado = await EnviarPredicaoAsync(body, ct);
+        return (resultado, null);
+    }
+   
     public async Task<SimulacaoResult> GerarSimulacaoAsync(
         SimulacaoRequest req,
         CancellationToken ct = default)

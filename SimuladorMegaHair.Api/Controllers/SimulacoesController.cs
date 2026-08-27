@@ -116,6 +116,7 @@ public class SimulacoesController : ControllerBase
         return Ok($"wwwroot/uploads/{fileName}");
     }
 
+   
     // ═══════════════════════════════════════════════════════════
     //  CRIAR SIMULAÇÃO
     // ═══════════════════════════════════════════════════════════
@@ -157,6 +158,18 @@ public class SimulacoesController : ControllerBase
 
         try
         {
+
+            var wresultado = await _imageService.PipelineKontextAsync(request.FotoOriginalPath,
+                new SimulacaoRequest
+                {
+                    ImagemOriginalPath = request.FotoOriginalPath,
+                    Comprimento = request.Comprimento,
+                    Cor = request.Cor,
+                    TipoCabelo = request.TipoCabelo,
+                    MetodoMegaHair = request.MetodoMegaHair,
+                    Provider = request.Provider
+                }, ct);
+
             resultado = await _imageService.GerarSimulacaoAsync(
                 new SimulacaoRequest
                 {

@@ -9,6 +9,22 @@ public static class PromptBuilder
     /// Gera prompt principal para inpainting FLUX Fill.
     /// Prioriza vocabulário feminino de salão de beleza.
     /// </summary>
+    /// 
+
+    public static string BuildInstrucao(string comprimento, string cor, string tipo)
+    {
+        var corEn = TraduzirCor(cor);
+        var tipoEn = TraduzirTipo(tipo);
+        var compEn = TraduzirComprimentoFeminino(comprimento);
+
+        return
+            $"Replace only the hair with {compEn} {corEn} {tipoEn} hair extensions, " +
+            $"full and voluminous, falling in front of both shoulders onto the chest. " +
+            $"Keep the face, skin, makeup, expression, glasses, clothing, neckline, " +
+            $"body shape, background and lighting exactly the same. " +
+            $"Do not change the outfit. Do not add cleavage. Photorealistic.";
+    }
+
     public static string BuildInpainting(
         string comprimento,
         string cor,
@@ -24,19 +40,13 @@ public static class PromptBuilder
         if (modo == HairEditMode.Extend || modo == HairEditMode.Recolor)
         {
             return
-                $"same woman, same face, same makeup, same expression, " +
-                $"KEEP EXACT ORIGINAL CLOTHING AND SHIRT UNCHANGED, NO CLEAVAGE, NO EXPOSED CHEST, MODEST OUTFIT, " + // 🔒 TRAVA ANTI-DECOTE
-                $"{compEn} {corEn} {tipoEn} hair, " +
-                $"FULL HEAD COVERAGE, every strand colored in uniform {corEn}, " +  // CHAVE
-                $"NO dark roots visible, NO leftover black hair, complete dye job, " +  // ANTI-PRETO
-                $"luxurious {corEn} {tipoEn} mega hair extensions falling OVER the shoulders and onto front chest, " + // 🔒 FORÇA CAIR PRA FRENTE
-                $"voluminous dense {corEn} {tipoEn} texture from scalp to tips, " +
-                $"cold tone {corEn} color, not yellow not orange not golden unless specified, " +  // ANTI-AMARELO
-                $"hair draping over shoulders and chest naturally, " +
-                $"seamless blend with scalp, realistic salon result, photorealistic" +
-                $"{metodoEn}, " +
-                $"covering shoulders, replacing all previous hair, " +
-                $"seamless scalp blend, professional salon photo, photorealistic";
+                "same woman, identical face, identical skin, identical makeup, " +
+    "KEEP ORIGINAL SHIRT AND BODY SHAPE UNCHANGED, no larger breasts, no deeper cleavage, no lingerie, " +
+    $"{compEn} {corEn} {tipoEn} hair extensions, " +
+    "REPLACE ALL EXISTING HAIR completely, " +
+    "long hair draped OVER the front of both shoulders, hair in front of shoulders, " +
+    "hair covering shoulder tops, not hidden behind back, " +
+    "full voluminous salon mega hair, photorealistic, seamless hairline";
         }
 
         if (modo == HairEditMode.Shorten)
@@ -97,7 +107,9 @@ public static class PromptBuilder
             antiCor = "blonde hair, platinum, ";
 
         return
-            antiCor + antiAmarelo +
+            "hair behind back only, hair tucked behind shoulders, leftover old hair, " +
+"cleavage, bare breasts, bigger breasts, boob job, nude, low-cut, " +
+"different body, different clothes, face change, " +
             "cleavage, low cut top, naked chest, bare breasts, changed clothing, bra, swimsuit, underwear, " + // 🔒 NEGAÇÃO RÍGIDA DE DECOTE
             "short buzzcut, bald, altered facial features, different person, distorted face, cartoon, low resolution";
     }

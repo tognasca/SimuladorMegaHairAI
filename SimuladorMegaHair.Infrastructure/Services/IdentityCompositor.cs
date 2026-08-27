@@ -41,13 +41,13 @@ public static class IdentityCompositor
                 for (int x = 0; x < origRow.Length; x++)
                 {
                     var t = mskRow[x].R / 255f;
-                    if (t < 0.004f)
-                        continue;
+                    if (t < 0.15f) continue;
 
-                    if (t > 0.996f)
+                    if (t > 0.40f)
                     {
-                        origRow[x] = genRow[x];
-                        continue;
+                        // blend só no começo da borda
+                        float k = t < 0.75f ? (t - 0.40f) / 0.35f : 1f;
+                        origRow[x] = k >= 0.99f ? genRow[x] : Mix(origRow[x], genRow[x], k);
                     }
 
                     origRow[x] = Mix(origRow[x], genRow[x], t);
