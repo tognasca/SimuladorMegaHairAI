@@ -1,0 +1,268 @@
+﻿@page "/captura"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@inject ApiClient Api
+
+<PageTitle>Nova Simulação</PageTitle>
+
+<div style="max-width:480px; margin:0 auto; display:flex; flex-direction:column; gap:18px;">
+
+    <h2 style="text-align:center; letter-spacing:3px; font-size:20px;">NOVA SIMULAÇÃO</h2>
+
+    @if (!string.IsNullOrWhiteSpace(ClienteNome))
+    {
+        <div class="card card-gold-border" style="text-align:center; padding:10px; font-size:12px; color:var(--gold-light);">
+            ♙ Simulação para: <b>@ClienteNome</b>
+        </div>
+    }
+
+    @if (!fotoCapturada)
+    {
+        <div class="card" style="padding:0; overflow:hidden; aspect-ratio:1/1; position:relative;">
+            <video id="videoPreview" style="width:100%; height:100%; object-fit:cover; display:@(cameraAtiva ? "block" : "none");"></video>
+
+            @if (!cameraAtiva)
+            {
+                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted);">
+                    Câmera desligada
+                </div>
+            }
+        </div>
+
+        @if (!cameraAtiva)
+        {
+            <button class="btn-gold" @onclick="IniciarCameraAsync">📷 Ligar câmera</button>
+        }
+        else
+        {
+            <button class="btn-gold" @onclick="CapturarFotoAsync">✦ Tirar foto</button>
+            <button class="btn-outline" @onclick="AlternarCameraAsync">🔄 Trocar câmera (frontal/traseira)</button>
+        }
+
+        @if (!string.IsNullOrEmpty(erro))
+        {
+            <p style="color:#E06565; font-size:12px; text-align:center;">@erro</p>
+        }
+    }
+    else
+    {
+        <div class="card" style="padding:0; overflow:hidden; aspect-ratio:1/1;">
+            <img src="data:image/png;base64,@fotoBase64" style="width:100%; height:100%; object-fit:cover;" />
+        </div>
+
+        <button class="btn-outline" @onclick="RefazerFoto">↺ Tirar outra foto</button>
+
+        <div class="card" style="display:flex; flex-direction:column; gap:14px;">
+
+            <label style="font-size:11px; letter-spacing:2px; color:var(--text-secondary);">COMPRIMENTO</label>
+            <select @bind="comprimento" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
+                @foreach (var c in comprimentos)
+                {
+                    <option value="@c">@c</option>
+                }
+            </select>
+
+            <label style="font-size:11px; letter-spacing:2px; color:var(--text-secondary);">COR</label>
+            <select @bind="cor" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
+                @foreach (var c in cores)
+                {
+                    <option value="@c">@c</option>
+                }
+            </select>
+
+            <label style="font-size:11px; letter-spacing:2px; color:var(--text-secondary);">TIPO DE CABELO</label>
+            <select @bind="tipoCabelo" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
+                @foreach (var t in tipos)
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+
+            <label style="font-size:11px; letter-spacing:2px; color:var(--text-secondary);">MÉTODO</label>
+            <select @bind="metodo" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
+                @foreach (var m in metodos)
+                {
+                    <option value="@m">@m</option>
+                }
+            </select>
+
+        </div>
+
+        @if (gerando)
+        {
+            <div class="card" style="text-align:center; color:var(--gold-light);">
+                ✦ Gerando sua simulação com IA... isso pode levar até 1 minuto.
+            </div>
+        }
+        else
+        {
+            <button class="btn-gold" @onclick="GerarSimulacaoAsync">✦ GERAR SIMULAÇÃO</button>
+        }
+
+        @if (!string.IsNullOrEmpty(erro))
+        {
+            <p style="color:#E06565; font-size:12px; text-align:center;">@erro</p>
+        }
+    }
+
+    @if (resultado is not null)
+    {
+        <div class="card card-gold-border" style="display:flex; flex-direction:column; gap:12px;">
+            <h3 style="text-align:center; font-size:14px; letter-spacing:2px; color:var(--gold);">RESULTADO</h3>
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <p style="font-size:10px; text-align:center; color:var(--text-muted);">ANTES</p>
+                    <img src="@resultado.FotoOriginalUrl" style="width:100%; border-radius:10px;" />
+                </div>
+                <div style="flex:1;">
+                    <p style="font-size:10px; text-align:center; color:var(--gold-light);">DEPOIS</p>
+                    <img src="@resultado.FotoResultadoUrl" style="width:100%; border-radius:10px; border:1px solid var(--border-gold);" />
+                </div>
+            </div>
+            <p style="text-align:center; font-size:16px; font-weight:700; color:var(--gold);">
+                R$ @resultado.ValorEstimado.ToString("N2")
+            </p>
+        </div>
+    }
+
+</div>
+
+@code {
+    [SupplyParameterFromQuery, Parameter] public string? ClienteId { get; set; }
+    [SupplyParameterFromQuery, Parameter] public string? ClienteNome { get; set; }
+    [SupplyParameterFromQuery(Name = "comprimento"), Parameter] public string? ComprimentoSugerido { get; set; }
+    [SupplyParameterFromQuery(Name = "cor"), Parameter] public string? CorSugerida { get; set; }
+    [SupplyParameterFromQuery(Name = "tipo"), Parameter] public string? TipoSugerido { get; set; }
+    [SupplyParameterFromQuery(Name = "metodo"), Parameter] public string? MetodoSugerido { get; set; }
+
+    private bool cameraAtiva;
+    private bool usarCameraFrontal = true;
+    private bool fotoCapturada;
+    private bool gerando;
+    private string? fotoBase64;
+    private string? fotoServidorPath;
+    private string? erro;
+    private SimulacaoResponse? resultado;
+
+    // Comprimentos em CENTÍMETROS reais (mais preciso que "Curto/Médio/
+    // Longo" — o backend calcula a máscara e o corte de preço a partir
+    // do valor numérico; ver HairMaskGenerator.ExtrairCm).
+    private readonly List<string> comprimentos = new()
+    {
+        "30 cm", "40 cm", "45 cm", "55 cm", "65 cm", "75 cm", "85 cm"
+    };
+
+    private readonly List<string> cores = new()
+    {
+        "Preto", "Castanho Escuro", "Castanho Claro", "Loiro Escuro",
+        "Loiro Médio", "Loiro Claro", "Loiro Platinado", "Ruivo", "Grisalho"
+    };
+
+    private readonly List<string> tipos = new() { "Liso", "Ondulado", "Cacheado", "Crespo" };
+
+    private readonly List<string> metodos = new()
+    {
+        "Fita Adesiva", "Queratina", "Micro Link", "Costurado"
+    };
+
+    private string comprimento = "55 cm";
+    private string cor = "Castanho Escuro";
+    private string tipoCabelo = "Liso";
+    private string metodo = "Fita Adesiva";
+
+    protected override void OnInitialized()
+    {
+        // Pré-preenche com o que veio do Catálogo ("Simular este estilo")
+        // ou mantém o padrão. Só aceita valores que realmente existem nas
+        // listas — evita <select> quebrado por um valor desconhecido vindo
+        // da URL.
+        if (!string.IsNullOrWhiteSpace(ComprimentoSugerido) && comprimentos.Contains(ComprimentoSugerido))
+            comprimento = ComprimentoSugerido;
+
+        if (!string.IsNullOrWhiteSpace(CorSugerida) && cores.Contains(CorSugerida))
+            cor = CorSugerida;
+
+        if (!string.IsNullOrWhiteSpace(TipoSugerido) && tipos.Contains(TipoSugerido))
+            tipoCabelo = TipoSugerido;
+
+        if (!string.IsNullOrWhiteSpace(MetodoSugerido) && metodos.Contains(MetodoSugerido))
+            metodo = MetodoSugerido;
+    }
+
+    private async Task IniciarCameraAsync()
+    {
+        erro = null;
+        var ok = await JS.InvokeAsync<bool>("megaHairCamera.iniciar", "videoPreview", usarCameraFrontal);
+        if (!ok)
+        {
+            erro = "Não foi possível acessar a câmera. Verifique se o site está em HTTPS e se a permissão de câmera foi concedida.";
+            return;
+        }
+        cameraAtiva = true;
+    }
+
+    private async Task AlternarCameraAsync()
+    {
+        usarCameraFrontal = !usarCameraFrontal;
+        await JS.InvokeVoidAsync("megaHairCamera.parar");
+        await IniciarCameraAsync();
+    }
+
+    private async Task CapturarFotoAsync()
+    {
+        var base64 = await JS.InvokeAsync<string?>("megaHairCamera.capturar", "videoPreview");
+        if (base64 is null)
+        {
+            erro = "Não foi possível capturar a foto. Tente novamente.";
+            return;
+        }
+
+        fotoBase64 = base64;
+        fotoCapturada = true;
+        await JS.InvokeVoidAsync("megaHairCamera.parar");
+        cameraAtiva = false;
+    }
+
+    private async Task RefazerFoto()
+    {
+        fotoCapturada = false;
+        fotoBase64 = null;
+        resultado = null;
+        await IniciarCameraAsync();
+    }
+
+    private async Task GerarSimulacaoAsync()
+    {
+        if (fotoBase64 is null) return;
+
+        try
+        {
+            gerando = true;
+            erro = null;
+
+            var bytes = Convert.FromBase64String(fotoBase64);
+            fotoServidorPath = await Api.UploadFotoAsync(bytes, $"captura_{Guid.NewGuid():N}.png");
+
+            var request = new CriarSimulacaoRequest
+            {
+                FotoOriginalPath = fotoServidorPath,
+                Comprimento = comprimento,
+                Cor = cor,
+                TipoCabelo = tipoCabelo,
+                MetodoMegaHair = metodo,
+                Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.Replicate,
+                ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null
+            };
+
+            resultado = await Api.CriarSimulacaoAsync(request);
+        }
+        catch (Exception ex)
+        {
+            erro = $"Erro ao gerar simulação: {ex.Message}";
+        }
+        finally
+        {
+            gerando = false;
+        }
+    }
+}

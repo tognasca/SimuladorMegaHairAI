@@ -1,0 +1,199 @@
+:root {
+    --bg: #0A0A0C;
+    --card: #151619;
+    --input: #1B1C20;
+    --sidebar: #101113;
+    --border-soft: #2A2B30;
+    --border-gold: #80602F;
+    --gold: #C9A227;
+    --gold-light: #E4C187;
+    --text-primary: #F5EEE4;
+    --text-secondary: #A9A5A0;
+    --text-muted: #6E6A66;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    height: 100%;
+    /* Evita "double-tap zoom" acidental em telas touch (TV/iPad/tablet) */
+    touch-action: manipulation;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ESTRUTURA GERAL: sidebar + conteúdo.
+   Em telas estreitas (retrato: TV montada em pé, iPad em pé,
+   celular), a sidebar vira uma barra de ícones no RODAPÉ —
+   padrão de app mobile, mais natural pro polegar do que uma
+   coluna lateral apertada.
+   ═══════════════════════════════════════════════════════════ */
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.app-main {
+    flex: 1;
+    min-width: 0;
+    padding: 32px 40px;
+    overflow-y: auto;
+}
+
+.sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--sidebar);
+    border-right: 1px solid var(--border-soft);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 12px;
+    gap: 6px;
+}
+
+.sidebar-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 28px;
+}
+
+.sidebar-logo img {
+    height: 56px;
+    width: 56px;
+    object-fit: contain;
+}
+
+.sidebar-logo-text {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text-primary);
+    transition: background 0.15s ease;
+}
+
+.sidebar-item:hover,
+.sidebar-item:active {
+    background: var(--card);
+}
+
+.sidebar-icon {
+    font-size: 18px;
+    width: 22px;
+    text-align: center;
+    color: var(--gold);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BREAKPOINT: retrato / tela estreita (TV vertical, iPad em pé,
+   celular) → sidebar vira barra inferior fixa, só ícones.
+   Usa orientação REAL do dispositivo (não só largura), porque
+   uma TV 4K vertical pode ter "largura" em pixels grande mesmo
+   sendo fisicamente estreita — orientation é mais confiável.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 820px), (orientation: portrait) {
+    .app-shell {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+        border-right: none;
+        border-top: 1px solid var(--border-soft);
+        padding: 8px 4px;
+        order: 2; /* barra fica embaixo */
+        gap: 0;
+    }
+
+    .sidebar-logo {
+        display: none; /* sem espaço numa barra inferior fina */
+    }
+
+    .sidebar-item {
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px 8px;
+        font-size: 9px;
+    }
+
+    .app-main {
+        order: 1;
+        padding: 20px;
+        padding-bottom: 90px; /* espaço pra não ficar atrás da barra */
+    }
+}
+
+/* Cards e botões reutilizáveis entre páginas */
+.card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.card-gold-border {
+    border-color: var(--border-gold);
+}
+
+.btn-gold {
+    background: var(--gold);
+    color: #0A0A0C;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.menu-grid {
+    display: grid;
+    gap: 16px;
+    max-width: 420px;
+    margin: 0 auto;
+}

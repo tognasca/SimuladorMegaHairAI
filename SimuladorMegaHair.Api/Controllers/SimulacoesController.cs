@@ -277,8 +277,8 @@ public class SimulacoesController : ControllerBase
     /// Não reprocessa a IA; usa filtros de imagem inteligentes.
     /// </summary>
     [HttpPost("{id}/volume")]
-    public async Task<IActionResult> AjustarVolume(
-    int id,
+    public async Task<ActionResult<SimulacaoResponse>> AjustarVolume(
+    Guid id,
     [FromBody] AjustarVolumeRequest request,
     CancellationToken ct)
     {
@@ -287,7 +287,7 @@ public class SimulacoesController : ControllerBase
             return BadRequest("Nível de volume inválido. Escolha entre 1 e 4.");
         }
 
-        var simulacao = await _dbContext.Simulacoes.FindAsync(id);
+        var simulacao = await _dbContext.Simulacoes.FindAsync(new object[] { id }, ct);
         if (simulacao == null)
         {
             return NotFound("Simulação não encontrada.");
@@ -295,10 +295,17 @@ public class SimulacoesController : ControllerBase
 
         request.ImagemOriginalPath = simulacao.FotoOriginalPath;
         request.ImagemResultadoPath = simulacao.FotoResultadoPath;
+        request.Comprimento = simulacao.Comprimento;
 
         var novoPath = await _imageService.AjustarVolumeAsync(request, ct);
 
-        return Ok(new { FotoResultadoPath = novoPath });
+        // Persiste o novo resultado para que fique disponível no histórico
+        // do cliente e em futuras consultas dessa simulação.
+        simulacao.FotoResultadoPath = novoPath;
+        await _dbContext.SaveChangesAsync(ct);
+
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        return Ok(MontarResponse(simulacao, baseUrl, veioDoCache: false));
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -313,7 +320,9 @@ public class SimulacoesController : ControllerBase
         _ => false
     };
 
-    private static SimulacaoResponse MontarResponse(
+    // internal: reaproveitado pelo ClientesController para montar o
+    // histórico de simulações de um cliente com o mesmo formato.
+    internal static SimulacaoResponse MontarResponse(
         Simulacao simulacao,
         string baseUrl,
         bool veioDoCache) => new()

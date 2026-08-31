@@ -1,7 +1,6 @@
 ﻿using System.Net.Http.Json;
 using SimuladorMegaHair.App.Models;
 using SimuladorMegaHair.Domain.Models;
-using static SimuladorMegaHair.Api.Controllers.SimulacoesController;
 
 namespace SimuladorMegaHair.App.Services;
 
@@ -38,7 +37,7 @@ public class ApiService
     }
 
     // Dentro da sua classe ApiService:
-    public async Task<SimulacaoResponse?> AjustarVolumeAsync(int simulacaoId, AjustarVolumeRequest request)
+    public async Task<SimulacaoResponse?> AjustarVolumeAsync(Guid simulacaoId, AjustarVolumeRequest request)
     {
         try
         {
@@ -82,5 +81,65 @@ public class ApiService
 
         return await response.Content.ReadFromJsonAsync<List<SimulacaoResponse>>()
             ?? new List<SimulacaoResponse>();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  CLIENTES
+    // ═══════════════════════════════════════════════════════════
+
+    public async Task<List<Domain.DTOs.ClienteResponse>> BuscarClientesAsync(string? busca = null)
+    {
+        var url = "api/clientes";
+        if (!string.IsNullOrWhiteSpace(busca))
+            url += $"?busca={Uri.EscapeDataString(busca)}";
+
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<List<Domain.DTOs.ClienteResponse>>()
+            ?? new List<Domain.DTOs.ClienteResponse>();
+    }
+
+    public async Task<Domain.DTOs.ClienteDetalheResponse?> ObterClienteAsync(Guid id)
+    {
+        var response = await _httpClient.GetAsync($"api/clientes/{id}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Domain.DTOs.ClienteDetalheResponse>();
+    }
+
+    public async Task<Domain.DTOs.ClienteResponse?> CriarClienteAsync(Domain.DTOs.CriarClienteRequest request)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/clientes", request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Domain.DTOs.ClienteResponse>();
+    }
+
+    public async Task<Domain.DTOs.ClienteResponse?> AtualizarClienteAsync(Guid id, Domain.DTOs.AtualizarClienteRequest request)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"api/clientes/{id}", request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Domain.DTOs.ClienteResponse>();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  CATÁLOGO
+    // ═══════════════════════════════════════════════════════════
+
+    public async Task<List<Domain.Entities.CatalogoItem>> GetCatalogoAsync(
+        string? cor = null, string? comprimento = null, string? tipoCabelo = null, string? metodo = null)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrWhiteSpace(cor)) query.Add($"cor={Uri.EscapeDataString(cor)}");
+        if (!string.IsNullOrWhiteSpace(comprimento)) query.Add($"comprimento={Uri.EscapeDataString(comprimento)}");
+        if (!string.IsNullOrWhiteSpace(tipoCabelo)) query.Add($"tipoCabelo={Uri.EscapeDataString(tipoCabelo)}");
+        if (!string.IsNullOrWhiteSpace(metodo)) query.Add($"metodo={Uri.EscapeDataString(metodo)}");
+
+        var url = "api/catalogo" + (query.Count > 0 ? "?" + string.Join("&", query) : "");
+
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<List<Domain.Entities.CatalogoItem>>()
+            ?? new List<Domain.Entities.CatalogoItem>();
     }
 }

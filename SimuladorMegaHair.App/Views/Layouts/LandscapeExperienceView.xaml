@@ -72,12 +72,31 @@
                 Grid.Row="0"
                 Padding="25,18">
 
-                <Label
-                    Text="SUA NOVA VERSÃO"
-                    FontSize="24"
-                    CharacterSpacing="6"
-                    TextColor="#F5EEE4"
-                    HorizontalOptions="Center" />
+                <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
+                    <Label
+                        Text="SUA NOVA VERSÃO"
+                        FontSize="24"
+                        CharacterSpacing="6"
+                        TextColor="#F5EEE4"
+                        HorizontalOptions="Center" />
+
+                    <!-- Selo de cliente vinculado -->
+                    <Border IsVisible="{Binding TemClienteVinculado}"
+                            StrokeShape="RoundRectangle 12"
+                            Stroke="#80602F"
+                            BackgroundColor="#151619"
+                            Padding="12,5"
+                            HorizontalOptions="Center">
+                        <Label FontSize="11" TextColor="#E4C187">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="♙ Para: " />
+                                    <Span Text="{Binding ClienteNome}" FontAttributes="Bold" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                    </Border>
+                </VerticalStackLayout>
             </Grid>
 
             <!-- ═══ ÁREA PRINCIPAL: SELETOR + FOTO + VOLUME + HISTÓRICO ═══ -->

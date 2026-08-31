@@ -85,6 +85,33 @@
                         </Border>
                     </VerticalStackLayout>
 
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="ENDEREÇO DO SERVIDOR"
+                               FontSize="10"
+                               CharacterSpacing="3"
+                               TextColor="{StaticResource TextSecondary}" />
+
+                        <Border Stroke="{StaticResource BorderSoft}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 8"
+                                BackgroundColor="{StaticResource InputColor}"
+                                Padding="12,2">
+                            <Entry Text="{Binding ApiBaseUrl}"
+                                   Placeholder="http://192.168.1.100:5185/"
+                                   Keyboard="Url"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   PlaceholderColor="{StaticResource TextMuted}"
+                                   BackgroundColor="Transparent"
+                                   FontSize="13"
+                                   HeightRequest="46" />
+                        </Border>
+
+                        <Label Text="Todos os aparelhos do salão (TV, tablets, celulares) devem usar o mesmo endereço, para compartilhar clientes e histórico. Use o IP da rede local da máquina que roda o servidor — não 'localhost'. Requer reabrir o app após alterar."
+                               FontSize="10"
+                               TextColor="{StaticResource TextMuted}"
+                               LineHeight="1.3" />
+                    </VerticalStackLayout>
+
                 </VerticalStackLayout>
             </Border>
 

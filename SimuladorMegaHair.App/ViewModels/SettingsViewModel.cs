@@ -19,6 +19,17 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty]
     private string imagemDeTesteSelecionada;
 
+    /// <summary>
+    /// Endereço do servidor (API). Era fixo em "http://localhost:5185/",
+    /// o que só funciona quando o app roda NO MESMO computador que a API —
+    /// quebra completamente em qualquer tablet/celular/TV que não seja essa
+    /// máquina. Agora é configurável: aponte todos os dispositivos do salão
+    /// (TV + tablets + celulares das clientes) para o IP da máquina que
+    /// roda a API, e todos compartilham a mesma base de clientes/catálogo.
+    /// </summary>
+    [ObservableProperty]
+    private string apiBaseUrl;
+
     public IReadOnlyList<string> LayoutModes { get; } =
     [
         "Automático",
@@ -57,6 +68,10 @@ public partial class SettingsViewModel : BaseViewModel
         imagemDeTesteSelecionada = Preferences.Get(
             "ImagemDeTeste",
             "e9897c5a-dab8-4c12-b89f-b742a931d9c8.png");
+
+        apiBaseUrl = Preferences.Get(
+            "ApiBaseUrl",
+            "http://localhost:5185/");
     }
 
     partial void OnLayoutModeSelectedChanged(string value)
@@ -77,6 +92,15 @@ public partial class SettingsViewModel : BaseViewModel
     partial void OnImagemDeTesteSelecionadaChanged(string value)
     {
         Preferences.Set("ImagemDeTeste", value);
+    }
+
+    partial void OnApiBaseUrlChanged(string value)
+    {
+        var normalizado = value.Trim();
+        if (!normalizado.EndsWith('/'))
+            normalizado += "/";
+
+        Preferences.Set("ApiBaseUrl", normalizado);
     }
 
     [RelayCommand]

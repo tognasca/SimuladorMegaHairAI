@@ -1,0 +1,33 @@
+﻿@inherits LayoutComponentBase
+
+<div class="app-shell">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <img src="images/logo_tati.png" alt="Logo" />
+            <span class="sidebar-logo-text">TATI MEGA HAIR</span>
+        </div>
+
+        <a class="sidebar-item" href="/">
+            <span class="sidebar-icon">⌂</span>
+            <span class="sidebar-label">Início</span>
+        </a>
+        <a class="sidebar-item" href="/captura">
+            <span class="sidebar-icon">✦</span>
+            <span class="sidebar-label">Nova Simulação</span>
+        </a>
+        <a class="sidebar-item" href="/clientes">
+            <span class="sidebar-icon">♙</span>
+            <span class="sidebar-label">Clientes</span>
+        </a>
+        <a class="sidebar-item" href="/catalogo">
+            <span class="sidebar-icon">▣</span>
+            <span class="sidebar-label">Catálogo</span>
+        </a>
+    </nav>
+
+    <main class="app-main">
+        @Body
+    </main>
+
+</div>

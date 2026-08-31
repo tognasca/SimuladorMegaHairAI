@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+             xmlns:components="clr-namespace:SimuladorMegaHair.App.Views.Components"
+             xmlns:dtos="clr-namespace:SimuladorMegaHair.Domain.DTOs;assembly=SimuladorMegaHair.Domain"
+             x:Class="SimuladorMegaHair.App.Views.ClienteDetalhePage"
+             x:Name="PageRoot"
+             x:DataType="vm:ClienteDetalheViewModel"
+             BackgroundColor="{StaticResource PageBackgroundColor}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid ColumnDefinitions="Auto, *">
+        <components:SidebarMenu Grid.Column="0" />
+
+        <ScrollView Grid.Column="1">
+            <VerticalStackLayout Padding="40,30" Spacing="20">
+
+                <!-- VOLTAR -->
+                <Grid ColumnDefinitions="Auto,*">
+                    <Label Text="← Voltar para clientes" FontSize="12" TextColor="{StaticResource TextSecondary}">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding VoltarCommand}" />
+                        </Label.GestureRecognizers>
+                    </Label>
+                </Grid>
+
+                <ActivityIndicator IsRunning="{Binding Carregando}" IsVisible="{Binding Carregando}" Color="{StaticResource GoldPrimary}" />
+
+                <!-- CARD DE DADOS DO CLIENTE -->
+                <Border StrokeShape="RoundRectangle 18" Stroke="{StaticResource BorderGold}" BackgroundColor="{StaticResource CardColor}" Padding="24">
+                    <VerticalStackLayout Spacing="14">
+
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Grid.Column="0" Text="{Binding Nome}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource GoldPrimary}" IsVisible="{Binding Editando, Converter={StaticResource InverseBoolConverter}}" />
+
+                            <Border Grid.Column="1" StrokeShape="RoundRectangle 10" Stroke="{StaticResource BorderSoft}" Padding="12,6">
+                                <Grid>
+                                    <Label FontSize="11" FontAttributes="Bold" TextColor="{StaticResource TextSecondary}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding Editando}" Value="True">
+                                                <Setter Property="Text" Value="CANCELAR" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding Editando}" Value="False">
+                                                <Setter Property="Text" Value="✎ EDITAR" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding AlternarEdicaoCommand}" />
+                                    </Grid.GestureRecognizers>
+                                </Grid>
+                            </Border>
+                        </Grid>
+
+                        <!-- MODO VISUALIZAÇÃO -->
+                        <VerticalStackLayout Spacing="4" IsVisible="{Binding Editando, Converter={StaticResource InverseBoolConverter}}">
+                            <Label FontSize="13" TextColor="{StaticResource TextSecondary}">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="Telefone: " FontAttributes="Bold" />
+                                        <Span Text="{Binding Telefone}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                            <Label FontSize="13" TextColor="{StaticResource TextSecondary}">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="E-mail: " FontAttributes="Bold" />
+                                        <Span Text="{Binding Email}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                            <Label FontSize="13" TextColor="{StaticResource TextSecondary}">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="Cliente desde: " FontAttributes="Bold" />
+                                        <Span Text="{Binding CriadoEm, StringFormat='{0:dd/MM/yyyy}'}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                        </VerticalStackLayout>
+
+                        <!-- MODO EDIÇÃO -->
+                        <VerticalStackLayout Spacing="10" IsVisible="{Binding Editando}">
+                            <Border StrokeShape="RoundRectangle 10" Stroke="{StaticResource BorderSoft}" BackgroundColor="{StaticResource InputColor}" Padding="12,2">
+                                <Entry Placeholder="Nome" Text="{Binding Nome}" TextColor="{StaticResource TextPrimary}" BackgroundColor="Transparent" />
+                            </Border>
+                            <Border StrokeShape="RoundRectangle 10" Stroke="{StaticResource BorderSoft}" BackgroundColor="{StaticResource InputColor}" Padding="12,2">
+                                <Entry Placeholder="Telefone" Text="{Binding Telefone}" Keyboard="Telephone" TextColor="{StaticResource TextPrimary}" BackgroundColor="Transparent" />
+                            </Border>
+                            <Border StrokeShape="RoundRectangle 10" Stroke="{StaticResource BorderSoft}" BackgroundColor="{StaticResource InputColor}" Padding="12,2">
+                                <Entry Placeholder="E-mail" Text="{Binding Email}" Keyboard="Email" TextColor="{StaticResource TextPrimary}" BackgroundColor="Transparent" />
+                            </Border>
+                            <Border StrokeShape="RoundRectangle 10" BackgroundColor="{StaticResource GoldPrimary}" Padding="0,10">
+                                <Grid>
+                                    <Label Text="SALVAR ALTERAÇÕES" FontSize="12" FontAttributes="Bold" TextColor="#0A0A0C" HorizontalOptions="Center" />
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding SalvarEdicaoCommand}" />
+                                    </Grid.GestureRecognizers>
+                                </Grid>
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <!-- NOVA SIMULAÇÃO -->
+                        <Border StrokeShape="RoundRectangle 12" Stroke="{StaticResource GoldPrimary}" Padding="0,12" Margin="0,6,0,0">
+                            <Grid>
+                                <Label Text="✦ INICIAR NOVA SIMULAÇÃO PARA ESTE CLIENTE" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource GoldPrimary}" HorizontalOptions="Center" />
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding NovaSimulacaoCommand}" />
+                                </Grid.GestureRecognizers>
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- HISTÓRICO -->
+                <Label Text="HISTÓRICO DE SIMULAÇÕES" FontSize="16" FontAttributes="Bold" CharacterSpacing="2" TextColor="{StaticResource TextPrimary}" Margin="0,10,0,0" />
+
+                <Label Text="Nenhuma simulação ainda para este cliente."
+                       FontSize="13"
+                       TextColor="{StaticResource TextMuted}"
+                       IsVisible="{Binding TemHistorico, Converter={StaticResource InverseBoolConverter}}" />
+
+                <CollectionView ItemsSource="{Binding Simulacoes}" IsVisible="{Binding TemHistorico}">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="14" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="dtos:SimulacaoResponse">
+                            <Border StrokeShape="RoundRectangle 16" Stroke="{StaticResource BorderSoft}" BackgroundColor="{StaticResource CardColor}" Padding="16">
+                                <Grid ColumnDefinitions="90,90,*,Auto" ColumnSpacing="14">
+
+                                    <Border Grid.Column="0" StrokeShape="RoundRectangle 10" HeightRequest="90" WidthRequest="90" Stroke="{StaticResource BorderSoft}">
+                                        <Image Source="{Binding FotoOriginalUrl}" Aspect="AspectFill" />
+                                    </Border>
+
+                                    <Border Grid.Column="1" StrokeShape="RoundRectangle 10" HeightRequest="90" WidthRequest="90" Stroke="{StaticResource GoldPrimary}">
+                                        <Image Source="{Binding FotoResultadoUrl}" Aspect="AspectFill" />
+                                    </Border>
+
+                                    <VerticalStackLayout Grid.Column="2" Spacing="3" VerticalOptions="Center">
+                                        <Label FontSize="13" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding Comprimento}" />
+                                                    <Span Text=" • " />
+                                                    <Span Text="{Binding Cor}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label FontSize="11" TextColor="{StaticResource TextMuted}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding MetodoMegaHair}" />
+                                                    <Span Text=" • R$ " />
+                                                    <Span Text="{Binding ValorEstimado, StringFormat='{0:N2}'}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label Text="{Binding CriadoEm, StringFormat='{0:dd/MM/yyyy HH:mm}'}" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                                    </VerticalStackLayout>
+
+                                    <Border Grid.Column="3" StrokeShape="RoundRectangle 10" Stroke="{StaticResource GoldPrimary}" Padding="12,8" VerticalOptions="Center">
+                                        <Grid>
+                                            <Label Text="REABRIR" FontSize="10" FontAttributes="Bold" TextColor="{StaticResource GoldPrimary}" />
+                                            <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding BindingContext.ReabrirSimulacaoCommand, Source={x:Reference PageRoot}}" CommandParameter="{Binding .}" />
+                                            </Grid.GestureRecognizers>
+                                        </Grid>
+                                    </Border>
+
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

@@ -1,0 +1,124 @@
+﻿@page "/clientes/{Id:guid}"
+@rendermode InteractiveServer
+@inject ApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>@(cliente?.Nome ?? "Cliente")</PageTitle>
+
+<div style="max-width:700px; margin:0 auto; display:flex; flex-direction:column; gap:18px;">
+
+    <a href="/clientes" style="font-size:12px; color:var(--text-secondary);">← Voltar para clientes</a>
+
+    @if (carregando)
+    {
+        <p style="text-align:center; color:var(--text-muted);">Carregando...</p>
+    }
+    else if (cliente is null)
+    {
+        <p style="text-align:center; color:var(--text-muted);">Cliente não encontrado.</p>
+    }
+    else
+    {
+        <div class="card card-gold-border" style="display:flex; flex-direction:column; gap:12px;">
+
+            @if (!editando)
+            {
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <h2 style="color:var(--gold); font-size:22px;">@cliente.Nome</h2>
+                    <button class="btn-outline" style="padding:8px 12px; font-size:10px;" @onclick="() => editando = true">✎ EDITAR</button>
+                </div>
+                <p style="font-size:13px; color:var(--text-secondary);"><b>Telefone:</b> @cliente.Telefone</p>
+                <p style="font-size:13px; color:var(--text-secondary);"><b>E-mail:</b> @cliente.Email</p>
+                <p style="font-size:13px; color:var(--text-secondary);"><b>Cliente desde:</b> @cliente.CriadoEm.ToString("dd/MM/yyyy")</p>
+            }
+            else
+            {
+                <input @bind="editNome" placeholder="Nome" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);" />
+                <input @bind="editTelefone" placeholder="Telefone" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);" />
+                <input @bind="editEmail" placeholder="E-mail" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);" />
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-outline" style="flex:1;" @onclick="() => editando = false">CANCELAR</button>
+                    <button class="btn-gold" style="flex:1;" @onclick="SalvarEdicaoAsync">SALVAR</button>
+                </div>
+            }
+
+            <button class="btn-gold" style="margin-top:8px;" @onclick="NovaSimulacao">
+                ✦ INICIAR NOVA SIMULAÇÃO PARA ESTE CLIENTE
+            </button>
+        </div>
+
+        <h3 style="letter-spacing:2px; font-size:15px; margin-top:10px;">HISTÓRICO DE SIMULAÇÕES</h3>
+
+        @if (cliente.Simulacoes.Count == 0)
+        {
+            <p style="color:var(--text-muted); font-size:13px;">Nenhuma simulação ainda para este cliente.</p>
+        }
+        else
+        {
+            @foreach (var s in cliente.Simulacoes)
+            {
+                <div class="card" style="display:flex; gap:12px; align-items:center;">
+                    <img src="@s.FotoOriginalUrl" style="width:70px; height:70px; object-fit:cover; border-radius:8px;" />
+                    <img src="@s.FotoResultadoUrl" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border-gold);" />
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:700;">@s.Comprimento • @s.Cor</div>
+                        <div style="font-size:11px; color:var(--text-muted);">@s.MetodoMegaHair • R$ @s.ValorEstimado.ToString("N2")</div>
+                        <div style="font-size:10px; color:var(--text-muted);">@s.CriadoEm.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                </div>
+            }
+        }
+    }
+
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private bool carregando = true;
+    private bool editando;
+    private ClienteDetalheResponse? cliente;
+
+    private string editNome = string.Empty;
+    private string editTelefone = string.Empty;
+    private string editEmail = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cliente = await Api.ObterClienteAsync(Id);
+        if (cliente is not null)
+        {
+            editNome = cliente.Nome;
+            editTelefone = cliente.Telefone ?? string.Empty;
+            editEmail = cliente.Email ?? string.Empty;
+        }
+        carregando = false;
+    }
+
+    private async Task SalvarEdicaoAsync()
+    {
+        if (string.IsNullOrWhiteSpace(editNome)) return;
+
+        var atualizado = await Api.AtualizarClienteAsync(Id, new AtualizarClienteRequest
+        {
+            Nome = editNome,
+            Telefone = editTelefone,
+            Email = editEmail
+        });
+
+        if (atualizado is not null && cliente is not null)
+        {
+            cliente.Nome = atualizado.Nome;
+            cliente.Telefone = atualizado.Telefone;
+            cliente.Email = atualizado.Email;
+        }
+
+        editando = false;
+    }
+
+    private void NovaSimulacao()
+    {
+        if (cliente is null) return;
+        Nav.NavigateTo($"/captura?clienteId={cliente.Id}&clienteNome={Uri.EscapeDataString(cliente.Nome)}");
+    }
+}

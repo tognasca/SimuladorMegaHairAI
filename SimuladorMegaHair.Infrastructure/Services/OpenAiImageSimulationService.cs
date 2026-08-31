@@ -1,4 +1,10 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿// ⚠️ CÓDIGO MORTO — NÃO É USADO EM PRODUÇÃO.
+// Excluído da build em SimuladorMegaHair.Infrastructure.csproj
+// (<Compile Remove="Services\OpenAiImageSimulationService.cs" />).
+// O pipeline REAL usado pela aplicação é SimulacaoPipelineService.cs
+// (provider Replicate, HabilitarProviderOpenAI = false no appsettings).
+// Mantido apenas para referência histórica; pode ser removido com segurança.
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SimuladorMegaHair.Domain.Interfaces;
