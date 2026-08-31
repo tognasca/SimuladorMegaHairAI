@@ -53,6 +53,24 @@
                            FontSize="12"
                            TextColor="#A9A5A0"
                            HorizontalOptions="Center" />
+
+                    <!-- Selo de cliente vinculado -->
+                    <Border IsVisible="{Binding TemClienteVinculado}"
+                            StrokeShape="RoundRectangle 12"
+                            Stroke="#80602F"
+                            BackgroundColor="#151619"
+                            Padding="12,6"
+                            HorizontalOptions="Center"
+                            Margin="0,4,0,0">
+                        <Label FontSize="11" TextColor="#E4C187">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="♙ Para: " />
+                                    <Span Text="{Binding ClienteNome}" FontAttributes="Bold" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                    </Border>
                 </VerticalStackLayout>
 
                 <!-- ═══ SELETOR DE MODO (Antes/Comparar/Depois) ═══ -->

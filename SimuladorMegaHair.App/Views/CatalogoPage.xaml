@@ -3,31 +3,140 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
              xmlns:components="clr-namespace:SimuladorMegaHair.App.Views.Components"
+             xmlns:entities="clr-namespace:SimuladorMegaHair.Domain.Entities;assembly=SimuladorMegaHair.Domain"
              x:Class="SimuladorMegaHair.App.Views.CatalogoPage"
+             x:Name="PageRoot"
              x:DataType="vm:CatalogoViewModel"
              BackgroundColor="{StaticResource PageBackgroundColor}"
              Shell.NavBarIsVisible="False">
 
-    <Grid ColumnDefinitions="220, *">
+    <Grid ColumnDefinitions="Auto, *">
         <components:SidebarMenu Grid.Column="0" />
 
-        <VerticalStackLayout Grid.Column="1" Padding="40" Spacing="20" VerticalOptions="Center" HorizontalOptions="Center">
-            <Label Text="▣" FontSize="60" TextColor="{StaticResource GoldPrimary}" HorizontalOptions="Center" />
-            <Label Text="CATÁLOGO"
-                   FontSize="28"
-                   FontAttributes="Bold"
-                   CharacterSpacing="6"
-                   TextColor="{StaticResource GoldPrimary}"
-                   HorizontalOptions="Center" />
-            <Label Text="Cabelos e cores criados pelo salão"
-                   FontSize="14"
-                   TextColor="{StaticResource TextSecondary}"
-                   HorizontalOptions="Center" />
-            <Label Text="Em breve..."
-                   FontSize="12"
-                   FontAttributes="Italic"
-                   TextColor="{StaticResource TextMuted}"
-                   HorizontalOptions="Center" />
-        </VerticalStackLayout>
+        <Grid Grid.Column="1" RowDefinitions="Auto, Auto, *" Padding="40,30" RowSpacing="18">
+
+            <!-- CABEÇALHO -->
+            <VerticalStackLayout Grid.Row="0" Spacing="4">
+                <Label Text="CATÁLOGO"
+                       FontSize="26"
+                       FontAttributes="Bold"
+                       CharacterSpacing="5"
+                       TextColor="{StaticResource GoldPrimary}" />
+                <Label Text="Estilos, cores e comprimentos disponíveis"
+                       FontSize="13"
+                       TextColor="{StaticResource TextSecondary}" />
+            </VerticalStackLayout>
+
+            <!-- FILTROS -->
+            <Grid Grid.Row="1" ColumnDefinitions="*,*,*,Auto" ColumnSpacing="10">
+
+                <Border Grid.Column="0" StrokeShape="RoundRectangle 12" Stroke="{StaticResource BorderSoft}" BackgroundColor="{StaticResource InputColor}" Padding="12,2">
+                    <Entry Placeholder="Cor (ex: loiro)" Text="{Binding FiltroCor}" TextColor="{StaticResource TextPrimary}" PlaceholderColor="{StaticResource TextMuted}" BackgroundColor="Transparent" FontSize="12" />
+                </Border>
+
+                <Border Grid.Column="1" StrokeShape="RoundRectangle 12" Stroke="{StaticResource BorderSoft}" BackgroundColor="{StaticResource InputColor}" Padding="6,0">
+                    <Picker ItemsSource="{Binding ComprimentosDisponiveis}"
+                            SelectedItem="{Binding FiltroComprimento}"
+                            Title="Comprimento"
+                            TitleColor="{StaticResource TextMuted}"
+                            TextColor="{StaticResource TextPrimary}"
+                            FontSize="12"
+                            BackgroundColor="Transparent" />
+                </Border>
+
+                <Border Grid.Column="2" StrokeShape="RoundRectangle 12" Stroke="{StaticResource BorderSoft}" BackgroundColor="{StaticResource InputColor}" Padding="6,0">
+                    <Picker ItemsSource="{Binding TiposDisponiveis}"
+                            SelectedItem="{Binding FiltroTipoCabelo}"
+                            Title="Tipo de cabelo"
+                            TitleColor="{StaticResource TextMuted}"
+                            TextColor="{StaticResource TextPrimary}"
+                            FontSize="12"
+                            BackgroundColor="Transparent" />
+                </Border>
+
+                <Border Grid.Column="3" StrokeShape="RoundRectangle 12" BackgroundColor="{StaticResource GoldPrimary}" Padding="16,0">
+                    <Grid>
+                        <Label Text="FILTRAR" FontSize="11" FontAttributes="Bold" TextColor="#0A0A0C" VerticalOptions="Center" />
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding AplicarFiltrosCommand}" />
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- CONTEÚDO -->
+            <ScrollView Grid.Row="2">
+                <VerticalStackLayout Spacing="16">
+
+                    <ActivityIndicator IsRunning="{Binding Carregando}" IsVisible="{Binding Carregando}" Color="{StaticResource GoldPrimary}" HeightRequest="40" />
+
+                    <VerticalStackLayout IsVisible="{Binding SemItens}" Spacing="6" Margin="0,30,0,0">
+                        <Label Text="Nenhum item encontrado com esses filtros" FontSize="14" TextColor="{StaticResource TextSecondary}" HorizontalOptions="Center" />
+                        <Label Text="Limpar filtros" FontSize="12" TextColor="{StaticResource GoldPrimary}" HorizontalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding LimparFiltrosCommand}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </VerticalStackLayout>
+
+                    <CollectionView x:Name="GridCatalogo" ItemsSource="{Binding Itens}" IsVisible="{Binding TemItens}">
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout x:Name="LayoutCatalogo" Orientation="Vertical" Span="3" HorizontalItemSpacing="16" VerticalItemSpacing="16" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="entities:CatalogoItem">
+                                <Border StrokeShape="RoundRectangle 16"
+                                        Stroke="{StaticResource BorderSoft}"
+                                        BackgroundColor="{StaticResource CardColor}"
+                                        Padding="0">
+                                    <VerticalStackLayout>
+
+                                        <Border StrokeShape="RoundRectangle 16,16,0,0" HeightRequest="180" Stroke="Transparent">
+                                            <Image Source="{Binding FotoPath}" Aspect="AspectFill" />
+                                        </Border>
+
+                                        <VerticalStackLayout Padding="14,10" Spacing="4">
+                                            <Label Text="{Binding Titulo}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" LineBreakMode="TailTruncation" />
+
+                                            <Label FontSize="11" TextColor="{StaticResource TextMuted}">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="{Binding Comprimento}" />
+                                                        <Span Text=" • " />
+                                                        <Span Text="{Binding Cor}" />
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+
+                                            <Label FontSize="11" TextColor="{StaticResource TextMuted}" Text="{Binding TipoCabelo}" />
+
+                                            <Label FontSize="15" FontAttributes="Bold" TextColor="{StaticResource GoldPrimary}" Margin="0,4,0,0">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="R$ " />
+                                                        <Span Text="{Binding PrecoBase, StringFormat='{0:N2}'}" />
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+
+                                            <Border StrokeShape="RoundRectangle 10" BackgroundColor="{StaticResource GoldPrimary}" Padding="0,8" Margin="0,6,0,0">
+                                                <Grid>
+                                                    <Label Text="SIMULAR ESTE ESTILO" FontSize="10" FontAttributes="Bold" TextColor="#0A0A0C" HorizontalOptions="Center" />
+                                                    <Grid.GestureRecognizers>
+                                                        <TapGestureRecognizer Command="{Binding BindingContext.SimularComEsteEstiloCommand, Source={x:Reference PageRoot}}" CommandParameter="{Binding .}" />
+                                                    </Grid.GestureRecognizers>
+                                                </Grid>
+                                            </Border>
+                                        </VerticalStackLayout>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                </VerticalStackLayout>
+            </ScrollView>
+
+        </Grid>
     </Grid>
 </ContentPage>

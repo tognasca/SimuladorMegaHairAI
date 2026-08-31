@@ -1,4 +1,12 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿// ⚠️ CÓDIGO MORTO — NÃO É USADO EM PRODUÇÃO E NÃO COMPILA COMO ESTÁ.
+// Excluído da build em SimuladorMegaHair.Infrastructure.csproj
+// (<Compile Remove="Services\ReplicateImageSimulationService.cs" />).
+// O pipeline REAL usado pela aplicação é SimulacaoPipelineService.cs,
+// registrado via DI em Program.cs. Este arquivo referencia propriedades
+// que não existem em ReplicateOptions (InpaintingOwner, InpaintingName,
+// InpaintingSteps, GuidanceScale) — auditado em 2026-08-27.
+// Mantido apenas para referência histórica; pode ser removido com segurança.
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SimuladorMegaHair.Domain.Interfaces;

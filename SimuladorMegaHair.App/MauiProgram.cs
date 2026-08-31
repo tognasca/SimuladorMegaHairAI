@@ -23,6 +23,13 @@ public static class MauiProgram
 
         builder.Services.AddSingleton(sp =>
         {
+            // Lido de Preferences (Configurações → Endereço do servidor).
+            // IMPORTANTE: como o HttpClient é Singleton, mudar esse endereço
+            // exige reabrir o app para valer (não é "ao vivo"). Para o uso
+            // no salão isso é aceitável: configura-se o endereço do servidor
+            // uma vez por dispositivo, na instalação/setup inicial.
+            var baseUrl = AppSettings.ApiBaseUrl;
+
 #if DEBUG
             var handler = new HttpClientHandler
             {
@@ -31,13 +38,13 @@ public static class MauiProgram
             };
             return new HttpClient(handler)
             {
-                BaseAddress = new Uri("http://localhost:5185/"),
+                BaseAddress = new Uri(baseUrl),
                 Timeout = TimeSpan.FromMinutes(10)
             };
 #else
             return new HttpClient
             {
-                BaseAddress = new Uri("http://localhost:5185/"),
+                BaseAddress = new Uri(baseUrl),
                 Timeout = TimeSpan.FromMinutes(10)
             };
 #endif
@@ -55,6 +62,7 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<CatalogoViewModel>();
         builder.Services.AddTransient<ClientesViewModel>();
+        builder.Services.AddTransient<ClienteDetalheViewModel>();
         builder.Services.AddTransient<OrcamentosViewModel>();
 
         // Pages
@@ -65,6 +73,7 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<CatalogoPage>();
         builder.Services.AddTransient<ClientesPage>();
+        builder.Services.AddTransient<ClienteDetalhePage>();
         builder.Services.AddTransient<OrcamentosPage>();
 
 #if DEBUG

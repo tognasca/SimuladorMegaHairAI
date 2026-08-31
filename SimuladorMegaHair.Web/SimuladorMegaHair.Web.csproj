@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!--
+      ⚠️ POR QUE ESTE PROJETO EXISTE (não é redundante com o App MAUI):
+      O App MAUI (Windows + Android) continua existindo para quem quiser
+      instalar um app "de verdade" no dispositivo. Este projeto Web é o
+      caminho para "abrir em qualquer plataforma pelo navegador" — em
+      especial iPad, que exigiria Mac + Xcode + Apple Developer Program
+      (US$ 99/ano) para virar um app nativo instalável. Pelo navegador,
+      o iPad (e qualquer outro aparelho com navegador) funciona sem
+      nenhum custo ou processo de loja de aplicativos.
+
+      Os dois (App MAUI e este Web) conversam com o MESMO backend
+      (SimuladorMegaHair.Api) — nenhuma lógica de negócio é duplicada.
+    -->
+    <UserSecretsId>simuladormegahair-web-secrets</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SimuladorMegaHair.Domain\SimuladorMegaHair.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

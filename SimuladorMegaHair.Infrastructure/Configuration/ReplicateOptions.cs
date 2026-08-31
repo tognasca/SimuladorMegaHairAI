@@ -64,6 +64,22 @@ public sealed class ReplicateOptions
     public string InpaintOwner { get; set; } = "zf-kbot";
     public string InpaintName { get; set; } = "inpaint-and-guess-prompt";
 
+    // ── Segmentação de cabelo via IA real (Grounded SAM) ──────
+    // Substitui a antiga máscara 100% geométrica/heurística por um
+    // modelo de segmentação de verdade, treinado, hospedado no Replicate.
+    // Confirmado em uso de produção (doiwear.it) e listado na coleção
+    // oficial de detecção/segmentação do Replicate.
+    // Fonte: https://replicate.com/schananas/grounded_sam
+    public string HairSegmentOwner { get; set; } = "schananas";
+    public string HairSegmentName { get; set; } = "grounded_sam";
+
+    /// <summary>
+    /// Se a segmentação por IA falhar ou expirar, a aplicação cai
+    /// automaticamente para a máscara geométrica (nunca quebra o fluxo).
+    /// </summary>
+    public int HairSegmentMaxPollAttempts { get; set; } = 20;
+    public int HairSegmentPollIntervalMs { get; set; } = 1500;
+
     // ── Flux / Inferência atual ──────────────────────────────
 
     public int FluxSteps { get; set; } = 28;

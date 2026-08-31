@@ -66,10 +66,12 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         // 2. Detecta rosto na imagem já recortada (mesmas coordenadas da máscara)
         var rosto = DetectarRostoSeguro(imagemPrep);
 
-        // 3. Gera máscara (MediaPipe → SAM2 ou fallback local)
+        // 3. Gera máscara: camada geométrica (segura) + camada de IA real
+        //    (Grounded SAM, via Replicate) intersectadas — ver
+        //    HairMaskGenerator para o porquê dessa arquitetura.
         var masksFolder = GarantirPasta("wwwroot", "masks");
         var (maskPath, modoEdit) = await HairMaskGenerator.GerarMascaraInteligenteAsync(
-            imagemPrep, masksFolder, rosto, req.Comprimento, ct);
+            imagemPrep, masksFolder, rosto, req.Comprimento, _http, _rep, _logger, ct);
 
         var auditOverlay = await HairMaskAudit.SalvarAsync(
             imagemPrep, maskPath,
@@ -113,7 +115,38 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         _logger.LogInformation("[VOLUME] Ajustando volume para nível {Nivel}...", req.Nivel);
 
         var outputFolder = GarantirPasta("wwwroot", "resultados");
-        return await HairVolumeAdjuster.Aplicar(req, _logger, outputFolder, ct);
+        var masksFolder = GarantirPasta("wwwroot", "masks");
+
+        // Gera (ou re-gera) a máscara de cabelo para a imagem alvo, para que
+        // o ganho de volume fique restrito aos fios — nunca afetando rosto
+        // ou fundo. Se algo falhar aqui, seguimos sem máscara: o adjuster
+        // tem um fallback de segurança (elipse central) mais sutil.
+        string? maskPath = null;
+        try
+        {
+            var caminhoImagem = ResolverCaminho(req.ImagemResultadoPath ?? req.ImagemOriginalPath!);
+            var rosto = DetectarRostoSeguro(caminhoImagem);
+            var comprimento = string.IsNullOrWhiteSpace(req.Comprimento) ? "60 cm" : req.Comprimento;
+
+            var (caminhoMascara, _) = await HairMaskGenerator.GerarMascaraInteligenteAsync(
+                caminhoImagem, masksFolder, rosto, comprimento, _http, _rep, _logger, ct);
+
+            maskPath = caminhoMascara;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[VOLUME] Não foi possível gerar máscara de cabelo; usando fallback.");
+        }
+
+        try
+        {
+            return await HairVolumeAdjuster.Aplicar(req, maskPath, _logger, outputFolder, ct);
+        }
+        finally
+        {
+            if (maskPath is not null)
+                LimparArquivosTemp(maskPath);
+        }
     }
 
     private async Task<(string url, string? aviso)> PipelineReplicateAsync(

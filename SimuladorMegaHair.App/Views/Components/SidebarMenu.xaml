@@ -4,13 +4,15 @@
              x:Class="SimuladorMegaHair.App.Views.Components.SidebarMenu"
              x:Name="Menu">
 
-    <Border BackgroundColor="{StaticResource SidebarColor}"
+    <Border x:Name="RootBorder"
+            WidthRequest="220"
+            BackgroundColor="{StaticResource SidebarColor}"
             Stroke="{StaticResource BorderSoft}"
             StrokeThickness="0,0,1,0"
             Padding="0">
 
         <ScrollView>
-            <VerticalStackLayout Padding="25,30" Spacing="8">
+            <VerticalStackLayout Padding="14,30" Spacing="8">
 
                 <!-- LOGO -->
                 <VerticalStackLayout Margin="0,0,0,35"
@@ -18,29 +20,31 @@
                      Spacing="10">
 
                     <Image Source="logo_tati.png"
-           HeightRequest="120"
-           WidthRequest="120"
+           HeightRequest="60"
+           WidthRequest="60"
            Aspect="AspectFit"
            HorizontalOptions="Center"/>
 
-                    <Label Text="SALÃO DE BELEZA"
-           FontSize="9"
-           CharacterSpacing="4"
-           HorizontalOptions="Center"
-           TextColor="{StaticResource TextSecondary}"/>
+                    <VerticalStackLayout x:Name="LogoTitulo" Spacing="10" HorizontalOptions="Center">
+                        <Label Text="SALÃO DE BELEZA"
+               FontSize="9"
+               CharacterSpacing="4"
+               HorizontalOptions="Center"
+               TextColor="{StaticResource TextSecondary}"/>
 
-                    <BoxView HeightRequest="1"
-             WidthRequest="120"
-             HorizontalOptions="Center"
-             Color="{StaticResource GoldPrimary}"
-             Opacity="0.35"/>
+                        <BoxView HeightRequest="1"
+                 WidthRequest="120"
+                 HorizontalOptions="Center"
+                 Color="{StaticResource GoldPrimary}"
+                 Opacity="0.35"/>
+                    </VerticalStackLayout>
                 </VerticalStackLayout>
 
                 <!-- INÍCIO -->
                 <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
                     <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
-                        <Label Text="⌂" FontSize="18" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
-                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Text="⌂" FontSize="18" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelInicio" Grid.Column="1" Spacing="2">
                             <Label Text="INÍCIO" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
                             <Label Text="Dashboard" FontSize="10" TextColor="{StaticResource TextMuted}" />
                         </VerticalStackLayout>
@@ -53,8 +57,8 @@
                 <!-- SIMULAÇÃO -->
                 <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
                     <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
-                        <Label Text="✦" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
-                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Text="✦" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelSimulacao" Grid.Column="1" Spacing="2">
                             <Label Text="SIMULAÇÃO" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
                             <Label Text="Corte / Mega Hair" FontSize="10" TextColor="{StaticResource TextMuted}" />
                         </VerticalStackLayout>
@@ -67,8 +71,8 @@
                 <!-- CATÁLOGO -->
                 <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
                     <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
-                        <Label Text="▣" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
-                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Text="▣" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelCatalogo" Grid.Column="1" Spacing="2">
                             <Label Text="CATÁLOGO" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
                             <Label Text="Cabelos &amp; Cores" FontSize="10" TextColor="{StaticResource TextMuted}" />
                         </VerticalStackLayout>
@@ -81,8 +85,8 @@
                 <!-- CLIENTES -->
                 <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
                     <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
-                        <Label Text="♙" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
-                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Text="♙" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelClientes" Grid.Column="1" Spacing="2">
                             <Label Text="CLIENTES" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
                             <Label Text="Seus atendimentos" FontSize="10" TextColor="{StaticResource TextMuted}" />
                         </VerticalStackLayout>
@@ -95,8 +99,8 @@
                 <!-- ORÇAMENTOS -->
                 <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
                     <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
-                        <Label Text="▤" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
-                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Text="▤" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelOrcamentos" Grid.Column="1" Spacing="2">
                             <Label Text="ORÇAMENTOS" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
                             <Label Text="Propostas &amp; Valores" FontSize="10" TextColor="{StaticResource TextMuted}" />
                         </VerticalStackLayout>
@@ -109,8 +113,8 @@
                 <!-- CONFIGURAÇÕES -->
                 <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
                     <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
-                        <Label Text="⚙" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
-                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Text="⚙" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelConfiguracoes" Grid.Column="1" Spacing="2">
                             <Label Text="CONFIGURAÇÕES" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
                             <Label Text="Geral do sistema" FontSize="10" TextColor="{StaticResource TextMuted}" />
                         </VerticalStackLayout>
@@ -121,7 +125,8 @@
                 </Border>
 
                 <!-- SELO EXPERIÊNCIA -->
-                <Border BackgroundColor="{StaticResource CardColor}"
+                <Border x:Name="SeloExperiencia"
+        BackgroundColor="{StaticResource CardColor}"
         Stroke="{StaticResource BorderGold}"
         StrokeThickness="1"
         StrokeShape="RoundRectangle 12"

@@ -8,66 +8,121 @@
              Shell.NavBarIsVisible="False">
 
     <Grid>
+        <ScrollView>
+            <VerticalStackLayout Spacing="26"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Padding="40,50">
 
-        <!-- CONTEÚDO CENTRAL -->
-        <VerticalStackLayout Spacing="30"
-                             VerticalOptions="Center"
-                             HorizontalOptions="Center"
-                             Padding="40">
+                <!-- ═══ LOGO TATI MEGA HAIR ═══ -->
+                <Image Source="logo_tati.png"
+                       HeightRequest="180"
+                       MaximumHeightRequest="200"
+                       Aspect="AspectFit"
+                       HorizontalOptions="Center"
+                       Margin="0,-10,0,0"/>
 
-            <!-- ═══ LOGO TATI MEGA HAIR ═══ -->
-            <Image Source="logo_tati.png"
-       HeightRequest="300"
-       MaximumHeightRequest="320"
-       Aspect="AspectFit"
-       HorizontalOptions="Center"
-       Margin="0,-20,0,0"/>
-           
-            <!-- Divisor dourado -->
-            <BoxView HeightRequest="1"
-                     WidthRequest="80"
-                     Color="{StaticResource GoldPrimary}"
-                     HorizontalOptions="Center"
-                     Opacity="0.5" />
+                <!-- Divisor dourado -->
+                <BoxView HeightRequest="1"
+                         WidthRequest="80"
+                         Color="{StaticResource GoldPrimary}"
+                         HorizontalOptions="Center"
+                         Opacity="0.5" />
 
-            <!-- Subtítulo -->
-            <Label Text="Veja como você ficaria antes&#10;de fazer o procedimento"
-                   FontSize="15"
-                   TextColor="{StaticResource TextSecondary}"
-                   HorizontalTextAlignment="Center"
-                   LineHeight="1.4" />
+                <!-- Subtítulo -->
+                <Label Text="O que você quer fazer agora?"
+                       FontSize="15"
+                       TextColor="{StaticResource TextSecondary}"
+                       HorizontalTextAlignment="Center"
+                       LineHeight="1.4" />
 
-            <!-- Botão principal -->
-            <Border Stroke="{StaticResource GoldPrimary}"
-                    StrokeThickness="1"
-                    StrokeShape="RoundRectangle 32"
-                    BackgroundColor="{StaticResource GoldPrimary}"
-                    HeightRequest="60"
-                    WidthRequest="290"
-                    Margin="0,10,0,0">
-                <Grid>
-                    <Label Text="INICIAR SIMULAÇÃO"
-                           FontSize="14"
-                           FontAttributes="Bold"
-                           CharacterSpacing="4"
-                           TextColor="#0A0A0C"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center" />
-                    <Grid.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding IniciarSimulacaoCommand}" />
-                    </Grid.GestureRecognizers>
-                </Grid>
-            </Border>
+                <!-- ═══ MENU DE OPÇÕES ═══ -->
+                <VerticalStackLayout Spacing="14" WidthRequest="320">
 
-            <!-- Rodapé -->
-            <Label Text="Tecnologia Tatiane Tognasca • Simulação com IA"
-                   FontSize="10"
-                   CharacterSpacing="3"
-                   TextColor="{StaticResource TextMuted}"
-                   HorizontalOptions="Center"
-                   Margin="0,15,0,0" />
+                    <!-- Nova Simulação (destaque) -->
+                    <Border Stroke="{StaticResource GoldPrimary}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 18"
+                            BackgroundColor="{StaticResource GoldPrimary}"
+                            HeightRequest="72">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14" Padding="20,0">
+                            <Label Text="✦" FontSize="22" TextColor="#0A0A0C" VerticalOptions="Center" />
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="1">
+                                <Label Text="NOVA SIMULAÇÃO" FontSize="15" FontAttributes="Bold" CharacterSpacing="2" TextColor="#0A0A0C" />
+                                <Label Text="Tirar ou escolher uma foto" FontSize="11" TextColor="#0A0A0C" Opacity="0.75" />
+                            </VerticalStackLayout>
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding IniciarSimulacaoCommand}" />
+                            </Grid.GestureRecognizers>
+                        </Grid>
+                    </Border>
 
-        </VerticalStackLayout>
+                    <!-- Buscar Cliente -->
+                    <Border Stroke="{StaticResource BorderSoft}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 18"
+                            BackgroundColor="{StaticResource CardColor}"
+                            HeightRequest="72">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14" Padding="20,0">
+                            <Label Text="♙" FontSize="20" TextColor="{StaticResource GoldPrimary}" VerticalOptions="Center" />
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="1">
+                                <Label Text="BUSCAR CLIENTE" FontSize="15" FontAttributes="Bold" CharacterSpacing="2" TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="Ver histórico de quem já simulou" FontSize="11" TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding BuscarClienteCommand}" />
+                            </Grid.GestureRecognizers>
+                        </Grid>
+                    </Border>
+
+                    <!-- Catálogo -->
+                    <Border Stroke="{StaticResource BorderSoft}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 18"
+                            BackgroundColor="{StaticResource CardColor}"
+                            HeightRequest="72">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14" Padding="20,0">
+                            <Label Text="▣" FontSize="20" TextColor="{StaticResource GoldPrimary}" VerticalOptions="Center" />
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="1">
+                                <Label Text="CATÁLOGO" FontSize="15" FontAttributes="Bold" CharacterSpacing="2" TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="Cabelos, cores e preços disponíveis" FontSize="11" TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding AbrirCatalogoCommand}" />
+                            </Grid.GestureRecognizers>
+                        </Grid>
+                    </Border>
+
+                    <!-- Orçamentos -->
+                    <Border Stroke="{StaticResource BorderSoft}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 18"
+                            BackgroundColor="{StaticResource CardColor}"
+                            HeightRequest="72">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14" Padding="20,0">
+                            <Label Text="▤" FontSize="20" TextColor="{StaticResource GoldPrimary}" VerticalOptions="Center" />
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="1">
+                                <Label Text="ORÇAMENTOS" FontSize="15" FontAttributes="Bold" CharacterSpacing="2" TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="Propostas e valores salvos" FontSize="11" TextColor="{StaticResource TextMuted}" />
+                            </VerticalStackLayout>
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding AbrirOrcamentosCommand}" />
+                            </Grid.GestureRecognizers>
+                        </Grid>
+                    </Border>
+
+                </VerticalStackLayout>
+
+                <!-- Rodapé -->
+                <Label Text="Tecnologia Tatiane Tognasca • Simulação com IA"
+                       FontSize="10"
+                       CharacterSpacing="3"
+                       TextColor="{StaticResource TextMuted}"
+                       HorizontalOptions="Center"
+                       Margin="0,15,0,0" />
+
+            </VerticalStackLayout>
+        </ScrollView>
 
         <!-- Botão de Configurações -->
         <Border Stroke="{StaticResource BorderSoft}"

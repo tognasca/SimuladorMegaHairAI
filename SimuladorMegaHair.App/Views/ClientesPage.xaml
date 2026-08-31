@@ -3,31 +3,166 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
              xmlns:components="clr-namespace:SimuladorMegaHair.App.Views.Components"
+             xmlns:dtos="clr-namespace:SimuladorMegaHair.Domain.DTOs;assembly=SimuladorMegaHair.Domain"
              x:Class="SimuladorMegaHair.App.Views.ClientesPage"
+             x:Name="PageRoot"
              x:DataType="vm:ClientesViewModel"
              BackgroundColor="{StaticResource PageBackgroundColor}"
              Shell.NavBarIsVisible="False">
 
-    <Grid ColumnDefinitions="220, *">
+    <Grid ColumnDefinitions="Auto, *">
         <components:SidebarMenu Grid.Column="0" />
 
-        <VerticalStackLayout Grid.Column="1" Padding="40" Spacing="20" VerticalOptions="Center" HorizontalOptions="Center">
-            <Label Text="♙" FontSize="60" TextColor="{StaticResource GoldPrimary}" HorizontalOptions="Center" />
-            <Label Text="CLIENTES"
-                   FontSize="28"
-                   FontAttributes="Bold"
-                   CharacterSpacing="6"
-                   TextColor="{StaticResource GoldPrimary}"
-                   HorizontalOptions="Center" />
-            <Label Text="Gerencie seus atendimentos"
-                   FontSize="14"
-                   TextColor="{StaticResource TextSecondary}"
-                   HorizontalOptions="Center" />
-            <Label Text="Em breve..."
-                   FontSize="12"
-                   FontAttributes="Italic"
-                   TextColor="{StaticResource TextMuted}"
-                   HorizontalOptions="Center" />
-        </VerticalStackLayout>
+        <Grid Grid.Column="1" RowDefinitions="Auto, Auto, *" Padding="40,30" RowSpacing="18">
+
+            <!-- CABEÇALHO -->
+            <VerticalStackLayout Grid.Row="0" Spacing="4">
+                <Label Text="CLIENTES"
+                       FontSize="26"
+                       FontAttributes="Bold"
+                       CharacterSpacing="5"
+                       TextColor="{StaticResource GoldPrimary}" />
+                <Label Text="Busque um cliente já cadastrado ou crie um novo"
+                       FontSize="13"
+                       TextColor="{StaticResource TextSecondary}" />
+            </VerticalStackLayout>
+
+            <!-- BUSCA -->
+            <Grid Grid.Row="1" ColumnDefinitions="*, Auto" ColumnSpacing="10">
+                <Border Grid.Column="0"
+                        StrokeShape="RoundRectangle 14"
+                        Stroke="{StaticResource BorderSoft}"
+                        BackgroundColor="{StaticResource InputColor}"
+                        Padding="16,4">
+                    <Entry Placeholder="Buscar por nome, telefone ou e-mail..."
+                           PlaceholderColor="{StaticResource TextMuted}"
+                           TextColor="{StaticResource TextPrimary}"
+                           BackgroundColor="Transparent"
+                           Text="{Binding TermoBusca}" />
+                </Border>
+
+                <Border Grid.Column="1"
+                        StrokeShape="RoundRectangle 14"
+                        Stroke="{StaticResource GoldPrimary}"
+                        BackgroundColor="{StaticResource GoldPrimary}"
+                        Padding="18,0"
+                        HeightRequest="46">
+                    <Grid>
+                        <Label Text="+ NOVO CLIENTE"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               CharacterSpacing="1"
+                               TextColor="#0A0A0C"
+                               VerticalOptions="Center" />
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding AlternarFormularioNovoCommand}" />
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- CONTEÚDO -->
+            <ScrollView Grid.Row="2">
+                <VerticalStackLayout Spacing="16">
+
+                    <!-- FORMULÁRIO DE NOVO CLIENTE -->
+                    <Border IsVisible="{Binding MostrandoFormularioNovo}"
+                            StrokeShape="RoundRectangle 16"
+                            Stroke="{StaticResource BorderGold}"
+                            BackgroundColor="{StaticResource CardColor}"
+                            Padding="20">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="Novo cliente" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource GoldPrimary}" />
+
+                            <Border StrokeShape="RoundRectangle 10" Stroke="{StaticResource BorderSoft}" BackgroundColor="{StaticResource InputColor}" Padding="12,2">
+                                <Entry Placeholder="Nome completo" Text="{Binding NovoNome}" TextColor="{StaticResource TextPrimary}" PlaceholderColor="{StaticResource TextMuted}" BackgroundColor="Transparent" />
+                            </Border>
+                            <Border StrokeShape="RoundRectangle 10" Stroke="{StaticResource BorderSoft}" BackgroundColor="{StaticResource InputColor}" Padding="12,2">
+                                <Entry Placeholder="Telefone / WhatsApp" Text="{Binding NovoTelefone}" Keyboard="Telephone" TextColor="{StaticResource TextPrimary}" PlaceholderColor="{StaticResource TextMuted}" BackgroundColor="Transparent" />
+                            </Border>
+                            <Border StrokeShape="RoundRectangle 10" Stroke="{StaticResource BorderSoft}" BackgroundColor="{StaticResource InputColor}" Padding="12,2">
+                                <Entry Placeholder="E-mail (opcional)" Text="{Binding NovoEmail}" Keyboard="Email" TextColor="{StaticResource TextPrimary}" PlaceholderColor="{StaticResource TextMuted}" BackgroundColor="Transparent" />
+                            </Border>
+
+                            <Border StrokeShape="RoundRectangle 12" BackgroundColor="{StaticResource GoldPrimary}" Padding="0,12" Margin="0,6,0,0">
+                                <Grid>
+                                    <Label Text="SALVAR E INICIAR SIMULAÇÃO" FontSize="12" FontAttributes="Bold" CharacterSpacing="1" TextColor="#0A0A0C" HorizontalOptions="Center" />
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding SalvarNovoClienteCommand}" />
+                                    </Grid.GestureRecognizers>
+                                </Grid>
+                            </Border>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- LOADING -->
+                    <ActivityIndicator IsRunning="{Binding Carregando}" IsVisible="{Binding Carregando}" Color="{StaticResource GoldPrimary}" HeightRequest="40" />
+
+                    <!-- SEM RESULTADOS -->
+                    <VerticalStackLayout IsVisible="{Binding SemResultados}" Spacing="6" Margin="0,30,0,0">
+                        <Label Text="Nenhum cliente encontrado" FontSize="14" TextColor="{StaticResource TextSecondary}" HorizontalOptions="Center" />
+                        <Label Text="Toque em '+ NOVO CLIENTE' para cadastrar" FontSize="12" TextColor="{StaticResource TextMuted}" HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+
+                    <!-- LISTA DE CLIENTES -->
+                    <CollectionView ItemsSource="{Binding Clientes}" IsVisible="{Binding TemResultados}">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="dtos:ClienteResponse">
+                                <Border StrokeShape="RoundRectangle 14"
+                                        Stroke="{StaticResource BorderSoft}"
+                                        BackgroundColor="{StaticResource CardColor}"
+                                        Padding="18,14">
+                                    <Grid ColumnDefinitions="*, Auto, Auto" ColumnSpacing="12">
+
+                                        <VerticalStackLayout Grid.Column="0" Spacing="3">
+                                            <Label Text="{Binding Nome}" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                                            <Label FontSize="11" TextColor="{StaticResource TextMuted}">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="{Binding TotalSimulacoes}" />
+                                                        <Span Text=" simulação(ões)" />
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+                                            <Label Text="{Binding Telefone}" FontSize="11" TextColor="{StaticResource TextMuted}" />
+                                        </VerticalStackLayout>
+
+                                        <Border Grid.Column="1"
+                                                StrokeShape="RoundRectangle 10"
+                                                Stroke="{StaticResource GoldPrimary}"
+                                                Padding="12,8">
+                                            <Grid>
+                                                <Label Text="HISTÓRICO" FontSize="10" FontAttributes="Bold" TextColor="{StaticResource GoldPrimary}" VerticalOptions="Center" />
+                                                <Grid.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding BindingContext.AbrirDetalheCommand, Source={x:Reference PageRoot}}" CommandParameter="{Binding .}" />
+                                                </Grid.GestureRecognizers>
+                                            </Grid>
+                                        </Border>
+
+                                        <Border Grid.Column="2"
+                                                StrokeShape="RoundRectangle 10"
+                                                BackgroundColor="{StaticResource GoldPrimary}"
+                                                Padding="12,8">
+                                            <Grid>
+                                                <Label Text="+ SIMULAÇÃO" FontSize="10" FontAttributes="Bold" TextColor="#0A0A0C" VerticalOptions="Center" />
+                                                <Grid.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding BindingContext.NovaSimulacaoParaClienteCommand, Source={x:Reference PageRoot}}" CommandParameter="{Binding .}" />
+                                                </Grid.GestureRecognizers>
+                                            </Grid>
+                                        </Border>
+
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                </VerticalStackLayout>
+            </ScrollView>
+
+        </Grid>
     </Grid>
 </ContentPage>

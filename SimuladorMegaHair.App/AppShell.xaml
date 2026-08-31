@@ -14,6 +14,7 @@
     <ShellContent Title="Configurações" ContentTemplate="{DataTemplate views:SettingsPage}" Route="SettingsPage" />
     <ShellContent Title="Catálogo" ContentTemplate="{DataTemplate views:CatalogoPage}" Route="CatalogoPage" />
     <ShellContent Title="Clientes" ContentTemplate="{DataTemplate views:ClientesPage}" Route="ClientesPage" />
+    <ShellContent Title="Cliente" ContentTemplate="{DataTemplate views:ClienteDetalhePage}" Route="ClienteDetalhePage" />
     <ShellContent Title="Orçamentos" ContentTemplate="{DataTemplate views:OrcamentosPage}" Route="OrcamentosPage" />
 
 </Shell>

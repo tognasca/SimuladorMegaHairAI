@@ -5,17 +5,35 @@ using SimuladorMegaHair.App.Services;
 using SimuladorMegaHair.Domain.Enums;
 using SimuladorMegaHair.Domain.Models;
 using System.Collections.ObjectModel;
-using static SimuladorMegaHair.Api.Controllers.SimulacoesController;
 
 namespace SimuladorMegaHair.App.ViewModels;
 
 [QueryProperty(nameof(FotoPath), "FotoPath")]
+[QueryProperty(nameof(ClienteId), "ClienteId")]
+[QueryProperty(nameof(ClienteNome), "ClienteNome")]
 public partial class StyleSelectionViewModel : BaseViewModel
 {
     private readonly ApiService _apiService;
     private string? _fotoServidorPath;
     private double _lastWidth;
     private double _lastHeight;
+
+    /// <summary>
+    /// Cliente vinculado a esta simulação (opcional). Vem preenchido quando
+    /// o fluxo começou em "Buscar Cliente" → "Nova simulação para este
+    /// cliente". Trafega como string na navegação (Shell não converte Guid?
+    /// automaticamente) e é convertido na hora de montar o request.
+    /// </summary>
+    [ObservableProperty]
+    private string? clienteId;
+
+    [ObservableProperty]
+    private string? clienteNome;
+
+    public bool TemClienteVinculado => !string.IsNullOrWhiteSpace(ClienteNome);
+
+    partial void OnClienteNomeChanged(string? value)
+        => OnPropertyChanged(nameof(TemClienteVinculado));
 
     // ═════════════════════════════════════════════════════════
     // PROPRIEDADES OBSERVÁVEIS - BÁSICAS
@@ -196,7 +214,10 @@ public partial class StyleSelectionViewModel : BaseViewModel
     };
 
     // ID da simulação atual para chamar o endpoint de volume
-    private int _simulacaoAtualId;
+    // (era um "int" derivado de GetHashCode() do Guid — nunca batia com o
+    // registro real no banco, então o ajuste de volume sempre falhava
+    // silenciosamente. Corrigido para usar o Guid de verdade.)
+    private Guid? _simulacaoAtualId;
 
     // ═════════════════════════════════════════════════════════
     // CONSTRUTOR
@@ -241,7 +262,7 @@ public partial class StyleSelectionViewModel : BaseViewModel
     [RelayCommand(AllowConcurrentExecutions = false)]
     private async Task AjustarVolume(int nivel)
     {
-        if (!TemResultado || _simulacaoAtualId <= 0)
+        if (!TemResultado || _simulacaoAtualId is null || _simulacaoAtualId == Guid.Empty)
         {
             await Shell.Current.DisplayAlert("Info",
                 "Gere uma simulação primeiro para ajustar o volume.", "OK");
@@ -261,7 +282,7 @@ public partial class StyleSelectionViewModel : BaseViewModel
                 ImagemResultadoPath = FotoResultadoUrl
             };
 
-            var resposta = await _apiService.AjustarVolumeAsync(_simulacaoAtualId, request);
+            var resposta = await _apiService.AjustarVolumeAsync(_simulacaoAtualId.Value, request);
 
             if (resposta != null && !string.IsNullOrWhiteSpace(resposta.FotoResultadoUrl))
             {
@@ -451,7 +472,8 @@ public partial class StyleSelectionViewModel : BaseViewModel
                     Cor = CorSelecionada,
                     TipoCabelo = TipoCabeloSelecionado,
                     MetodoMegaHair = MetodoSelecionado,
-                    Provider = ImageProvider.Replicate
+                    Provider = ImageProvider.Replicate,
+                    ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null
                 };
 
                 resultado = await _apiService.CriarSimulacaoAsync(request)
@@ -467,7 +489,7 @@ public partial class StyleSelectionViewModel : BaseViewModel
             FotoResultadoUrl = resultado.FotoResultadoUrl;
             ValorAtual = resultado.ValorEstimado ?? 0;
             TemResultado = true;
-            _simulacaoAtualId = resultado.Id is Guid g ? g.GetHashCode() : resultado.Id.GetHashCode();
+            _simulacaoAtualId = resultado.Id;
 
             ComprimentoSelecionado = resultado.Comprimento;
             CorSelecionada = resultado.Cor;
@@ -502,7 +524,7 @@ public partial class StyleSelectionViewModel : BaseViewModel
         TipoCabeloSelecionado = item.TipoCabelo;
         MetodoSelecionado = item.MetodoMegaHair;
         TemResultado = true;
-        _simulacaoAtualId = item.Id is Guid g ? g.GetHashCode() : item.Id.GetHashCode();
+        _simulacaoAtualId = item.Id;
 
         ResetarVolume();
 

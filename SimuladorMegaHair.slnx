@@ -3,4 +3,5 @@
   <Project Path="SimuladorMegaHair.App/SimuladorMegaHair.App.csproj" />
   <Project Path="SimuladorMegaHair.Domain/SimuladorMegaHair.Domain.csproj" />
   <Project Path="SimuladorMegaHair.Infrastructure/SimuladorMegaHair.Infrastructure.csproj" />
+  <Project Path="SimuladorMegaHair.Web/SimuladorMegaHair.Web.csproj" />
 </Solution>

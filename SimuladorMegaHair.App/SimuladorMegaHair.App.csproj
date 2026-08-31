@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net8.0-windows10.0.19041.0</TargetFrameworks>
-		<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+		<TargetFrameworks>net8.0-windows10.0.19041.0;net8.0-android</TargetFrameworks>
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>SimuladorMegaHair.App</RootNamespace>
@@ -18,13 +17,26 @@
 
 		<WindowsPackageType>None</WindowsPackageType>
 
-		<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
-		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+		<!-- Windows -->
+		<SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('-windows'))">10.0.17763.0</SupportedOSPlatformVersion>
+		<TargetPlatformMinVersion Condition="$(TargetFramework.Contains('-windows'))">10.0.17763.0</TargetPlatformMinVersion>
+		<RuntimeIdentifier Condition="$(TargetFramework.Contains('-windows'))">win10-x64</RuntimeIdentifier>
+
+		<!-- Android: mínimo Android 8.0 (API 26) — cobre praticamente todo
+		     tablet/TV box comprado nos últimos anos; alvo de compilação
+		     Android 14 (API 34), a versão mais recente estável na época
+		     deste ajuste. -->
+		<SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('-android'))">26.0</SupportedOSPlatformVersion>
+		<TargetPlatformMinVersion Condition="$(TargetFramework.Contains('-android'))">26.0</TargetPlatformMinVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
-		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+		<!--
+		  Identidade visual do salão (dourado/preto), não o roxo padrão
+		  do template MAUI (#512BD4) que estava aqui antes.
+		-->
+		<MauiIcon Include="Resources\Images\logo_tati.png" Color="#0A0A0C" />
+		<MauiSplashScreen Include="Resources\Images\logo_tati.png" Color="#0A0A0C" BaseSize="320,320" />
 		<MauiImage Include="Resources\Images\*" />
 		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
 		<MauiFont Include="Resources\Fonts\*" />
@@ -50,7 +62,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\SimuladorMegaHair.Api\SimuladorMegaHair.Api.csproj" />
+	  <ProjectReference Include="..\SimuladorMegaHair.Domain\SimuladorMegaHair.Domain.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

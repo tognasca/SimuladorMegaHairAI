@@ -1,0 +1,112 @@
+﻿@page "/catalogo"
+@rendermode InteractiveServer
+@inject ApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>Catálogo</PageTitle>
+
+<div style="max-width:1100px; margin:0 auto; display:flex; flex-direction:column; gap:18px;">
+
+    <div>
+        <h2 style="letter-spacing:3px; font-size:22px; color:var(--gold); margin-bottom:4px;">CATÁLOGO</h2>
+        <p style="color:var(--text-secondary); font-size:13px;">Estilos, cores e comprimentos disponíveis</p>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input @bind="filtroCor" placeholder="Cor (ex: loiro)"
+               style="flex:1; min-width:140px; padding:10px 14px; border-radius:10px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);" />
+
+        <select @bind="filtroComprimento" style="padding:10px; border-radius:10px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
+            <option value="">Comprimento (todos)</option>
+            @foreach (var c in comprimentos)
+            {
+                <option value="@c">@c</option>
+            }
+        </select>
+
+        <select @bind="filtroTipo" style="padding:10px; border-radius:10px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
+            <option value="">Tipo (todos)</option>
+            @foreach (var t in tipos)
+            {
+                <option value="@t">@t</option>
+            }
+        </select>
+
+        <button class="btn-gold" @onclick="CarregarAsync">FILTRAR</button>
+    </div>
+
+    @if (carregando)
+    {
+        <p style="text-align:center; color:var(--text-muted);">Carregando...</p>
+    }
+    else if (itens.Count == 0)
+    {
+        <p style="text-align:center; color:var(--text-muted); margin-top:20px;">
+            Nenhum item encontrado com esses filtros.
+        </p>
+    }
+    else
+    {
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px;">
+            @foreach (var item in itens)
+            {
+                <div class="card" style="padding:0; overflow:hidden; display:flex; flex-direction:column;">
+                    <img src="@item.FotoPath" style="width:100%; aspect-ratio:1/1; object-fit:cover;" />
+                    <div style="padding:12px; display:flex; flex-direction:column; gap:4px;">
+                        <div style="font-weight:700; font-size:14px;">@item.Titulo</div>
+                        <div style="font-size:11px; color:var(--text-muted);">@item.Comprimento • @item.Cor</div>
+                        <div style="font-size:11px; color:var(--text-muted);">@item.TipoCabelo</div>
+                        <div style="font-size:15px; font-weight:700; color:var(--gold); margin-top:4px;">
+                            R$ @item.PrecoBase.ToString("N2")
+                        </div>
+                        <button class="btn-gold" style="margin-top:6px; font-size:10px; padding:8px;" @onclick="() => SimularEsteEstilo(item)">
+                            SIMULAR ESTE ESTILO
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+@code {
+    private bool carregando;
+    private string filtroCor = string.Empty;
+    private string filtroComprimento = string.Empty;
+    private string filtroTipo = string.Empty;
+    private List<CatalogoItem> itens = new();
+
+    private readonly List<string> comprimentos = new() { "30 cm", "45 cm", "55 cm", "65 cm", "75 cm", "85 cm" };
+    private readonly List<string> tipos = new() { "Liso", "Ondulado", "Cacheado", "Crespo" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        carregando = true;
+        try
+        {
+            itens = await Api.GetCatalogoAsync(
+                string.IsNullOrWhiteSpace(filtroCor) ? null : filtroCor,
+                string.IsNullOrWhiteSpace(filtroComprimento) ? null : filtroComprimento,
+                string.IsNullOrWhiteSpace(filtroTipo) ? null : filtroTipo);
+        }
+        finally
+        {
+            carregando = false;
+        }
+    }
+
+    private void SimularEsteEstilo(CatalogoItem item)
+    {
+        var url = $"/captura?comprimento={Uri.EscapeDataString(item.Comprimento)}" +
+                  $"&cor={Uri.EscapeDataString(item.Cor)}" +
+                  $"&tipo={Uri.EscapeDataString(item.TipoCabelo)}" +
+                  $"&metodo={Uri.EscapeDataString(item.MetodoMegaHair)}";
+        Nav.NavigateTo(url);
+    }
+}
