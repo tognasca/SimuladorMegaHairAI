@@ -1,4 +1,4 @@
-﻿@page "/clientes"
+@page "/clientes"
 @rendermode InteractiveServer
 @inject ApiClient Api
 @inject NavigationManager Nav
@@ -56,7 +56,7 @@
                         </div>
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <button class="btn-outline" style="padding:8px 12px; font-size:10px;" @onclick="() => Nav.NavigateTo($"/clientes/{c.Id}")">
+                        <button class="btn-outline" style="padding:8px 12px; font-size:10px;" @onclick='() => Nav.NavigateTo($"/clientes/{c.Id}")'>
                             HISTÓRICO
                         </button>
                         <button class="btn-gold" style="padding:8px 12px; font-size:10px;" @onclick="() => NovaSimulacaoParaCliente(c)">

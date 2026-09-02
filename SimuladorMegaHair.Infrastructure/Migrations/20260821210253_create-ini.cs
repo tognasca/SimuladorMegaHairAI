@@ -5,7 +5,7 @@
 namespace SimuladorMegaHair.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class createini : Migration
+    public partial class CreateIni : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

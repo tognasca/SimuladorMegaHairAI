@@ -1,8 +1,9 @@
-﻿using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
+﻿using Microsoft.Extensions.Logging;
 using SimuladorMegaHair.Domain.Enums;
 using SimuladorMegaHair.Domain.Models;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System.Text.RegularExpressions;
 
 namespace SimuladorMegaHair.Infrastructure.Services;
@@ -103,6 +104,66 @@ public static class HairMaskGenerator
         // reassegura após blur
         ProtegerRosto(mask, fx, fy, frx * .90f, fry * 1.00f, chinY + fry * .08f);
         ProtegerCentroDuro(mask, fx, frx * .40f, chinY + fry * .10f, h);
+
+        // ── 8. Expande sobre pixels de cabelo REAL que ficaram de fora
+        //      do envelope geométrico (evita "meio preto meio loiro"
+        //      quando uma mecha escapa da área prevista).
+        ExpandirParaCabeloReal(img, mask, perfil, rx0, ry0, rx1, ry1);
+
+        // ── 9. SEGUNDA CAMADA: Segmentação por IA real (Grounded SAM) ──
+        // Se disponível, intersecta o resultado da IA com o envelope
+        // geométrico. A IA só pode REFINAR (reduzir) a área — nunca
+        // expandi-la para fora do que a geometria já considera seguro.
+        if (http is not null && repOpts is not null && logger is not null)
+        {
+            var iaMaskPath = await HairSegmentationService.SegmentarCabeloAsync(
+                http, repOpts, imagemOriginalPath, outputFolder, logger, ct);
+
+            if (iaMaskPath is not null)
+            {
+                try
+                {
+                    // ── Proteção para casos extremos: cliente careca, cabelo
+                    // raspado, ou mudança drástica curto→longo. Nesses casos
+                    // a IA de segmentação pode encontrar POUCO OU NENHUM
+                    // cabelo na foto atual. Se intersectássemos cegamente, a
+                    // máscara final zeraria e a simulação não geraria cabelo
+                    // nenhum — inaceitável para o negócio (o cabelo DESEJADO
+                    // nunca depende do cabelo ATUAL).
+                    //
+                    // Regra: só aplicamos a interseção se a IA encontrou uma
+                    // área plausível de cabelo (>= 8% da área do envelope
+                    // geométrico). Abaixo disso, confiamos só na geometria.
+                    var areaIa = await CalcularAreaBrancaAsync(iaMaskPath, ct);
+                    var areaGeo = ContarPixelsBrancos(mask);
+                    var proporcao = areaGeo > 0 ? (float)areaIa / areaGeo : 0f;
+
+                    if (proporcao >= 0.08f)
+                    {
+                        await IntersectarComMascaraIaAsync(mask, iaMaskPath, ct);
+                        logger.LogInformation(
+                            "[MASK] Máscara refinada por IA real (Grounded SAM) aplicada ({P:P0} de cobertura).",
+                            proporcao);
+                    }
+                    else
+                    {
+                        logger.LogInformation(
+                            "[MASK] IA encontrou pouco/nenhum cabelo na foto atual ({P:P0} — provável careca, " +
+                            "raspado ou mudança drástica de comprimento). Mantendo só a máscara geométrica, " +
+                            "calculada a partir do comprimento DESEJADO, não do cabelo atual.",
+                            proporcao);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "[MASK] Falha ao combinar máscara de IA; seguindo só com geométrica.");
+                }
+                finally
+                {
+                    try { if (File.Exists(iaMaskPath)) File.Delete(iaMaskPath); } catch { /* ignore */ }
+                }
+            }
+        }
 
         Directory.CreateDirectory(outputFolder);
         var path = Path.Combine(outputFolder, $"mask_{modo}_{Guid.NewGuid():N}.png");
@@ -225,78 +286,96 @@ public static class HairMaskGenerator
         // se não achou semente (chapéu, careca, luz forte) devolve o mapa cru
         if (fila.Count == 0) return map;
 
-        // Detecta onde está o cabelo ESCURO/ORIGINAL na foto
-        // e pinta de BRANCO na máscara (para a IA recriar/recolore)
-        var maskExpanded = ExpandirParaCabeloReal(img, mask, fx, fy, frx, fry, chinY, cm);
+        int[] dx8 = { -1, 1, 0, 0, -1, -1, 1, 1 };
+        int[] dy8 = { 0, 0, -1, 1, -1, 1, -1, 1 };
 
-        // ── 6. SEGUNDA CAMADA: Segmentação por IA real (Grounded SAM) ──
-        // Se disponível, intersecta o resultado da IA com o envelope
-        // geométrico. A IA só pode REFINAR (reduzir) a área — nunca
-        // expandi-la para fora do que a geometria já considera seguro.
-        // Isso corrige o principal ponto fraco do método antigo (que era
-        // 100% heurística de cor/geometria, sem nenhum modelo treinado).
-        if (http is not null && repOpts is not null && logger is not null)
+        while (fila.Count > 0)
         {
-            var iaMaskPath = await HairSegmentationService.SegmentarCabeloAsync(
-                http, repOpts, imagemOriginalPath, outputFolder, logger, ct);
+            int i = fila.Dequeue();
+            int cx = i % w, cy = i / w;
 
-            if (iaMaskPath is not null)
+            for (int k = 0; k < 8; k++)
             {
-                try
+                int nx = cx + dx8[k], ny = cy + dy8[k];
+                if (nx < x0 || nx > x1 || ny < y0 || ny > y1) continue;
+                int ni = ny * w + nx;
+                if (map[ni] == 1 && outMap[ni] == 0)
                 {
-                    // ── Proteção para casos extremos: cliente careca, cabelo
-                    // raspado, ou mudança drástica curto→longo. Nesses casos
-                    // a IA de segmentação pode encontrar POUCO OU NENHUM
-                    // cabelo na foto atual (porque quase não há cabelo pra
-                    // detectar). Se intersectássemos cegamente, a máscara
-                    // final zeraria e a simulação simplesmente não geraria
-                    // cabelo nenhum — inaceitável para o negócio (o cabelo
-                    // DESEJADO nunca depende do cabelo ATUAL).
-                    //
-                    // Regra: só aplicamos a interseção se a IA encontrou uma
-                    // área plausível de cabelo (>= 8% da área do envelope
-                    // geométrico). Abaixo disso, confiamos só na geometria,
-                    // que é calculada a partir do COMPRIMENTO DESEJADO e da
-                    // posição do rosto — não do cabelo atual — e por isso
-                    // funciona igual para careca, raspado, curto→longo,
-                    // longo→curto ou qualquer combinação.
-                    var areaIa = await CalcularAreaBrancaAsync(iaMaskPath, ct);
-                    var areaGeo = ContarPixelsBrancos(maskExpanded);
-                    var proporcao = areaGeo > 0 ? (float)areaIa / areaGeo : 0f;
-
-                    if (proporcao >= 0.08f)
-                    {
-                        await IntersectarComMascaraIaAsync(maskExpanded, iaMaskPath, ct);
-                        logger.LogInformation(
-                            "[MASK] Máscara refinada por IA real (Grounded SAM) aplicada ({P:P0} de cobertura).",
-                            proporcao);
-                    }
-                    else
-                    {
-                        logger.LogInformation(
-                            "[MASK] IA encontrou pouco/nenhum cabelo na foto atual ({P:P0} — provável careca, " +
-                            "raspado ou mudança drástica de comprimento). Mantendo só a máscara geométrica, " +
-                            "calculada a partir do comprimento DESEJADO, não do cabelo atual.",
-                            proporcao);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "[MASK] Falha ao combinar máscara de IA; seguindo só com geométrica.");
-                }
-                finally
-                {
-                    try { if (File.Exists(iaMaskPath)) File.Delete(iaMaskPath); } catch { /* ignore */ }
+                    outMap[ni] = 1;
+                    fila.Enqueue(ni);
                 }
             }
         }
 
-        Directory.CreateDirectory(outputFolder);
-        // Salva a versão expandida
-        var maskPath = Path.Combine(outputFolder, $"mask_{modo}_{Guid.NewGuid()}.png");
-        await maskExpanded.SaveAsPngAsync(maskPath, ct);
+        return outMap;
+    }
 
-        return (maskPath, modo);
+    /// <summary>
+    /// Expande a área branca da máscara sobre pixels que também parecem
+    /// cabelo (mesma cromaticidade da amostra), mesmo que estejam fora do
+    /// envelope geométrico original — desde que estejam ADJACENTES a uma
+    /// área já branca. Resolve o caso de mechas que escapam da região
+    /// prevista pela geometria ("meio preto meio loiro" no resultado).
+    /// Nunca pinta ilhas de cabelo isoladas longe da máscara já existente.
+    /// </summary>
+    private static void ExpandirParaCabeloReal(
+        Image<Rgba32> originalImg,
+        Image<Rgba32> mask,
+        HairProfile hp,
+        int x0, int y0, int x1, int y1)
+    {
+        const int raioVizinhanca = 3;
+        var paraPintar = new List<(int x, int y)>();
+
+        x0 = Math.Max(0, x0); y0 = Math.Max(0, y0);
+        x1 = Math.Min(mask.Width - 1, x1); y1 = Math.Min(mask.Height - 1, y1);
+
+        mask.ProcessPixelRows(originalImg, (mAcc, iAcc) =>
+        {
+            for (int y = y0; y <= y1; y++)
+            {
+                var mRow = mAcc.GetRowSpan(y);
+                var iRow = iAcc.GetRowSpan(y);
+
+                for (int x = x0; x <= x1; x++)
+                {
+                    if (mRow[x].R > 127) continue;      // já branco
+                    var p = iRow[x];
+                    if (EhPele(p)) continue;
+
+                    float lum = Lum(p);
+                    if (lum > 245) continue;
+
+                    float soma = Math.Max(1, p.R + p.G + p.B);
+                    float nr = p.R / soma, ng = p.G / soma, nb = p.B / soma;
+                    float d = MathF.Abs(nr - hp.NR) + MathF.Abs(ng - hp.NG) + MathF.Abs(nb - hp.NB);
+                    bool pareceCabelo = hp.Acromatico ? d < 0.14f : d < 0.10f;
+                    if (!pareceCabelo) continue;
+
+                    // só expande se houver vizinhança branca próxima (evita
+                    // pintar manchas de cabelo soltas, longe da região já
+                    // considerada editável)
+                    bool vizinhoBranco = false;
+                    for (int dy = -raioVizinhanca; dy <= raioVizinhanca && !vizinhoBranco; dy++)
+                    {
+                        int ny = y + dy;
+                        if (ny < 0 || ny >= mask.Height) continue;
+                        var vRow = mAcc.GetRowSpan(ny);
+                        for (int dx = -raioVizinhanca; dx <= raioVizinhanca; dx++)
+                        {
+                            int nx = x + dx;
+                            if (nx < 0 || nx >= mask.Width) continue;
+                            if (vRow[nx].R > 127) { vizinhoBranco = true; break; }
+                        }
+                    }
+
+                    if (vizinhoBranco) paraPintar.Add((x, y));
+                }
+            }
+        });
+
+        foreach (var (x, y) in paraPintar)
+            mask[x, y] = White;
     }
 
     /// <summary>
@@ -369,37 +448,6 @@ public static class HairMaskGenerator
                 }
             }
         });
-    }
-    /// <summary>
-    /// Expande a máscara branca para cobrir PIXELS DE CABELO REAL que ficaram de fora
-    /// da zona geométrica. Resolve o problema de "meio preto meio loiro".
-    /// </summary>
-    private static Image<Rgba32> ExpandirParaCabeloReal(
-        Image<Rgba32> originalImg,
-        Image<Rgba32> maskGeometrica,
-        float cx, float cy,
-        float frx, float fry,
-        float chinY,
-        int comprimentoCm)
-    {
-        var result = maskGeometrica.Clone();
-        int w = originalImg.Width;
-        int h = originalImg.Height;
-
-            for (int k = 0; k < 8; k++)
-            {
-                int nx = cx + dx[k], ny = cy + dy[k];
-                if (nx < x0 || nx > x1 || ny < y0 || ny > y1) continue;
-                int ni = ny * w + nx;
-                if (map[ni] == 1 && outMap[ni] == 0)
-                {
-                    outMap[ni] = 1;
-                    fila.Enqueue(ni);
-                }
-            }
-        }
-
-        return outMap;
     }
 
     // ════════════════════════════════════════════════════════
@@ -666,6 +714,7 @@ public static class HairMaskGenerator
                     if (row[x].R > 127) brancos++;
             }
         });
+        return total == 0 ? 0 : (double)brancos / total;
     }
 
     private static int ExtrairCm(string? comprimento)
@@ -681,8 +730,7 @@ public static class HairMaskGenerator
         // "Extra Longo"), sem número — antes disso, TODO texto sem
         // dígito caía no default fixo de 55cm, inclusive "Extra Longo",
         // o que fazia a máscara nunca se estender o suficiente para
-        // mega hair de verdade. Mapeamento alinhado com as mesmas
-        // faixas usadas em TraduzirComprimentoFeminino/ResolverModo.
+        // mega hair de verdade.
         var texto = comprimento.ToLowerInvariant();
         if (texto.Contains("extra") && texto.Contains("longo")) return 85;
         if (texto.Contains("longo")) return 65;
@@ -690,41 +738,5 @@ public static class HairMaskGenerator
         if (texto.Contains("curto")) return 30;
 
         return 55;
-    }
-
-    private static HairEditMode ResolverModo(int cm, bool cabeloAtualLongo)
-    {
-        // Lógica alinhada ao mercado de mega hair feminino
-        if (cm <= 25)
-            return cabeloAtualLongo ? HairEditMode.Shorten : HairEditMode.Recolor; // Pixie/Bob
-        if (cm <= 45)
-            return cabeloAtualLongo ? HairEditMode.Shorten : HairEditMode.Extend;    // Shoulder
-        return HairEditMode.Extend; // Longo/Mega é sempre extend
-    }
-
-    private static bool DetectarSeCabeloLongoAtual(
-        Image<Rgba32> img, float fx, float faceBottom, float frx, float fry)
-    {
-        // Amostra região abaixo do queixo e laterais
-        int startY = (int)(faceBottom - fry * 0.5f); // inclui parte das bochechas
-        int endY = Math.Min(img.Height - 1, (int)(faceBottom + fry * 3.0f)); // mais profundo p/ mulher
-        int startX = Math.Max(0, (int)(fx - frx * 2.5f));
-        int endX = Math.Min(img.Width - 1, (int)(fx + frx * 2.5f));
-
-        int total = 0, hair = 0;
-        for (int y = startY; y < endY; y += 3) // passo menor para melhor detecção
-            for (int x = startX; x < endX; x += 3)
-            {
-                total++;
-                if (PareceCabeloFeminino(img[x, y])) hair++;
-            }
-        return total > 0 && (float)hair / total > 0.06f; // threshold levemente menor
-    }
-
-    private static int ExtrairCm(string? c)
-    {
-        if (string.IsNullOrWhiteSpace(c)) return 55;
-        var m = Regex.Match(c, @"\d+");
-        return m.Success && int.TryParse(m.Value, out int cm) ? Math.Clamp(cm, 15, 120) : 55;
     }
 }

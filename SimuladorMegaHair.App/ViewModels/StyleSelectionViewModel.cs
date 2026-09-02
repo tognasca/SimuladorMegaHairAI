@@ -98,8 +98,6 @@ public partial class StyleSelectionViewModel : BaseViewModel
     // PROPRIEDADES DE VOLUME
     // ═════════════════════════════════════════════════════════
 
-    private int _volumeNivel = 2; // 1=100g, 2=200g, 3=300g, 4=400g
-
     /// <summary>
     /// Nível selecionado (1-4). Controla qual botão fica ativo no UI.
     /// </summary>
@@ -364,7 +362,6 @@ public partial class StyleSelectionViewModel : BaseViewModel
 
     private void ResetarVolume()
     {
-        _volumeNivel = 2;
         VolumeNivel = 2;
         _fotoVolumeProcessada = null;
         VolumeTexto = "💫 Perfeito para uso diário (200g)";

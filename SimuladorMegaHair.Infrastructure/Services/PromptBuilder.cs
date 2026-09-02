@@ -99,17 +99,10 @@ public static class PromptBuilder
             ? "yellow hair, orange hair, golden yellow, carrot color, brassy tones, highlight streaks only, "
             : "";
 
-        string antiCor = "";
-
-        if (corNorm.Contains("loiro") || corNorm.Contains("platinado") || corNorm.Contains("claro"))
-            antiCor = "black hair, dark brown hair, yellow hair, orange hair, ";
-        else if (corNorm.Contains("preto") || corNorm.Contains("castanho") || corNorm.Contains("chocolate"))
-            antiCor = "blonde hair, platinum, ";
-
         return
             "hair behind back only, hair tucked behind shoulders, leftover old hair, " +
-"cleavage, bare breasts, bigger breasts, boob job, nude, low-cut, " +
-"different body, different clothes, face change, " +
+            "cleavage, bare breasts, bigger breasts, boob job, nude, low-cut, " +
+            "different body, different clothes, face change, " +
             "cleavage, low cut top, naked chest, bare breasts, changed clothing, bra, swimsuit, underwear, " + // 🔒 NEGAÇÃO RÍGIDA DE DECOTE
             "short buzzcut, bald, altered facial features, different person, distorted face, cartoon, low resolution";
     }

@@ -13,7 +13,7 @@ namespace SimuladorMegaHair.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20260821210253_create-ini")]
-    partial class createini
+    partial class CreateIni
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

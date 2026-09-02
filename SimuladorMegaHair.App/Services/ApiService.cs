@@ -49,7 +49,7 @@ public class ApiService
 
             return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             //Debug.WriteLine($"[ApiService] Erro ao ajustar volume: {ex.Message}");
             throw;
