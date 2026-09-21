@@ -74,6 +74,7 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+//builder.Services.AddApplicationInsightsTelemetry();
 
 // ═══════════════════════════════════════════════════════════
 //  BUILD & PIPELINE

@@ -52,12 +52,31 @@ window.megaHairCamera = {
     /**
      * Captura o frame atual do <video> e retorna como PNG base64
      * (sem o prefixo "data:image/png;base64,").
+     *
+     * Espera até 1,5s pelas dimensões do vídeo ficarem disponíveis antes
+     * de desistir — em alguns navegadores/aparelhos, videoWidth/videoHeight
+     * só ficam populados alguns instantes depois do play() resolver
+     * (condição de corrida real do getUserMedia, não erro nosso).
+     *
      * @param {string} videoElementId
-     * @returns {string|null}
+     * @returns {Promise<string|null>}
      */
-    capturar: function (videoElementId) {
+    capturar: async function (videoElementId) {
         const video = document.getElementById(videoElementId);
-        if (!video || video.videoWidth === 0) return null;
+        if (!video) {
+            console.error("[Câmera] Elemento de vídeo não encontrado:", videoElementId);
+            return null;
+        }
+
+        const inicio = Date.now();
+        while (video.videoWidth === 0 && (Date.now() - inicio) < 1500) {
+            await new Promise(r => setTimeout(r, 100));
+        }
+
+        if (video.videoWidth === 0) {
+            console.error("[Câmera] videoWidth continua 0 após esperar — o stream não está realmente conectado a este elemento.");
+            return null;
+        }
 
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;

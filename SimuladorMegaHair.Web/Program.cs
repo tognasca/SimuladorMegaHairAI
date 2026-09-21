@@ -7,6 +7,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// ⚠️ Limite de tamanho de mensagem do SignalR (canal em tempo real do
+// Blazor Server). O padrão é pequeno (~32 KB) — insuficiente para uma
+// foto capturada pela câmera, que some no JS interop como uma string
+// base64 de vários MB. Sem aumentar isso, o circuito é derrubado à
+// força assim que a foto tenta trafegar (sintoma: "Connection closed
+// with an error" logo após clicar em "Tirar foto").
+builder.Services.AddSignalR(options =>
+{
+    options.MaximumReceiveMessageSize = 15 * 1024 * 1024; // 15 MB
+});
+
 // ── Cliente HTTP para o backend (SimuladorMegaHair.Api) ─────────
 // O endereço vem de appsettings.json (seção "Api:BaseUrl") — configure
 // para o IP da máquina que roda a API na rede do salão, ex:

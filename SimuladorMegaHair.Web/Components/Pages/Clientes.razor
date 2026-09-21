@@ -37,6 +37,12 @@
     {
         <p style="text-align:center; color:var(--text-muted);">Carregando...</p>
     }
+    else if (!string.IsNullOrEmpty(erro))
+    {
+        <div class="card" style="text-align:center; color:#E06565; font-size:13px;">
+            @erro
+        </div>
+    }
     else if (clientes.Count == 0)
     {
         <p style="text-align:center; color:var(--text-muted); margin-top:20px;">
@@ -56,7 +62,7 @@
                         </div>
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <button class="btn-outline" style="padding:8px 12px; font-size:10px;" @onclick='() => Nav.NavigateTo($"/clientes/{c.Id}")'>
+                        <button class="btn-outline" style="padding:8px 12px; font-size:10px;" @onclick="() => AbrirDetalhe(c)">
                             HISTÓRICO
                         </button>
                         <button class="btn-gold" style="padding:8px 12px; font-size:10px;" @onclick="() => NovaSimulacaoParaCliente(c)">
@@ -74,6 +80,7 @@
     private string termoBusca = string.Empty;
     private bool carregando;
     private bool mostrandoNovo;
+    private string? erro;
     private string novoNome = string.Empty;
     private string novoTelefone = string.Empty;
     private string novoEmail = string.Empty;
@@ -100,9 +107,15 @@
     private async Task BuscarAsync()
     {
         carregando = true;
+        erro = null;
         try
         {
             clientes = await Api.BuscarClientesAsync(termoBusca);
+        }
+        catch (Exception ex)
+        {
+            erro = $"Não foi possível conectar ao servidor. Verifique se a API está rodando. ({ex.Message})";
+            clientes = new();
         }
         finally
         {
@@ -125,6 +138,11 @@
 
         if (criado is not null)
             NovaSimulacaoParaCliente(criado);
+    }
+
+    private void AbrirDetalhe(ClienteResponse cliente)
+    {
+        Nav.NavigateTo($"/clientes/{cliente.Id}");
     }
 
     private void NovaSimulacaoParaCliente(ClienteResponse cliente)

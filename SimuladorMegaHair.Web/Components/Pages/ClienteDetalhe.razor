@@ -13,6 +13,12 @@
     {
         <p style="text-align:center; color:var(--text-muted);">Carregando...</p>
     }
+    else if (!string.IsNullOrEmpty(erro))
+    {
+        <div class="card" style="text-align:center; color:#E06565; font-size:13px;">
+            @erro
+        </div>
+    }
     else if (cliente is null)
     {
         <p style="text-align:center; color:var(--text-muted);">Cliente não encontrado.</p>
@@ -77,6 +83,7 @@
 
     private bool carregando = true;
     private bool editando;
+    private string? erro;
     private ClienteDetalheResponse? cliente;
 
     private string editNome = string.Empty;
@@ -85,14 +92,24 @@
 
     protected override async Task OnInitializedAsync()
     {
-        cliente = await Api.ObterClienteAsync(Id);
-        if (cliente is not null)
+        try
         {
-            editNome = cliente.Nome;
-            editTelefone = cliente.Telefone ?? string.Empty;
-            editEmail = cliente.Email ?? string.Empty;
+            cliente = await Api.ObterClienteAsync(Id);
+            if (cliente is not null)
+            {
+                editNome = cliente.Nome;
+                editTelefone = cliente.Telefone ?? string.Empty;
+                editEmail = cliente.Email ?? string.Empty;
+            }
         }
-        carregando = false;
+        catch (Exception ex)
+        {
+            erro = $"Não foi possível conectar ao servidor. Verifique se a API está rodando. ({ex.Message})";
+        }
+        finally
+        {
+            carregando = false;
+        }
     }
 
     private async Task SalvarEdicaoAsync()
