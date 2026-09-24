@@ -1,13 +1,8 @@
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
-using SimuladorMegaHair.Api.Seguranca;
-using SimuladorMegaHair.Api.Servicos;
 using SimuladorMegaHair.Domain.Interfaces;
 using SimuladorMegaHair.Infrastructure.Configuration;
 using SimuladorMegaHair.Infrastructure.Data;
 using SimuladorMegaHair.Infrastructure.Services;
-using SimuladorMegaHair.Infrastructure.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -119,7 +114,9 @@ builder.Services.AddHttpClient<IImageSimulationService, SimulacaoPipelineService
 });
 
 // ═══════════════════════════════════════════════════════════
-//  CORS
+//  CORS — restrito às origens conhecidas do salão (Web/App),
+//  configuradas em "AllowedOrigins" no appsettings. Nunca use
+//  AllowAnyOrigin() aqui: a API expõe dados pessoais de clientes.
 // ═══════════════════════════════════════════════════════════
 //
 // FASE 1: a política "AllowAll" (qualquer origem, qualquer método, qualquer
@@ -131,20 +128,19 @@ builder.Services.AddHttpClient<IImageSimulationService, SimulacaoPipelineService
 var origensPermitidas = builder.Configuration
     .GetSection("Cors:OrigensPermitidas").Get<string[]>() ?? Array.Empty<string>();
 
+var allowedOrigins = builder.Configuration
+    .GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("PainelDoSalao", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        if (origensPermitidas.Length > 0)
-        {
-            policy.WithOrigins(origensPermitidas)
-                  .AllowAnyMethod()
-                  .WithHeaders("Content-Type", ApiKeyDefaults.Header);
-        }
-        // Sem origens configuradas: nenhuma política é aplicada, ou seja,
-        // nenhuma chamada de navegador de outra origem é permitida.
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
+//builder.Services.AddApplicationInsightsTelemetry();
 
 // ═══════════════════════════════════════════════════════════
 //  BUILD & PIPELINE
@@ -152,48 +148,17 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (string.IsNullOrWhiteSpace(apiKey))
+// Swagger
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.Logger.LogWarning(
-        "MEGAHAIR_API_KEY não configurada: TODAS as requisições autenticadas " +
-        "serão recusadas (falha fechada). Configure a variável de ambiente " +
-        "MEGAHAIR_API_KEY ou 'dotnet user-secrets set MEGAHAIR_API_KEY <valor>'.");
-}
-
-app.UseExceptionHandler();
-
-// Swagger: só em Development. Em produção o painel ficaria acessível a
-// qualquer pessoa na rede, expondo todos os endpoints e seus formatos.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "MegaHair AI v1");
-        options.RoutePrefix = "swagger";
-    });
-}
-
-app.UseHttpsRedirection();
-
-app.UseCors("PainelDoSalao");
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Só o catálogo (fotos do salão, sem dado pessoal) continua público como
-// arquivo estático. Uploads, resultados, máscaras e temporários — que
-// contêm fotos de clientes — NÃO são mais servidos como estático; passam
-// pelo MediaController, com URL assinada e validade (ver Controllers/
-// MediaController.cs).
-var pastaCatalogo = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "catalogo");
-Directory.CreateDirectory(pastaCatalogo);
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(pastaCatalogo),
-    RequestPath = "/catalogo"
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "MegaHair AI v1");
+    options.RoutePrefix = string.Empty;
 });
 
+// Middlewares
+app.UseCors("AllowAll");
+app.UseStaticFiles();
 app.MapControllers();
 
 // Migração automática do banco.

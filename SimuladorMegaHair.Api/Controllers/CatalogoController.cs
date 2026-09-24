@@ -66,6 +66,7 @@ public class CatalogoController : ControllerBase
 
     // POST api/catalogo — exige X-Api-Key: só o salão cadastra itens.
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult<CatalogoItem>> Adicionar(
         [FromForm] string titulo,
         [FromForm] string comprimento,

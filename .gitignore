@@ -361,24 +361,3 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-# ═══════════════════════════════════════════════════════════
-#  FASE 1 (P01/P02) — segredos e fotos de clientes
-# ═══════════════════════════════════════════════════════════
-# Nunca versionar: fotos de clientes (upload, resultado, máscara/overlay de
-# auditoria, temporários de processamento) nem segredos de configuração.
-# Remover do HEAD não apaga o que já está no histórico — isso exige revogar
-# as chaves e reescrever o histórico (ver docs/SEGURANCA.md).
-
-SimuladorMegaHair.Api/wwwroot/uploads/
-SimuladorMegaHair.Api/wwwroot/resultados/
-SimuladorMegaHair.Api/wwwroot/temp/
-SimuladorMegaHair.Api/wwwroot/masks/
-SimuladorMegaHair.App/resultados/
-
-# Segredos: nunca comitar appsettings com token/chave preenchidos
-appsettings.*.local.json
-*.secrets.json
-
-# Logs deixados por engano em commits anteriores
-erro_completo.txt
-web_log.txt

@@ -110,7 +110,12 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         var (resultadoUrl, aviso) = req.Provider switch
         {
             ImageProvider.Replicate => await PipelineReplicateAsync(imagemPrep, maskPath, req, modoEdit, ct),
-            _ => throw new ArgumentOutOfRangeException(nameof(req.Provider))
+            // Local e OpenAI ainda não têm implementação registrada (ver auditoria).
+            // Lança InvalidOperationException em vez de ArgumentOutOfRangeException
+            // para que o Controller já trate como erro 422 amigável ao cliente,
+            // em vez de estourar um 500 não tratado.
+            _ => throw new InvalidOperationException(
+                $"Provider '{req.Provider}' ainda não está implementado nesta versão da API.")
         };
 
         // 5. Salva resultado

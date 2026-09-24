@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -21,6 +22,7 @@ namespace SimuladorMegaHair.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/[controller]")]
+[Authorize]
 public class SimulacoesController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
@@ -217,24 +219,41 @@ public class SimulacoesController : ControllerBase
         }
 
         // ── Chama pipeline de IA ────────────────────────────
-        // FASE 1 (P05): antes havia AQUI uma primeira chamada a
-        // PipelineKontextAsync cujo resultado (variável "wresultado") era
-        // descartado — a IA era chamada e cobrada duas vezes por simulação,
-        // e a primeira montava um corpo incompatível com o modelo Fill
-        // configurado. Removida; só GerarSimulacaoAsync roda.
-        // Erros aqui (arquivo não encontrado, Replicate fora do ar, timeout
-        // etc.) não são mais capturados aqui: o GlobalExceptionHandler
-        // (Program.cs) padroniza a resposta para todos os casos.
-        var resultado = await _imageService.GerarSimulacaoAsync(
-            new SimulacaoRequest
-            {
-                ImagemOriginalPath = fotoOriginalPath,
-                Comprimento = request.Comprimento,
-                Cor = request.Cor,
-                TipoCabelo = request.TipoCabelo,
-                MetodoMegaHair = request.MetodoMegaHair,
-                Provider = request.Provider
-            }, ct);
+        SimulacaoResult resultado;
+
+        try
+        {
+
+            var wresultado = await _imageService.PipelineKontextAsync(request.FotoOriginalPath,
+                new SimulacaoRequest
+                {
+                    ImagemOriginalPath = request.FotoOriginalPath,
+                    Comprimento = request.Comprimento,
+                    Cor = request.Cor,
+                    TipoCabelo = request.TipoCabelo,
+                    MetodoMegaHair = request.MetodoMegaHair,
+                    Provider = request.Provider
+                }, ct);
+
+            resultado = await _imageService.GerarSimulacaoAsync(
+                new SimulacaoRequest
+                {
+                    ImagemOriginalPath = request.FotoOriginalPath,
+                    Comprimento = request.Comprimento,
+                    Cor = request.Cor,
+                    TipoCabelo = request.TipoCabelo,
+                    MetodoMegaHair = request.MetodoMegaHair,
+                    Provider = request.Provider
+                }, ct);
+        }
+        catch (FileNotFoundException ex)
+        {
+            return NotFound(new { erro = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return UnprocessableEntity(new { erro = ex.Message });
+        }
 
         // ── Calcula orçamento ───────────────────────────────
         var valor = _orcamentoService.Calcular(
@@ -371,7 +390,7 @@ public class SimulacoesController : ControllerBase
     // público, sem controle); a URL agora aponta para /media/{pasta}/
     // {arquivo} com uma assinatura HMAC e prazo de validade (ver
     // Seguranca/MediaUrlSigner.cs e Controllers/MediaController.cs).
-    private SimulacaoResponse MontarResponse(
+    public async Task<SimulacaoResponse> MontarResponse(
         Simulacao simulacao,
         MediaUrlSigner urlSigner,
         bool veioDoCache) =>
