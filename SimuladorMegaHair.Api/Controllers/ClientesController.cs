@@ -5,28 +5,21 @@ using SimuladorMegaHair.Api.Seguranca;
 using SimuladorMegaHair.Domain.DTOs;
 using SimuladorMegaHair.Domain.Entities;
 using SimuladorMegaHair.Infrastructure.Data;
-using SimuladorMegaHair.Infrastructure.Services;
 
 namespace SimuladorMegaHair.Api.Controllers;
 
-// FASE 1: exige X-Api-Key. Antes, este controller era anônimo e expunha
-// nome/telefone/e-mail de todos os clientes, além de permitir excluir
-// qualquer um sem qualquer verificação.
 [ApiController]
-[Authorize]
 [Route("api/[controller]")]
+[Authorize]
 public class ClientesController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
-    private readonly MediaUrlSigner _urlSigner;
-    private readonly ExclusaoDadosService _exclusaoDados;
+    private readonly IWebHostEnvironment _env;
 
-    public ClientesController(
-        AppDbContext dbContext, MediaUrlSigner urlSigner, ExclusaoDadosService exclusaoDados)
+    public ClientesController(AppDbContext dbContext, IWebHostEnvironment env)
     {
         _dbContext = dbContext;
-        _urlSigner = urlSigner;
-        _exclusaoDados = exclusaoDados;
+        _env = env;
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -101,9 +94,10 @@ public class ClientesController : ControllerBase
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 
         if (cliente is null)
-            return NotFound(new { erro = "Cliente não encontrado." });
+            return NotFound("Cliente não encontrado.");
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var urlSigner = new MediaUrlSigner(baseUrl, TimeSpan.FromMinutes(30));
 
         var resposta = new ClienteDetalheResponse
         {
@@ -114,7 +108,7 @@ public class ClientesController : ControllerBase
             CriadoEm = cliente.CriadoEm,
             Simulacoes = cliente.Simulacoes
                 .OrderByDescending(s => s.CriadoEm)
-                .Select(s => SimulacoesController.MontarResponseEstatico(s, baseUrl, _urlSigner, veioDoCache: false))
+                .Select(s =>  await SimulacoesController.MontarResponse(s, urlSigner, veioDoCache: false))
                 .ToList()
         };
 
@@ -130,7 +124,7 @@ public class ClientesController : ControllerBase
         [FromBody] CriarClienteRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Nome))
-            return BadRequest(new { erro = "Nome é obrigatório." });
+            return BadRequest("Nome é obrigatório.");
 
         var cliente = new Cliente
         {
@@ -163,11 +157,11 @@ public class ClientesController : ControllerBase
         Guid id, [FromBody] AtualizarClienteRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Nome))
-            return BadRequest(new { erro = "Nome é obrigatório." });
+            return BadRequest("Nome é obrigatório.");
 
         var cliente = await _dbContext.Clientes.FindAsync(new object[] { id }, ct);
         if (cliente is null)
-            return NotFound(new { erro = "Cliente não encontrado." });
+            return NotFound("Cliente não encontrado.");
 
         cliente.Nome = request.Nome.Trim();
         cliente.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
@@ -192,27 +186,50 @@ public class ClientesController : ControllerBase
     //  EXCLUIR CLIENTE
     // ═══════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// FASE 1 (P17 — LGPD): excluir um cliente agora apaga também as fotos
-    /// dele em disco. Antes, DeleteBehavior.SetNull só desvinculava as
-    /// simulações do cliente; nenhum arquivo era removido e as fotos
-    /// continuavam acessíveis pela URL.
-    /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Excluir(Guid id, CancellationToken ct)
     {
-        var cliente = await _dbContext.Clientes
-            .Include(c => c.Simulacoes)
-            .FirstOrDefaultAsync(c => c.Id == id, ct);
-
+        var cliente = await _dbContext.Clientes.FindAsync(new object[] { id }, ct);
         if (cliente is null)
-            return NotFound(new { erro = "Cliente não encontrado." });
+            return NotFound("Cliente não encontrado.");
 
-        var simulacoes = cliente.Simulacoes.ToList();
+        // Correção da auditoria (LGPD): antes só o registro do cliente era
+        // apagado — as fotos (original + resultado) de todas as
+        // simulações dele continuavam no disco para sempre, órfãs.
+        // Agora apagamos os arquivos físicos e as simulações associadas.
+        var simulacoes = await _dbContext.Simulacoes
+            .Where(s => s.ClienteId == id)
+            .ToListAsync(ct);
+
+        foreach (var sim in simulacoes)
+        {
+            ApagarArquivoSeExistir(sim.FotoOriginalPath);
+            ApagarArquivoSeExistir(sim.FotoResultadoPath);
+        }
+
+        _dbContext.Simulacoes.RemoveRange(simulacoes);
         _dbContext.Clientes.Remove(cliente);
-
-        await _exclusaoDados.ExcluirSimulacoesAsync(simulacoes, ct);
+        await _dbContext.SaveChangesAsync(ct);
 
         return NoContent();
+    }
+
+    /// <summary>
+    /// Apaga um arquivo referenciado por um caminho relativo salvo no banco
+    /// (ex.: "/uploads/xxx.jpg"), resolvendo contra wwwroot. Silencioso se
+    /// o caminho for vazio ou o arquivo já não existir — exclusão de
+    /// cliente não deve falhar por causa de um arquivo já ausente.
+    /// </summary>
+    private void ApagarArquivoSeExistir(string? caminhoRelativo)
+    {
+        if (string.IsNullOrWhiteSpace(caminhoRelativo))
+            return;
+
+        var caminhoFisico = Path.Combine(
+            _env.ContentRootPath, "wwwroot",
+            caminhoRelativo.TrimStart('/', '\\').Replace('/', Path.DirectorySeparatorChar));
+
+        if (System.IO.File.Exists(caminhoFisico))
+            System.IO.File.Delete(caminhoFisico);
     }
 }
