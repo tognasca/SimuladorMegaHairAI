@@ -36,18 +36,26 @@ public static class MauiProgram
                 ServerCertificateCustomValidationCallback =
                     HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             };
-            return new HttpClient(handler)
+            var http = new HttpClient(handler)
             {
                 BaseAddress = new Uri(baseUrl),
                 Timeout = TimeSpan.FromMinutes(10)
             };
 #else
-            return new HttpClient
+            var http = new HttpClient
             {
                 BaseAddress = new Uri(baseUrl),
                 Timeout = TimeSpan.FromMinutes(10)
             };
 #endif
+            // FASE 1: a API exige X-Api-Key em toda chamada. Configurada
+            // em Configurações → Chave de API (junto com o endereço do
+            // servidor). Sem ela, toda chamada volta 401.
+            var chave = AppSettings.ApiKey;
+            if (!string.IsNullOrWhiteSpace(chave))
+                http.DefaultRequestHeaders.Add("X-Api-Key", chave);
+
+            return http;
         });
 
         // Services

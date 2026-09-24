@@ -1,20 +1,32 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SimuladorMegaHair.Api.Seguranca;
 using SimuladorMegaHair.Domain.DTOs;
 using SimuladorMegaHair.Domain.Entities;
 using SimuladorMegaHair.Infrastructure.Data;
+using SimuladorMegaHair.Infrastructure.Services;
 
 namespace SimuladorMegaHair.Api.Controllers;
 
+// FASE 1: exige X-Api-Key. Antes, este controller era anônimo e expunha
+// nome/telefone/e-mail de todos os clientes, além de permitir excluir
+// qualquer um sem qualquer verificação.
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class ClientesController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly MediaUrlSigner _urlSigner;
+    private readonly ExclusaoDadosService _exclusaoDados;
 
-    public ClientesController(AppDbContext dbContext)
+    public ClientesController(
+        AppDbContext dbContext, MediaUrlSigner urlSigner, ExclusaoDadosService exclusaoDados)
     {
         _dbContext = dbContext;
+        _urlSigner = urlSigner;
+        _exclusaoDados = exclusaoDados;
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -89,7 +101,7 @@ public class ClientesController : ControllerBase
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 
         if (cliente is null)
-            return NotFound("Cliente não encontrado.");
+            return NotFound(new { erro = "Cliente não encontrado." });
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
@@ -102,7 +114,7 @@ public class ClientesController : ControllerBase
             CriadoEm = cliente.CriadoEm,
             Simulacoes = cliente.Simulacoes
                 .OrderByDescending(s => s.CriadoEm)
-                .Select(s => SimulacoesController.MontarResponse(s, baseUrl, veioDoCache: false))
+                .Select(s => SimulacoesController.MontarResponseEstatico(s, baseUrl, _urlSigner, veioDoCache: false))
                 .ToList()
         };
 
@@ -118,7 +130,7 @@ public class ClientesController : ControllerBase
         [FromBody] CriarClienteRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Nome))
-            return BadRequest("Nome é obrigatório.");
+            return BadRequest(new { erro = "Nome é obrigatório." });
 
         var cliente = new Cliente
         {
@@ -151,11 +163,11 @@ public class ClientesController : ControllerBase
         Guid id, [FromBody] AtualizarClienteRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Nome))
-            return BadRequest("Nome é obrigatório.");
+            return BadRequest(new { erro = "Nome é obrigatório." });
 
         var cliente = await _dbContext.Clientes.FindAsync(new object[] { id }, ct);
         if (cliente is null)
-            return NotFound("Cliente não encontrado.");
+            return NotFound(new { erro = "Cliente não encontrado." });
 
         cliente.Nome = request.Nome.Trim();
         cliente.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
@@ -180,15 +192,26 @@ public class ClientesController : ControllerBase
     //  EXCLUIR CLIENTE
     // ═══════════════════════════════════════════════════════════
 
+    /// <summary>
+    /// FASE 1 (P17 — LGPD): excluir um cliente agora apaga também as fotos
+    /// dele em disco. Antes, DeleteBehavior.SetNull só desvinculava as
+    /// simulações do cliente; nenhum arquivo era removido e as fotos
+    /// continuavam acessíveis pela URL.
+    /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Excluir(Guid id, CancellationToken ct)
     {
-        var cliente = await _dbContext.Clientes.FindAsync(new object[] { id }, ct);
-        if (cliente is null)
-            return NotFound("Cliente não encontrado.");
+        var cliente = await _dbContext.Clientes
+            .Include(c => c.Simulacoes)
+            .FirstOrDefaultAsync(c => c.Id == id, ct);
 
+        if (cliente is null)
+            return NotFound(new { erro = "Cliente não encontrado." });
+
+        var simulacoes = cliente.Simulacoes.ToList();
         _dbContext.Clientes.Remove(cliente);
-        await _dbContext.SaveChangesAsync(ct);
+
+        await _exclusaoDados.ExcluirSimulacoesAsync(simulacoes, ct);
 
         return NoContent();
     }

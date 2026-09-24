@@ -1,0 +1,375 @@
+diff --git a/.gitignore b/.gitignore
+index 9491a2f..459eebd 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -360,4 +360,15 @@ MigrationBackup/
+ .ionide/
+ 
+ # Fody - auto-generated XML schema
+-FodyWeavers.xsd
+\ No newline at end of file
++FodyWeavers.xsd
++# ── Dados de runtime (fotos de clientes) — NUNCA versionar ──
++SimuladorMegaHair.Api/wwwroot/uploads/
++SimuladorMegaHair.Api/wwwroot/resultados/
++SimuladorMegaHair.Api/wwwroot/masks/
++SimuladorMegaHair.Api/wwwroot/temp/
++SimuladorMegaHair.App/resultados/
++
++# ── Segredos ──
++appsettings.Production.json
++appsettings.*.local.json
++*.secrets.json
+diff --git a/SimuladorMegaHair.Api/Controllers/CatalogoController.cs b/SimuladorMegaHair.Api/Controllers/CatalogoController.cs
+index c122851..6d6fc9d 100644
+--- a/SimuladorMegaHair.Api/Controllers/CatalogoController.cs
++++ b/SimuladorMegaHair.Api/Controllers/CatalogoController.cs
+@@ -1,5 +1,6 @@
+ ﻿using SimuladorMegaHair.Domain.Entities;
+ using SimuladorMegaHair.Infrastructure.Data;
++using Microsoft.AspNetCore.Authorization;
+ using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ 
+@@ -52,6 +53,7 @@ public class CatalogoController : ControllerBase
+ 
+     // POST api/catalogo
+     [HttpPost]
++    [Authorize]
+     public async Task<ActionResult<CatalogoItem>> Adicionar(
+         [FromForm] string titulo,
+         [FromForm] string comprimento,
+diff --git a/SimuladorMegaHair.Api/Controllers/ClientesController.cs b/SimuladorMegaHair.Api/Controllers/ClientesController.cs
+index e4e831e..522754a 100644
+--- a/SimuladorMegaHair.Api/Controllers/ClientesController.cs
++++ b/SimuladorMegaHair.Api/Controllers/ClientesController.cs
+@@ -1,4 +1,5 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++﻿using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using SimuladorMegaHair.Domain.DTOs;
+ using SimuladorMegaHair.Domain.Entities;
+@@ -8,13 +9,16 @@ namespace SimuladorMegaHair.Api.Controllers;
+ 
+ [ApiController]
+ [Route("api/[controller]")]
++[Authorize]
+ public class ClientesController : ControllerBase
+ {
+     private readonly AppDbContext _dbContext;
++    private readonly IWebHostEnvironment _env;
+ 
+-    public ClientesController(AppDbContext dbContext)
++    public ClientesController(AppDbContext dbContext, IWebHostEnvironment env)
+     {
+         _dbContext = dbContext;
++        _env = env;
+     }
+ 
+     // ═══════════════════════════════════════════════════════════
+@@ -187,9 +191,43 @@ public class ClientesController : ControllerBase
+         if (cliente is null)
+             return NotFound("Cliente não encontrado.");
+ 
++        // Correção da auditoria (LGPD): antes só o registro do cliente era
++        // apagado — as fotos (original + resultado) de todas as
++        // simulações dele continuavam no disco para sempre, órfãs.
++        // Agora apagamos os arquivos físicos e as simulações associadas.
++        var simulacoes = await _dbContext.Simulacoes
++            .Where(s => s.ClienteId == id)
++            .ToListAsync(ct);
++
++        foreach (var sim in simulacoes)
++        {
++            ApagarArquivoSeExistir(sim.FotoOriginalPath);
++            ApagarArquivoSeExistir(sim.FotoResultadoPath);
++        }
++
++        _dbContext.Simulacoes.RemoveRange(simulacoes);
+         _dbContext.Clientes.Remove(cliente);
+         await _dbContext.SaveChangesAsync(ct);
+ 
+         return NoContent();
+     }
++
++    /// <summary>
++    /// Apaga um arquivo referenciado por um caminho relativo salvo no banco
++    /// (ex.: "/uploads/xxx.jpg"), resolvendo contra wwwroot. Silencioso se
++    /// o caminho for vazio ou o arquivo já não existir — exclusão de
++    /// cliente não deve falhar por causa de um arquivo já ausente.
++    /// </summary>
++    private void ApagarArquivoSeExistir(string? caminhoRelativo)
++    {
++        if (string.IsNullOrWhiteSpace(caminhoRelativo))
++            return;
++
++        var caminhoFisico = Path.Combine(
++            _env.ContentRootPath, "wwwroot",
++            caminhoRelativo.TrimStart('/', '\\').Replace('/', Path.DirectorySeparatorChar));
++
++        if (System.IO.File.Exists(caminhoFisico))
++            System.IO.File.Delete(caminhoFisico);
++    }
+ }
+diff --git a/SimuladorMegaHair.Api/Controllers/SimulacoesController.cs b/SimuladorMegaHair.Api/Controllers/SimulacoesController.cs
+index 909b3af..a9dd9d9 100644
+--- a/SimuladorMegaHair.Api/Controllers/SimulacoesController.cs
++++ b/SimuladorMegaHair.Api/Controllers/SimulacoesController.cs
+@@ -1,4 +1,5 @@
+-﻿using Microsoft.AspNetCore.Identity.Data;
++﻿using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Identity.Data;
+ using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using Microsoft.Extensions.Options;
+@@ -15,6 +16,7 @@ namespace SimuladorMegaHair.Api.Controllers;
+ 
+ [ApiController]
+ [Route("api/[controller]")]
++[Authorize]
+ public class SimulacoesController : ControllerBase
+ {
+     private readonly AppDbContext _dbContext;
+@@ -158,18 +160,10 @@ public class SimulacoesController : ControllerBase
+ 
+         try
+         {
+-
+-            var wresultado = await _imageService.PipelineKontextAsync(request.FotoOriginalPath,
+-                new SimulacaoRequest
+-                {
+-                    ImagemOriginalPath = request.FotoOriginalPath,
+-                    Comprimento = request.Comprimento,
+-                    Cor = request.Cor,
+-                    TipoCabelo = request.TipoCabelo,
+-                    MetodoMegaHair = request.MetodoMegaHair,
+-                    Provider = request.Provider
+-                }, ct);
+-
++            // NOTA (correção da auditoria): antes havia aqui uma chamada extra a
++            // _imageService.PipelineKontextAsync(...) (flux-kontext-pro, modelo pago
++            // no Replicate) cujo resultado nunca era usado — toda simulação pagava
++            // por uma predição descartada. Removida.
+             resultado = await _imageService.GerarSimulacaoAsync(
+                 new SimulacaoRequest
+                 {
+diff --git a/SimuladorMegaHair.Api/Program.cs b/SimuladorMegaHair.Api/Program.cs
+index 5ad2825..c153870 100644
+--- a/SimuladorMegaHair.Api/Program.cs
++++ b/SimuladorMegaHair.Api/Program.cs
+@@ -1,8 +1,11 @@
++using Microsoft.AspNetCore.Authentication.JwtBearer;
+ using Microsoft.EntityFrameworkCore;
++using Microsoft.IdentityModel.Tokens;
+ using SimuladorMegaHair.Domain.Interfaces;
+ using SimuladorMegaHair.Infrastructure.Configuration;
+ using SimuladorMegaHair.Infrastructure.Data;
+ using SimuladorMegaHair.Infrastructure.Services;
++using System.Text;
+ 
+ var builder = WebApplication.CreateBuilder(args);
+ 
+@@ -62,18 +65,51 @@ builder.Services.AddHttpClient<IImageSimulationService, SimulacaoPipelineService
+ });
+ 
+ // ═══════════════════════════════════════════════════════════
+-//  CORS
++//  CORS — restrito às origens conhecidas do salão (Web/App),
++//  configuradas em "AllowedOrigins" no appsettings. Nunca use
++//  AllowAnyOrigin() aqui: a API expõe dados pessoais de clientes.
+ // ═══════════════════════════════════════════════════════════
+ 
++var allowedOrigins = builder.Configuration
++    .GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
++
+ builder.Services.AddCors(options =>
+ {
+-    options.AddPolicy("AllowAll", policy =>
++    options.AddPolicy("Default", policy =>
+     {
+-        policy.AllowAnyOrigin()
++        policy.WithOrigins(allowedOrigins)
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+     });
+ });
++
++// ═══════════════════════════════════════════════════════════
++//  AUTENTICAÇÃO (JWT)
++// ═══════════════════════════════════════════════════════════
++
++var jwtKey = builder.Configuration["Jwt:Key"]
++    ?? throw new InvalidOperationException(
++        "Jwt:Key não configurado. Defina a variável de ambiente Jwt__Key " +
++        "(mín. 32 caracteres aleatórios) — nunca deixe isso em appsettings.json versionado.");
++
++builder.Services
++    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
++    .AddJwtBearer(options =>
++    {
++        options.TokenValidationParameters = new TokenValidationParameters
++        {
++            ValidateIssuer = true,
++            ValidateAudience = true,
++            ValidateLifetime = true,
++            ValidateIssuerSigningKey = true,
++            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "SimuladorMegaHair",
++            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "SimuladorMegaHair.Clients",
++            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
++        };
++    });
++
++builder.Services.AddAuthorization();
++
+ //builder.Services.AddApplicationInsightsTelemetry();
+ 
+ // ═══════════════════════════════════════════════════════════
+@@ -82,16 +118,23 @@ builder.Services.AddCors(options =>
+ 
+ var app = builder.Build();
+ 
+-// Swagger
+-app.UseSwagger();
+-app.UseSwaggerUI(options =>
++// Swagger — só em desenvolvimento. Em produção, a documentação interativa
++// e o "Try it out" da API não devem ficar publicamente acessíveis.
++if (app.Environment.IsDevelopment())
+ {
+-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "MegaHair AI v1");
+-    options.RoutePrefix = string.Empty;
+-});
++    app.UseSwagger();
++    app.UseSwaggerUI(options =>
++    {
++        options.SwaggerEndpoint("/swagger/v1/swagger.json", "MegaHair AI v1");
++        options.RoutePrefix = "swagger";
++    });
++}
+ 
+ // Middlewares
+-app.UseCors("AllowAll");
++app.UseHttpsRedirection();
++app.UseCors("Default");
++app.UseAuthentication();
++app.UseAuthorization();
+ app.UseStaticFiles();
+ app.MapControllers();
+ 
+diff --git a/SimuladorMegaHair.Api/SimuladorMegaHair.Api.csproj b/SimuladorMegaHair.Api/SimuladorMegaHair.Api.csproj
+index 3df1a29..8b9ecea 100644
+--- a/SimuladorMegaHair.Api/SimuladorMegaHair.Api.csproj
++++ b/SimuladorMegaHair.Api/SimuladorMegaHair.Api.csproj
+@@ -18,6 +18,8 @@
+ 
+ 	<ItemGroup>
+ 		<PackageReference Include="Azure.Identity" Version="1.21.0" />
++		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
++		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+ 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.1.2" />
+ 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.26">
+ 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+diff --git a/SimuladorMegaHair.Api/appsettings.json b/SimuladorMegaHair.Api/appsettings.json
+index cb102af..784b1bc 100644
+--- a/SimuladorMegaHair.Api/appsettings.json
++++ b/SimuladorMegaHair.Api/appsettings.json
+@@ -3,12 +3,14 @@
+     "DefaultConnection": "Host=localhost;Port=5432;Database=simulacaomegahairdb;Username=postgres;Password=postgres"
+   },
+   "Simulacao": {
+-    "DefaultProvider": "Local",
+-    "HabilitarProviderLocal": true,
++    "_comentario": "Local e OpenAI ainda não têm implementação registrada em Program.cs (ver auditoria) — mantenha desabilitados até implementar de fato, ou o pipeline retorna erro 422 se alguém tentar usá-los.",
++    "DefaultProvider": "Replicate",
++    "HabilitarProviderLocal": false,
+     "HabilitarProviderReplicate": true,
+     "HabilitarProviderOpenAI": false
+   },
+   "Replicate": {
++    "_comentario": "NUNCA preencha ApiToken aqui em um arquivo versionado. Use variável de ambiente Replicate__ApiToken ou 'dotnet user-secrets set Replicate:ApiToken SEU_TOKEN' em desenvolvimento.",
+     "ApiToken": "",
+     "FluxFillOwner": "black-forest-labs",
+     "FluxFillName": "flux-fill-pro",
+@@ -29,6 +31,15 @@
+     "Size": "1024x1024",
+     "Quality": "high"
+   },
++  "Jwt": {
++    "_comentario": "Key NÃO vai aqui — defina a variável de ambiente Jwt__Key (32+ caracteres aleatórios). Issuer/Audience podem ficar aqui, não são segredo.",
++    "Issuer": "SimuladorMegaHair",
++    "Audience": "SimuladorMegaHair.Clients"
++  },
++  "AllowedOrigins": [
++    "https://localhost:7180",
++    "http://192.168.1.100:7180"
++  ],
+   "Logging": {
+     "LogLevel": {
+       "Default": "Information",
+diff --git a/SimuladorMegaHair.Infrastructure/Data/AppDbContext.cs b/SimuladorMegaHair.Infrastructure/Data/AppDbContext.cs
+index 93919e3..6be212b 100644
+--- a/SimuladorMegaHair.Infrastructure/Data/AppDbContext.cs
++++ b/SimuladorMegaHair.Infrastructure/Data/AppDbContext.cs
+@@ -8,6 +8,7 @@ public class AppDbContext : DbContext
+     public DbSet<Cliente> Clientes => Set<Cliente>();
+     public DbSet<Simulacao> Simulacoes => Set<Simulacao>();
+     public DbSet<CatalogoItem> CatalogoItens => Set<CatalogoItem>();
++    public DbSet<Usuario> Usuarios => Set<Usuario>();
+ 
+     public AppDbContext(DbContextOptions<AppDbContext> options)
+         : base(options)
+@@ -39,6 +40,19 @@ public class AppDbContext : DbContext
+                   .HasForeignKey(e => e.ClienteId)
+                   .IsRequired(false)
+                   .OnDelete(DeleteBehavior.SetNull);
++
++            // Correção da auditoria (perf): a busca de cache em
++            // SimulacoesController.Criar filtra por esses campos juntos —
++            // sem índice, vira table scan conforme o histórico cresce.
++            entity.HasIndex(e => new
++            {
++                e.FotoOriginalPath,
++                e.Comprimento,
++                e.Cor,
++                e.TipoCabelo,
++                e.MetodoMegaHair,
++                e.ProviderUtilizado
++            });
+         });
+ 
+         // CatalogoItem
+@@ -49,6 +63,15 @@ public class AppDbContext : DbContext
+             entity.Property(e => e.PrecoBase).HasColumnType("numeric(10,2)");
+         });
+ 
++        // Usuario
++        modelBuilder.Entity<Usuario>(entity =>
++        {
++            entity.HasKey(e => e.Id);
++            entity.Property(e => e.Email).IsRequired().HasMaxLength(256);
++            entity.Property(e => e.SenhaHash).IsRequired();
++            entity.HasIndex(e => e.Email).IsUnique();
++        });
++
+         base.OnModelCreating(modelBuilder);
+     }
+ }
+\ No newline at end of file
+diff --git a/SimuladorMegaHair.Infrastructure/Services/SimulacaoPipelineService.cs b/SimuladorMegaHair.Infrastructure/Services/SimulacaoPipelineService.cs
+index 573d72e..e818281 100644
+--- a/SimuladorMegaHair.Infrastructure/Services/SimulacaoPipelineService.cs
++++ b/SimuladorMegaHair.Infrastructure/Services/SimulacaoPipelineService.cs
+@@ -103,7 +103,12 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
+         var (resultadoUrl, aviso) = req.Provider switch
+         {
+             ImageProvider.Replicate => await PipelineReplicateAsync(imagemPrep, maskPath, req, modoEdit, ct),
+-            _ => throw new ArgumentOutOfRangeException(nameof(req.Provider))
++            // Local e OpenAI ainda não têm implementação registrada (ver auditoria).
++            // Lança InvalidOperationException em vez de ArgumentOutOfRangeException
++            // para que o Controller já trate como erro 422 amigável ao cliente,
++            // em vez de estourar um 500 não tratado.
++            _ => throw new InvalidOperationException(
++                $"Provider '{req.Provider}' ainda não está implementado nesta versão da API.")
+         };
+ 
+         // 5. Salva resultado

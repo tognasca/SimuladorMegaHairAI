@@ -37,14 +37,25 @@ ipconfig
 
 Anote o **IPv4** (ex: `192.168.1.100`). Depois, no roteador do salão, reserve esse IP para o computador (procure por "DHCP Reservation" ou "IP fixo" nas configurações do roteador) — assim ele nunca muda, mesmo depois de reiniciar o roteador.
 
-### 1.2 Rodar a API
+### 1.2 Configurar a chave de API (obrigatória a partir da Fase 1)
+
+A API agora exige uma chave secreta em todo pedido (cabeçalho `X-Api-Key`) — sem ela, ninguém acessa nada. Escolha uma chave longa e aleatória (ex.: gere uma com `openssl rand -base64 32` ou qualquer gerador de senhas) e **não a escreva em nenhum arquivo versionado**. Defina como variável de ambiente **no computador-servidor**, antes de rodar a API:
+
+```powershell
+$env:MEGAHAIR_API_KEY = "cole-aqui-uma-chave-longa-e-aleatoria"
+```
+
+Você vai usar essa **mesma chave** em três lugares: aqui (API), no site Web (passo 2.1) e em cada instalação do app MAUI (passo 3.1). Anote-a num cofre de senhas do salão — se for perdida, é só gerar outra e reconfigurar os três lugares.
+
+### 1.3 Rodar a API em modo de produção
 
 ```powershell
 cd SimuladorMegaHair.Api
+$env:ASPNETCORE_ENVIRONMENT = "Production"
 dotnet run --launch-profile https
 ```
 
-Isso agora escuta em `0.0.0.0` (todas as placas de rede), não só `localhost` — correção necessária para os tablets/TV/iPad conseguirem alcançar. Confirme testando de **outro** aparelho na mesma Wi-Fi, no navegador:
+`ASPNETCORE_ENVIRONMENT=Production` é importante: sem isso, o Swagger (painel que lista e permite chamar todos os endpoints) fica exposto para qualquer aparelho na rede. Isso agora escuta em `0.0.0.0` (todas as placas de rede), não só `localhost` — correção necessária para os tablets/TV/iPad conseguirem alcançar. Confirme testando de **outro** aparelho na mesma Wi-Fi, no navegador:
 
 ```
 http://192.168.1.100:5185/api/catalogo
@@ -52,18 +63,26 @@ http://192.168.1.100:5185/api/catalogo
 
 Se aparecer uma lista (ainda que vazia `[]`), a API está acessível pela rede. Se der "não é possível acessar este site", o Firewall do Windows está bloqueando — libere a porta 5185 (e 7064) no Firewall do Windows Defender para redes privadas.
 
-### 1.3 🔴 Revogar o token do Replicate (pendência de segurança já identificada)
+### 1.4 🔴 Revogar os tokens do Replicate expostos anteriormente (pendência crítica)
 
-O `appsettings.json` da API tem uma chave de API real. Antes de colocar em produção:
+Duas chaves de API do Replicate já foram commitadas neste repositório em algum momento e ficaram registradas no **histórico do Git**, mesmo tendo sido removidas depois do `appsettings.json` atual. Enquanto isso não for resolvido, qualquer pessoa com acesso ao repositório (ou a uma cópia dele) pode gastar o crédito da conta:
+
 1. Acesse [replicate.com/account/api-tokens](https://replicate.com/account/api-tokens)
-2. Revogue o token atual
-3. Gere um novo e substitua em `SimuladorMegaHair.Api/appsettings.json` → `Replicate:ApiToken`
+2. Revogue **todos** os tokens que já apareceram neste projeto (se você não tem certeza de quais são, revogue todos e gere um novo — é mais seguro que tentar adivinhar)
+3. Gere um novo token
+4. Configure-o como variável de ambiente `Replicate__ApiToken` (ou em `dotnet user-secrets`), **nunca** direto em `SimuladorMegaHair.Api/appsettings.json`:
+
+```powershell
+$env:Replicate__ApiToken = "cole-aqui-o-novo-token"
+```
+
+5. Veja `docs/SEGURANCA.md` para o passo de reescrever o histórico do Git e remover as chaves e as fotos de clientes que também foram commitadas por engano.
 
 ---
 
 ## 2. Rodar o Web (Blazor) — para iPad, celular, Smart TV comum
 
-### 2.1 Configurar o endereço da API
+### 2.1 Configurar o endereço da API e a chave
 
 Edite `SimuladorMegaHair.Web/appsettings.json`:
 
@@ -72,6 +91,14 @@ Edite `SimuladorMegaHair.Web/appsettings.json`:
 ```
 
 (troque pelo IP fixo que você reservou no passo 1.1)
+
+E defina a **mesma chave** do passo 1.2 como variável de ambiente, antes de rodar o Web (passo 2.3):
+
+```powershell
+$env:MEGAHAIR_API_KEY = "a-mesma-chave-configurada-na-api"
+```
+
+Essa chave fica só no servidor que roda o site (Blazor Server) — o navegador da cliente nunca a recebe.
 
 ### 2.2 Gerar e confiar o certificado HTTPS (obrigatório para a câmera funcionar)
 
@@ -90,6 +117,7 @@ Isso confia o certificado **nesse computador**. Só resolve o navegador local �
 
 ```powershell
 cd SimuladorMegaHair.Web
+$env:ASPNETCORE_ENVIRONMENT = "Production"
 dotnet run --launch-profile https
 ```
 
@@ -107,15 +135,14 @@ No Safari, abra o endereço acima → toque no ícone de compartilhar → **"Adi
 
 ## 3. Rodar o App MAUI (Windows ou Android)
 
-### 3.1 Configurar o endereço do servidor em cada aparelho
+### 3.1 Configurar o endereço do servidor e a chave em cada aparelho
 
-Dentro do app → **Configurações** → campo **"Endereço do servidor"**:
+Dentro do app → **Configurações**:
 
-```
-http://192.168.1.100:5185/
-```
+- **Endereço do servidor**: `http://192.168.1.100:5185/`
+- **Chave de API**: a mesma chave configurada no passo 1.2
 
-Precisa **reabrir o app** depois de mudar (o app avisa isso na própria tela).
+Precisa **reabrir o app** depois de mudar (o app avisa isso na própria tela). Sem a chave certa, todas as telas voltam erro 401.
 
 ### 3.2 Publicar o Android (gerar o `.apk`/`.aab`)
 
@@ -139,12 +166,15 @@ dotnet publish -f net8.0-windows10.0.19041.0 -c Release
 ## 4. Checklist do dia da instalação no salão
 
 - [ ] Computador-servidor com IP fixo reservado no roteador
-- [ ] Token do Replicate revogado e substituído
-- [ ] `dotnet run` da API testado de **outro** aparelho na mesma rede (não só localhost)
+- [ ] Chave de API gerada (`MEGAHAIR_API_KEY`) e configurada na API, no Web e em cada aparelho MAUI
+- [ ] Tokens antigos do Replicate revogados em replicate.com/account/api-tokens e substituído por um novo
+- [ ] `ASPNETCORE_ENVIRONMENT=Production` definido antes de rodar a API e o Web (senão o Swagger fica exposto)
+- [ ] `dotnet run` da API testado de **outro** aparelho na mesma rede (não só localhost), incluindo um teste sem a chave certa (deve dar 401)
 - [ ] Certificado HTTPS confiado em cada iPad/tablet que vai acessar via navegador
-- [ ] Endereço do servidor configurado em cada instalação do app MAUI
+- [ ] Endereço do servidor e chave de API configurados em cada instalação do app MAUI
 - [ ] TV testada em pé (retrato) e deitada (paisagem) — tela de simulação deve alternar sozinha
 - [ ] Uma simulação completa de ponta a ponta testada em **cada** tipo de aparelho antes de abrir para clientes
+- [ ] Ver `docs/SEGURANCA.md` — repositório tornado privado e histórico do Git tratado (fotos de clientes e tokens antigos)
 
 ---
 
@@ -152,7 +182,9 @@ dotnet publish -f net8.0-windows10.0.19041.0 -c Release
 
 | Sintoma | Causa mais provável |
 |---|---|
-| App/site abre mas "não carrega catálogo/clientes" | Endereço do servidor errado, ou API não está rodando |
+| App/site abre mas "não carrega catálogo/clientes" | Endereço do servidor errado, API não está rodando, ou chave de API errada/ausente (veja o código de erro: 401 = chave errada) |
+| Erro 401 em qualquer tela | `MEGAHAIR_API_KEY` não configurada, ou diferente entre API/Web/app |
+| Erro 429 ao gerar simulação | Limite de gerações simultâneas ou cota diária atingidos (`Simulacao:MaxGeracoesSimultaneas` / `LimiteDiarioGlobal` em appsettings) |
 | Câmera não abre no iPad/navegador | Site não está em HTTPS, ou certificado não foi aceito ainda |
 | Cada aparelho mostra clientes diferentes | Endereços de servidor diferentes entre os aparelhos — revisar passo 3.1/2.1 |
 | Simulação demora muito ou dá erro de rede | Verificar se o token do Replicate é válido e tem créditos |

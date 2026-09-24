@@ -30,6 +30,15 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty]
     private string apiBaseUrl;
 
+    /// <summary>
+    /// FASE 1: chave exigida pela API (cabeçalho X-Api-Key) em toda
+    /// requisição. Sem ela, todas as chamadas deste app retornam 401.
+    /// Guardada como as demais preferências do dispositivo — configure
+    /// uma vez por aparelho, junto com o endereço do servidor.
+    /// </summary>
+    [ObservableProperty]
+    private string apiKey;
+
     public IReadOnlyList<string> LayoutModes { get; } =
     [
         "Automático",
@@ -72,6 +81,8 @@ public partial class SettingsViewModel : BaseViewModel
         apiBaseUrl = Preferences.Get(
             "ApiBaseUrl",
             "http://localhost:5185/");
+
+        apiKey = Preferences.Get("ApiKey", string.Empty);
     }
 
     partial void OnLayoutModeSelectedChanged(string value)
@@ -101,6 +112,11 @@ public partial class SettingsViewModel : BaseViewModel
             normalizado += "/";
 
         Preferences.Set("ApiBaseUrl", normalizado);
+    }
+
+    partial void OnApiKeyChanged(string value)
+    {
+        Preferences.Set("ApiKey", value.Trim());
     }
 
     [RelayCommand]

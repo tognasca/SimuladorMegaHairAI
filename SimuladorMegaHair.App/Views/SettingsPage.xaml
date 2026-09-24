@@ -112,6 +112,32 @@
                                LineHeight="1.3" />
                     </VerticalStackLayout>
 
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="CHAVE DE API"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextMuted}" />
+
+                        <Border StrokeThickness="1"
+                                StrokeShape="RoundRectangle 8"
+                                BackgroundColor="{StaticResource InputColor}"
+                                Padding="12,2">
+                            <Entry Text="{Binding ApiKey}"
+                                   Placeholder="Chave fornecida pelo administrador"
+                                   IsPassword="True"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   PlaceholderColor="{StaticResource TextMuted}"
+                                   BackgroundColor="Transparent"
+                                   FontSize="13"
+                                   HeightRequest="46" />
+                        </Border>
+
+                        <Label Text="A mesma chave configurada no servidor (MEGAHAIR_API_KEY). Sem ela, o app não consegue falar com a API. Requer reabrir o app após alterar."
+                               FontSize="10"
+                               TextColor="{StaticResource TextMuted}"
+                               LineHeight="1.3" />
+                    </VerticalStackLayout>
+
                 </VerticalStackLayout>
             </Border>
 

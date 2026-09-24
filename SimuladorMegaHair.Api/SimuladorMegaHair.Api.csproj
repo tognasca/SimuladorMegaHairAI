@@ -17,13 +17,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Azure.Identity" Version="1.21.0" />
-		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.1.2" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.26">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.3" />
+		<!-- FASE 1: alinhada com a versão usada em SimuladorMegaHair.Infrastructure
+		     (antes 8.0.3 aqui x 8.0.4 lá, causava aviso NU1603 no build). -->
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
 	</ItemGroup>
 
