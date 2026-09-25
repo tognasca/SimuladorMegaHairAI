@@ -1,4 +1,5 @@
 ﻿@page "/captura"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @rendermode InteractiveServer
 @inject IJSRuntime JS
 @inject ApiClient Api
@@ -18,30 +19,59 @@
 
     @if (!fotoCapturada)
     {
-        <div class="card" style="padding:0; overflow:hidden; aspect-ratio:1/1; position:relative;">
-            <video id="videoPreview" style="width:100%; height:100%; object-fit:cover; display:@(cameraAtiva ? "block" : "none");"></video>
+        <div class="card" style="display:flex; gap:8px; padding:6px;">
+            <button class="@(modo == ModoFoto.Camera ? "btn-gold" : "btn-outline")" style="flex:1; padding:10px;" @onclick="() => modo = ModoFoto.Camera">
+                📷 Câmera
+            </button>
+            <button class="@(modo == ModoFoto.Upload ? "btn-gold" : "btn-outline")" style="flex:1; padding:10px;" @onclick="() => modo = ModoFoto.Upload">
+                📁 Já tenho a foto
+            </button>
+        </div>
+
+        @if (modo == ModoFoto.Camera)
+        {
+            <div class="card" style="padding:0; overflow:hidden; aspect-ratio:1/1; position:relative;">
+                <video id="videoPreview" style="width:100%; height:100%; object-fit:cover; display:@(cameraAtiva ? "block" : "none");"></video>
+
+                @if (!cameraAtiva)
+                {
+                    <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted);">
+                        Câmera desligada
+                    </div>
+                }
+            </div>
 
             @if (!cameraAtiva)
             {
-                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted);">
-                    Câmera desligada
-                </div>
+                <button class="btn-gold" @onclick="IniciarCameraAsync">📷 Ligar câmera</button>
             }
-        </div>
-
-        @if (!cameraAtiva)
-        {
-            <button class="btn-gold" @onclick="IniciarCameraAsync">📷 Ligar câmera</button>
+            else
+            {
+                <button class="btn-gold" @onclick="CapturarFotoAsync">✦ Tirar foto</button>
+                <button class="btn-outline" @onclick="AlternarCameraAsync">🔄 Trocar câmera (frontal/traseira)</button>
+            }
         }
         else
         {
-            <button class="btn-gold" @onclick="CapturarFotoAsync">✦ Tirar foto</button>
-            <button class="btn-outline" @onclick="AlternarCameraAsync">🔄 Trocar câmera (frontal/traseira)</button>
+            <div class="card" style="padding:20px; text-align:center;">
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+                    Use isso se a cliente já tirou a foto antes, veio de outro
+                    aparelho, ou a câmera deste dispositivo não está funcionando.
+                </p>
+                <InputFile OnChange="CarregarArquivoAsync" accept="image/png,image/jpeg,image/webp" />
+                @if (carregandoArquivo)
+                {
+                    <p style="font-size:12px; color:var(--gold-light); margin-top:10px;">Carregando...</p>
+                }
+            </div>
         }
 
         @if (!string.IsNullOrEmpty(erro))
         {
-            <p style="color:#E06565; font-size:12px; text-align:center;">@erro</p>
+            <div class="card" style="border-color:#E06565; text-align:center; display:flex; flex-direction:column; gap:8px;">
+                <p style="color:#E06565; font-size:12px;">@erro</p>
+                <button class="btn-outline" @onclick="TentarNovamenteAsync">↺ Tentar novamente</button>
+            </div>
         }
     }
     else
@@ -101,7 +131,10 @@
 
         @if (!string.IsNullOrEmpty(erro))
         {
-            <p style="color:#E06565; font-size:12px; text-align:center;">@erro</p>
+            <div class="card" style="border-color:#E06565; text-align:center; display:flex; flex-direction:column; gap:8px;">
+                <p style="color:#E06565; font-size:12px;">@erro</p>
+                <button class="btn-outline" @onclick="GerarSimulacaoAsync">↺ Tentar novamente</button>
+            </div>
         }
     }
 
@@ -134,6 +167,10 @@
     [SupplyParameterFromQuery(Name = "cor"), Parameter] public string? CorSugerida { get; set; }
     [SupplyParameterFromQuery(Name = "tipo"), Parameter] public string? TipoSugerido { get; set; }
     [SupplyParameterFromQuery(Name = "metodo"), Parameter] public string? MetodoSugerido { get; set; }
+
+    private enum ModoFoto { Camera, Upload }
+    private ModoFoto modo = ModoFoto.Camera;
+    private bool carregandoArquivo;
 
     private bool cameraAtiva;
     private bool usarCameraFrontal = true;
@@ -228,7 +265,48 @@
         fotoCapturada = false;
         fotoBase64 = null;
         resultado = null;
-        await IniciarCameraAsync();
+        erro = null;
+        if (modo == ModoFoto.Camera)
+            await IniciarCameraAsync();
+    }
+
+    private void TentarNovamenteAsync()
+    {
+        // Erro na tela de captura (câmera/upload) — só limpa a mensagem
+        // e deixa a pessoa tentar a mesma ação de novo, sem perder nada.
+        erro = null;
+    }
+
+    private async Task CarregarArquivoAsync(InputFileChangeEventArgs e)
+    {
+        erro = null;
+        carregandoArquivo = true;
+        try
+        {
+            const long tamanhoMaximo = 10 * 1024 * 1024; // 10 MB — mesmo limite do backend
+            var arquivo = e.File;
+
+            if (arquivo.Size > tamanhoMaximo)
+            {
+                erro = "Arquivo excede 10 MB. Escolha uma foto menor.";
+                return;
+            }
+
+            using var stream = arquivo.OpenReadStream(tamanhoMaximo);
+            using var memoria = new MemoryStream();
+            await stream.CopyToAsync(memoria);
+
+            fotoBase64 = Convert.ToBase64String(memoria.ToArray());
+            fotoCapturada = true;
+        }
+        catch (Exception)
+        {
+            erro = "Não foi possível carregar esse arquivo. Verifique se é uma imagem (JPG, PNG ou WEBP).";
+        }
+        finally
+        {
+            carregandoArquivo = false;
+        }
     }
 
     private async Task GerarSimulacaoAsync()

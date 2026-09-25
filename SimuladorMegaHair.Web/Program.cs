@@ -7,6 +7,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// ── Autenticação (JWT contra a Api, ponte com o Blazor) ─────────
+// Sem isso, não existia login nenhum no Web: qualquer pessoa abria
+// direto em "/" e ia parar em "Nova Simulação" sem autenticar, e o
+// ApiClient nunca mandava Authorization — todo 401/403 da Api virava
+// um "Response status code does not indicate success" genérico.
+builder.Services.AddScoped<AuthTokenStore>();
+builder.Services.AddScoped<AuthHeaderHandler>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider, JwtAuthStateProvider>();
+builder.Services.AddAuthorizationCore();
+builder.Services.AddCascadingAuthenticationState();
+
 // ⚠️ Limite de tamanho de mensagem do SignalR (canal em tempo real do
 // Blazor Server). O padrão é pequeno (~32 KB) — insuficiente para uma
 // foto capturada pela câmera, que some no JS interop como uma string
@@ -24,33 +35,14 @@ builder.Services.AddSignalR(options =>
 // "http://192.168.1.100:5185/". Igual ao app MAUI, TODOS os
 // dispositivos (TV, tablets, iPad, celulares) devem apontar para o
 // MESMO endereço, para compartilhar clientes/catálogo/histórico.
-//
-// FASE 1: a API agora exige o cabeçalho X-Api-Key em todas as chamadas.
-// Como este site fala com a API pelo SERVIDOR (Blazor Server), a chave
-// fica só aqui — nunca chega ao navegador da cliente.
-var megaHairApiKey = builder.Configuration["MEGAHAIR_API_KEY"]
-                      ?? Environment.GetEnvironmentVariable("MEGAHAIR_API_KEY")
-                      ?? string.Empty;
-
 builder.Services.AddHttpClient<ApiClient>(client =>
 {
     var baseUrl = builder.Configuration["Api:BaseUrl"] ?? "http://localhost:5185/";
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromMinutes(10); // simulações de IA demoram
-
-    if (!string.IsNullOrWhiteSpace(megaHairApiKey))
-        client.DefaultRequestHeaders.Add("X-Api-Key", megaHairApiKey);
-});
+}).AddHttpMessageHandler<AuthHeaderHandler>();
 
 var app = builder.Build();
-
-if (string.IsNullOrWhiteSpace(megaHairApiKey))
-{
-    app.Logger.LogWarning(
-        "MEGAHAIR_API_KEY não configurada neste site: todas as chamadas à " +
-        "Api serão recusadas com 401. Configure a mesma chave usada na Api " +
-        "(variável de ambiente MEGAHAIR_API_KEY).");
-}
 
 if (!app.Environment.IsDevelopment())
 {

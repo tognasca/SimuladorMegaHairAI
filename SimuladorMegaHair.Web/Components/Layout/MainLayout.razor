@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@inject SimuladorMegaHair.Web.Services.AuthTokenStore TokenStore
+@inject NavigationManager Nav
 
 <div class="app-shell">
 
@@ -24,6 +26,19 @@
             <span class="sidebar-icon">▣</span>
             <span class="sidebar-label">Catálogo</span>
         </a>
+
+        @if (TokenStore.EstaAutenticado)
+        {
+            <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border-soft, #2a2a30);">
+                <div style="font-size:11px; color:var(--text-muted); padding:0 12px 8px;">
+                    @TokenStore.EmailUsuario
+                </div>
+                <a class="sidebar-item" href="#" @onclick="SairAsync" @onclick:preventDefault>
+                    <span class="sidebar-icon">⏻</span>
+                    <span class="sidebar-label">Sair</span>
+                </a>
+            </div>
+        }
     </nav>
 
     <main class="app-main">
@@ -31,3 +46,11 @@
     </main>
 
 </div>
+
+@code {
+    private async Task SairAsync()
+    {
+        await TokenStore.LimparAsync();
+        Nav.NavigateTo("/login", forceLoad: false);
+    }
+}

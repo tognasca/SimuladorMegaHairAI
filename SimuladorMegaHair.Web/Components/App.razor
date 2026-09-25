@@ -24,7 +24,14 @@
 </head>
 
 <body>
-    <Routes />
+    <!--
+        prerender:false — sem isso, o Blazor tenta renderizar a página uma
+        vez no servidor ANTES do circuito SignalR conectar (prerender),
+        momento em que interop com JavaScript (incl. Protected Local
+        Storage, usado para restaurar o login) ainda não está disponível
+        e lança "JavaScript interop calls cannot be issued at this time".
+    -->
+    <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
     <script src="_framework/blazor.web.js"></script>
     <script src="js/camera.js"></script>
 </body>

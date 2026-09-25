@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimuladorMegaHair.Api", "SimuladorMegaHair.Api\SimuladorMegaHair.Api.csproj", "{75AE43BF-131C-4009-B553-1B3D5150C4D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimuladorMegaHair.App", "SimuladorMegaHair.App\SimuladorMegaHair.App.csproj", "{25018882-884E-4B79-99DC-F41D8C3151E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimuladorMegaHair.Domain", "SimuladorMegaHair.Domain\SimuladorMegaHair.Domain.csproj", "{8B9435B9-6F75-47F7-B60C-D016BF2E58EB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimuladorMegaHair.Infrastructure", "SimuladorMegaHair.Infrastructure\SimuladorMegaHair.Infrastructure.csproj", "{D24F1956-6DB1-4A39-8333-B0BCF367E07B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimuladorMegaHair.Web", "SimuladorMegaHair.Web\SimuladorMegaHair.Web.csproj", "{7F8B83D8-4155-49D2-A1CA-956C9381DAF1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{75AE43BF-131C-4009-B553-1B3D5150C4D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75AE43BF-131C-4009-B553-1B3D5150C4D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75AE43BF-131C-4009-B553-1B3D5150C4D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75AE43BF-131C-4009-B553-1B3D5150C4D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25018882-884E-4B79-99DC-F41D8C3151E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25018882-884E-4B79-99DC-F41D8C3151E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25018882-884E-4B79-99DC-F41D8C3151E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25018882-884E-4B79-99DC-F41D8C3151E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B9435B9-6F75-47F7-B60C-D016BF2E58EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B9435B9-6F75-47F7-B60C-D016BF2E58EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B9435B9-6F75-47F7-B60C-D016BF2E58EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B9435B9-6F75-47F7-B60C-D016BF2E58EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D24F1956-6DB1-4A39-8333-B0BCF367E07B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D24F1956-6DB1-4A39-8333-B0BCF367E07B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D24F1956-6DB1-4A39-8333-B0BCF367E07B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D24F1956-6DB1-4A39-8333-B0BCF367E07B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F8B83D8-4155-49D2-A1CA-956C9381DAF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F8B83D8-4155-49D2-A1CA-956C9381DAF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F8B83D8-4155-49D2-A1CA-956C9381DAF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F8B83D8-4155-49D2-A1CA-956C9381DAF1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

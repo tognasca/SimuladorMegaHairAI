@@ -21,6 +21,21 @@ public class ApiClient
     }
 
     /// <summary>
+    /// Login contra a API (POST /api/auth/login). Não precisa de token
+    /// prévio — o endpoint é anônimo por design.
+    /// </summary>
+    public async Task<LoginResponse?> LoginAsync(string email, string senha)
+    {
+        var response = await _http.PostAsJsonAsync("api/auth/login",
+            new LoginRequest { Email = email, Senha = senha });
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<LoginResponse>();
+    }
+
+    /// <summary>
     /// Envia os bytes de uma foto (ex: capturada pela câmera do
     /// navegador) e retorna o caminho salvo no servidor.
     /// </summary>

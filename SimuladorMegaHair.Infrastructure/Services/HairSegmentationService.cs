@@ -96,8 +96,6 @@ public static class HairSegmentationService
         }
         catch (Exception ex)
         {
-            // Nunca deixa a IA de máscara derrubar a simulação — cai para
-            // o fallback geométrico (defesa em profundidade).
             logger.LogWarning(ex, "[IA-MASK] Segmentação por IA indisponível; usando fallback geométrico.");
             return null;
         }
@@ -122,8 +120,6 @@ public static class HairSegmentationService
             {
                 var output = doc.RootElement.GetProperty("output");
 
-                // O modelo retorna um array de máscaras (uma por prompt
-                // combinado); como enviamos só "hair", usamos a primeira.
                 return output.ValueKind switch
                 {
                     JsonValueKind.Array when output.GetArrayLength() > 0 => output[0].GetString(),

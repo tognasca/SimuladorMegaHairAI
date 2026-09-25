@@ -1,6 +1,4 @@
-﻿// SimuladorMegaHair.Infrastructure/Configuration/OpenAIOptions.cs
-namespace SimuladorMegaHair.Infrastructure.Configuration;
-
+﻿namespace SimuladorMegaHair.Infrastructure.Configuration;
 public sealed class OpenAIOptions
 {
     public const string Section = "OpenAI";

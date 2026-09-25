@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using SimuladorMegaHair.Api.Seguranca;
 using SimuladorMegaHair.Domain.DTOs;
 using SimuladorMegaHair.Domain.Entities;
 using SimuladorMegaHair.Domain.Enums;
@@ -12,15 +11,10 @@ using SimuladorMegaHair.Domain.Models;
 using SimuladorMegaHair.Infrastructure.Configuration;
 using SimuladorMegaHair.Infrastructure.Data;
 using SimuladorMegaHair.Infrastructure.Services;
-using SimuladorMegaHair.Infrastructure.Storage;
 
 namespace SimuladorMegaHair.Api.Controllers;
 
-// FASE 1: exige o cabeçalho X-Api-Key (ver Seguranca/ApiKeyAuthentication.cs)
-// em todos os endpoints. Antes, este controller era totalmente anônimo:
-// qualquer um na rede gerava simulações pagas e listava o histórico.
 [ApiController]
-[Authorize]
 [Route("api/[controller]")]
 [Authorize]
 public class SimulacoesController : ControllerBase
@@ -30,8 +24,6 @@ public class SimulacoesController : ControllerBase
     private readonly IOrcamentoService _orcamentoService;
     private readonly IWebHostEnvironment _env;
     private readonly SimulacaoOptions _simOpts;
-    private readonly MediaUrlSigner _urlSigner;
-    private readonly GeracaoThrottle _throttle;
     private readonly ILogger<SimulacoesController> _logger;
 
     public SimulacoesController(
@@ -40,8 +32,6 @@ public class SimulacoesController : ControllerBase
         IOrcamentoService orcamentoService,
         IWebHostEnvironment env,
         IOptions<SimulacaoOptions> simOpts,
-        MediaUrlSigner urlSigner,
-        GeracaoThrottle throttle,
         ILogger<SimulacoesController> logger)
     {
         _dbContext = dbContext;
@@ -49,8 +39,6 @@ public class SimulacoesController : ControllerBase
         _orcamentoService = orcamentoService;
         _env = env;
         _simOpts = simOpts.Value;
-        _urlSigner = urlSigner;
-        _throttle = throttle;
         _logger = logger;
     }
 
@@ -102,54 +90,35 @@ public class SimulacoesController : ControllerBase
     //  UPLOAD
     // ═══════════════════════════════════════════════════════════
 
-    // FASE 1 — validação por conteúdo, não por nome de arquivo:
-    // 1) lê os "magic bytes" para descobrir o formato REAL (o nome do
-    //    arquivo é escolhido livremente por quem envia e não prova nada);
-    // 2) rejeita resolução fora da faixa esperada de uma selfie/foto de
-    //    rosto, evitando decodificar uma imagem enorme na memória;
-    // 3) salva com a extensão do formato REAL, nunca a do nome recebido.
-    private const int LadoMinimoPx = 128;
-    private const int LadoMaximoPx = 8000;
-    private const long PixelsMaximos = 40_000_000; // ~40 MP
-
     [HttpPost("upload")]
     public async Task<ActionResult<string>> Upload(
         IFormFile file,
         CancellationToken ct)
     {
         if (file is null || file.Length == 0)
-            return BadRequest(new { erro = "Arquivo inválido." });
+            return BadRequest("Arquivo inválido.");
+
+        var extensoesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var extensao = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+        if (!extensoesPermitidas.Contains(extensao))
+            return BadRequest("Formato não permitido.");
 
         // Limite 10 MB
         if (file.Length > 10 * 1024 * 1024)
-            return BadRequest(new { erro = "Arquivo excede 10 MB." });
+            return BadRequest("Arquivo excede 10 MB.");
 
-        InfoImagem? info;
-        await using (var streamLeitura = file.OpenReadStream())
-        {
-            info = await ImagemInspetor.InspecionarAsync(streamLeitura, ct);
-        }
-
-        if (info is null)
-            return BadRequest(new { erro = "Formato não permitido. Envie uma foto em JPG, PNG ou WEBP." });
-
-        var motivo = ImagemInspetor.MotivoRejeicao(info, LadoMinimoPx, LadoMaximoPx, PixelsMaximos);
-        if (motivo is not null)
-            return BadRequest(new { erro = motivo });
-
-        var uploadsFolder = Path.Combine(_env.ContentRootPath, "wwwroot", CaminhosSeguros.PastaUploads);
+        var uploadsFolder = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads");
         Directory.CreateDirectory(uploadsFolder);
 
-        var fileName = $"{Guid.NewGuid()}{info.Extensao}";
+        var fileName = $"{Guid.NewGuid()}{extensao}";
         var fullPath = Path.Combine(uploadsFolder, fileName);
 
-        await using (var streamGravacao = file.OpenReadStream())
-        await using (var destino = System.IO.File.Create(fullPath))
-        {
-            await streamGravacao.CopyToAsync(destino, ct);
-        }
+        await using var stream = System.IO.File.Create(fullPath);
+        await file.CopyToAsync(stream, ct);
 
-        return Ok(CaminhosSeguros.Canonico(CaminhosSeguros.PastaUploads, fileName));
+        // ✅ Padroniza com forward slash (funciona em Windows e Linux)
+        return Ok($"wwwroot/uploads/{fileName}");
     }
 
    
@@ -163,19 +132,8 @@ public class SimulacoesController : ControllerBase
         CancellationToken ct)
     {
         // ── Validações ──────────────────────────────────────
-        // FASE 1 (P04): o caminho recebido do cliente é normalizado e
-        // validado contra a lista de nomes que o PRÓPRIO servidor gera; um
-        // caminho absoluto ou "../etc/passwd" é rejeitado aqui, antes de
-        // chegar perto de qualquer leitura de arquivo. Corrige a leitura
-        // arbitrária de arquivo (o valor era usado sem checagem e o
-        // conteúdo era enviado à Replicate).
-        if (!CaminhosSeguros.TryNormalizar(request.FotoOriginalPath, out var pastaFoto, out var arquivoFoto)
-            || pastaFoto != CaminhosSeguros.PastaUploads)
-        {
-            return BadRequest(new { erro = "Foto inválida. Envie a foto novamente." });
-        }
-
-        var fotoOriginalPath = CaminhosSeguros.Canonico(pastaFoto, arquivoFoto);
+        if (string.IsNullOrWhiteSpace(request.FotoOriginalPath))
+            return BadRequest("Caminho da foto é obrigatório.");
 
         if (!ProviderHabilitado(request.Provider))
             return BadRequest(new
@@ -183,19 +141,11 @@ public class SimulacoesController : ControllerBase
                 erro = $"Provider '{request.Provider}' não está habilitado."
             });
 
-        // FASE 1: cota diária simples, para não esgotar o crédito de IA em
-        // caso de uso indevido ou de bug em algum cliente.
-        var desde = DateTime.UtcNow.AddDays(-1);
-        var geradasUltimas24h = await _dbContext.Simulacoes.CountAsync(s => s.CriadoEm >= desde, ct);
-        if (geradasUltimas24h >= _simOpts.LimiteDiarioGlobal)
-        {
-            return StatusCode(StatusCodes.Status429TooManyRequests,
-                new { erro = "Limite diário de simulações atingido. Tente novamente mais tarde." });
-        }
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
         // ── Cache: mesma foto + mesmos parâmetros + mesmo provider ──
         var existente = await _dbContext.Simulacoes
-            .Where(s => s.FotoOriginalPath == fotoOriginalPath
+            .Where(s => s.FotoOriginalPath == request.FotoOriginalPath
                      && s.Comprimento == request.Comprimento
                      && s.Cor == request.Cor
                      && s.TipoCabelo == request.TipoCabelo
@@ -205,17 +155,7 @@ public class SimulacoesController : ControllerBase
 
         if (existente is not null)
         {
-            return Ok(MontarResponse(existente, _urlSigner, veioDoCache: true));
-        }
-
-        // FASE 1: limita quantas gerações rodam ao mesmo tempo, em vez de
-        // deixar a requisição empilhar indefinidamente (memória + limites
-        // da Replicate).
-        using var vaga = _throttle.TentarEntrar();
-        if (vaga is null)
-        {
-            return StatusCode(StatusCodes.Status429TooManyRequests,
-                new { erro = "O sistema está processando muitas simulações agora. Tente novamente em instantes." });
+            return Ok(MontarResponse(existente, baseUrl, veioDoCache: true));
         }
 
         // ── Chama pipeline de IA ────────────────────────────
@@ -223,18 +163,10 @@ public class SimulacoesController : ControllerBase
 
         try
         {
-
-            var wresultado = await _imageService.PipelineKontextAsync(request.FotoOriginalPath,
-                new SimulacaoRequest
-                {
-                    ImagemOriginalPath = request.FotoOriginalPath,
-                    Comprimento = request.Comprimento,
-                    Cor = request.Cor,
-                    TipoCabelo = request.TipoCabelo,
-                    MetodoMegaHair = request.MetodoMegaHair,
-                    Provider = request.Provider
-                }, ct);
-
+            // NOTA (correção da auditoria): antes havia aqui uma chamada extra a
+            // _imageService.PipelineKontextAsync(...) (flux-kontext-pro, modelo pago
+            // no Replicate) cujo resultado nunca era usado — toda simulação pagava
+            // por uma predição descartada. Removida.
             resultado = await _imageService.GerarSimulacaoAsync(
                 new SimulacaoRequest
                 {
@@ -253,6 +185,59 @@ public class SimulacoesController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return UnprocessableEntity(new { erro = ex.Message });
+        }
+        catch (HttpRequestException ex) when (
+            ex.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+            ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            // Causa mais comum aqui: Replicate:ApiToken vazio, ainda com o
+            // token antigo (revogado) ou digitado errado no user-secrets/
+            // variável de ambiente. Logamos o detalhe completo no servidor,
+            // mas devolvemos ao cliente uma mensagem que não vaza o token.
+            _logger.LogError(ex,
+                "Falha de autenticação com o provedor de IA ao gerar simulação {ClienteId}",
+                request.ClienteId);
+
+            return StatusCode(StatusCodes.Status502BadGateway, new
+            {
+                erro = "Não foi possível autenticar com o provedor de IA. " +
+                       "Verifique se o token do Replicate está configurado " +
+                       "corretamente (Replicate:ApiToken) e não expirou."
+            });
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex,
+                "Falha ao chamar o provedor de IA ao gerar simulação {ClienteId}",
+                request.ClienteId);
+
+            return StatusCode(StatusCodes.Status502BadGateway, new
+            {
+                erro = "O provedor de IA não respondeu corretamente. Tente novamente em instantes."
+            });
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            // Timeout do HttpClient (não foi o usuário/requisição que cancelou).
+            _logger.LogError(ex, "Timeout ao gerar simulação {ClienteId}", request.ClienteId);
+
+            return StatusCode(StatusCodes.Status504GatewayTimeout, new
+            {
+                erro = "O processamento demorou demais e foi interrompido. Tente novamente."
+            });
+        }
+        catch (Exception ex)
+        {
+            // Rede de segurança final: qualquer erro não previsto acima cai
+            // aqui em vez de virar um 500 sem corpo e sem log — o que era
+            // exatamente o problema relatado ("Response status code does
+            // not indicate success: 500", sem nenhuma pista do motivo real).
+            _logger.LogError(ex, "Erro inesperado ao gerar simulação {ClienteId}", request.ClienteId);
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                erro = "Erro inesperado ao gerar a simulação. A equipe técnica já foi notificada pelo log do servidor."
+            });
         }
 
         // ── Calcula orçamento ───────────────────────────────
@@ -277,7 +262,7 @@ public class SimulacoesController : ControllerBase
         var simulacao = new Simulacao
         {
             ClienteId = request.ClienteId,
-            FotoOriginalPath = fotoOriginalPath,
+            FotoOriginalPath = request.FotoOriginalPath,
             FotoResultadoPath = resultado.ImagemResultadoPath,
             Comprimento = request.Comprimento,
             Cor = request.Cor,
@@ -292,7 +277,7 @@ public class SimulacoesController : ControllerBase
         _dbContext.Simulacoes.Add(simulacao);
         await _dbContext.SaveChangesAsync(ct);
 
-        var response = MontarResponse(simulacao, _urlSigner, veioDoCache: false);
+        var response = MontarResponse(simulacao, baseUrl, veioDoCache: false);
         response.Aviso = resultado.Aviso;
 
         return Ok(response);
@@ -309,6 +294,7 @@ public class SimulacoesController : ControllerBase
         [FromQuery] int take = 20,
         CancellationToken ct = default)
     {
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
         var query = _dbContext.Simulacoes.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(fotoOriginalPath))
@@ -325,7 +311,7 @@ public class SimulacoesController : ControllerBase
             .ToListAsync(ct);
 
         var response = historico
-            .Select(s => MontarResponse(s, _urlSigner, veioDoCache: false))
+            .Select(s => MontarResponse(s, baseUrl, veioDoCache: false))
             .ToList();
 
         return Ok(response);
@@ -368,7 +354,8 @@ public class SimulacoesController : ControllerBase
         simulacao.FotoResultadoPath = novoPath;
         await _dbContext.SaveChangesAsync(ct);
 
-        return Ok(MontarResponse(simulacao, _urlSigner, veioDoCache: false));
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        return Ok(MontarResponse(simulacao, baseUrl, veioDoCache: false));
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -385,29 +372,14 @@ public class SimulacoesController : ControllerBase
 
     // internal: reaproveitado pelo ClientesController para montar o
     // histórico de simulações de um cliente com o mesmo formato.
-    //
-    // FASE 1: as fotos não são mais servidas por UseStaticFiles() (link
-    // público, sem controle); a URL agora aponta para /media/{pasta}/
-    // {arquivo} com uma assinatura HMAC e prazo de validade (ver
-    // Seguranca/MediaUrlSigner.cs e Controllers/MediaController.cs).
-    public async Task<SimulacaoResponse> MontarResponse(
-        Simulacao simulacao,
-        MediaUrlSigner urlSigner,
-        bool veioDoCache) =>
-        MontarResponseEstatico(simulacao, $"{Request.Scheme}://{Request.Host}", urlSigner, veioDoCache);
-
-    // internal static: reaproveitado pelo ClientesController para montar o
-    // histórico de simulações de um cliente com o mesmo formato (o
-    // ClientesController monta seu próprio baseUrl a partir do Request dele).
-    internal static SimulacaoResponse MontarResponseEstatico(
+    internal static SimulacaoResponse MontarResponse(
         Simulacao simulacao,
         string baseUrl,
-        MediaUrlSigner urlSigner,
         bool veioDoCache) => new()
         {
             Id = simulacao.Id,
-            FotoOriginalUrl = UrlAssinada(baseUrl, urlSigner, simulacao.FotoOriginalPath),
-            FotoResultadoUrl = UrlAssinada(baseUrl, urlSigner, simulacao.FotoResultadoPath),
+            FotoOriginalUrl = $"{baseUrl}/{NormalizarPath(simulacao.FotoOriginalPath)}",
+            FotoResultadoUrl = $"{baseUrl}/{NormalizarPath(simulacao.FotoResultadoPath)}",
             ValorEstimado = simulacao.ValorEstimado,
             Comprimento = simulacao.Comprimento,
             Cor = simulacao.Cor,
@@ -419,15 +391,20 @@ public class SimulacoesController : ControllerBase
             VeioDoCache = veioDoCache
         };
 
-    // FASE 1: as fotos não são mais servidas por UseStaticFiles() (link
-    // público, sem controle); a URL agora aponta para /media/{pasta}/
-    // {arquivo} com uma assinatura HMAC e prazo de validade (ver
-    // Seguranca/MediaUrlSigner.cs e Controllers/MediaController.cs).
-    private static string UrlAssinada(string baseUrl, MediaUrlSigner urlSigner, string? path)
+    /// <summary>
+    /// Normaliza path para URL:
+    /// - Remove "wwwroot/" (arquivos estáticos servem a partir dele)
+    /// - Converte backslash em forward slash
+    /// </summary>
+    private static string NormalizarPath(string path)
     {
-        if (!CaminhosSeguros.TryNormalizar(path, out var pasta, out var arquivo))
-            return string.Empty;
+        if (string.IsNullOrWhiteSpace(path)) return string.Empty;
 
-        return $"{baseUrl}/media/{pasta}/{arquivo}?{urlSigner.Assinar(pasta, arquivo)}";
+        var normalizado = path.Replace('\\', '/');
+
+        if (normalizado.StartsWith("wwwroot/", StringComparison.OrdinalIgnoreCase))
+            normalizado = normalizado["wwwroot/".Length..];
+
+        return normalizado.TrimStart('/');
     }
 }

@@ -361,3 +361,14 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# ── Dados de runtime (fotos de clientes) — NUNCA versionar ──
+SimuladorMegaHair.Api/wwwroot/uploads/
+SimuladorMegaHair.Api/wwwroot/resultados/
+SimuladorMegaHair.Api/wwwroot/masks/
+SimuladorMegaHair.Api/wwwroot/temp/
+SimuladorMegaHair.App/resultados/
+
+# ── Segredos ──
+appsettings.Production.json
+appsettings.*.local.json
+*.secrets.json

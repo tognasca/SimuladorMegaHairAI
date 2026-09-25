@@ -1,0 +1,9 @@
+﻿@inject NavigationManager Nav
+
+@code {
+    protected override void OnInitialized()
+    {
+        var voltarPara = Uri.EscapeDataString(new Uri(Nav.Uri).PathAndQuery);
+        Nav.NavigateTo($"/login?retorno={voltarPara}", forceLoad: false, replace: true);
+    }
+}

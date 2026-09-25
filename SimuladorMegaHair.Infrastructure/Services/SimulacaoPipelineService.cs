@@ -6,7 +6,6 @@ using SimuladorMegaHair.Domain.Enums;
 using SimuladorMegaHair.Domain.Interfaces;
 using SimuladorMegaHair.Domain.Models;
 using SimuladorMegaHair.Infrastructure.Configuration;
-using SimuladorMegaHair.Infrastructure.Storage;
 using System;
 using System.Diagnostics;
 using System.Net;
@@ -59,13 +58,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
             input = new
             {
                 prompt,
-                // FASE 1 (P04) — mesma proteção usada em GerarSimulacaoAsync:
-                // mesmo este método não sendo mais chamado pelo controller,
-                // ele continua compilado e importável. Resolver o caminho
-                // aqui também evita reabrir a leitura arbitrária de arquivo
-                // caso alguém volte a chamá-lo no futuro sem notar o motivo
-                // de ele ter sido desligado (ver comentário na interface).
-                input_image = ConverterBase64(ResolverCaminho(imagemPath)),
+                input_image = ConverterBase64(imagemPath),
                 output_format = "png",
                 safety_tolerance = 2
             }
@@ -442,15 +435,14 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         return caminho;
     }
 
-    // FASE 1 (P04) — defesa em profundidade: mesmo que o controller já
-    // valide o caminho recebido do cliente, este serviço não confia só
-    // nisso. Antes, esta função aceitava QUALQUER caminho, inclusive
-    // absoluto ("Path.IsPathRooted(path) ? path : ..."), o que permitia ler
-    // qualquer arquivo do servidor (ex.: appsettings.json) e enviá-lo à
-    // Replicate. Agora só resolve nomes que o próprio servidor gera, dentro
-    // de wwwroot/uploads ou wwwroot/resultados.
-    private string ResolverCaminho(string path) =>
-        CaminhosSeguros.ResolverExistente(_env.ContentRootPath, path);
+    private string ResolverCaminho(string path)
+    {
+        var abs = Path.IsPathRooted(path)
+            ? path : Path.Combine(_env.ContentRootPath, path);
+        if (!File.Exists(abs))
+            throw new FileNotFoundException("Imagem não encontrada.", abs);
+        return abs;
+    }
 
     private FaceBox? DetectarRostoSeguro(string imagemPath)
     {

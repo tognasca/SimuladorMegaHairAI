@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SimuladorMegaHair.Api.Seguranca;
 using SimuladorMegaHair.Domain.DTOs;
 using SimuladorMegaHair.Domain.Entities;
 using SimuladorMegaHair.Infrastructure.Data;
@@ -97,7 +96,6 @@ public class ClientesController : ControllerBase
             return NotFound("Cliente não encontrado.");
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        var urlSigner = new MediaUrlSigner(baseUrl, TimeSpan.FromMinutes(30));
 
         var resposta = new ClienteDetalheResponse
         {
@@ -108,7 +106,7 @@ public class ClientesController : ControllerBase
             CriadoEm = cliente.CriadoEm,
             Simulacoes = cliente.Simulacoes
                 .OrderByDescending(s => s.CriadoEm)
-                .Select(s =>  await SimulacoesController.MontarResponse(s, urlSigner, veioDoCache: false))
+                .Select(s => SimulacoesController.MontarResponse(s, baseUrl, veioDoCache: false))
                 .ToList()
         };
 

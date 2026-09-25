@@ -1,0 +1,77 @@
+﻿@page "/login"
+@layout Layout.LoginLayout
+@rendermode InteractiveServer
+@inject ApiClient Api
+@inject AuthTokenStore TokenStore
+@inject NavigationManager Nav
+
+<PageTitle>Entrar — Mega Hair AI</PageTitle>
+
+<div style="width:100%; max-width:360px; display:flex; flex-direction:column; align-items:center; padding:32px; border-radius:16px; background:var(--card, #16161a); border:1px solid var(--border-soft, #2a2a30);">
+    <img src="images/logo_tati.png" style="height:100px; object-fit:contain;" alt="Logo" />
+
+    <h2 style="text-align:center; letter-spacing:3px; font-size:18px; margin-top:8px;">ENTRAR</h2>
+
+    <EditForm Model="modelo" OnValidSubmit="EntrarAsync">
+        <div style="display:flex; flex-direction:column; gap:14px; margin-top:16px;">
+            <div>
+                <label style="font-size:11px; letter-spacing:2px; color:var(--text-secondary);">E-MAIL</label>
+                <InputText @bind-Value="modelo.Email" type="email" required
+                           style="width:100%; padding:12px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);" />
+            </div>
+
+            <div>
+                <label style="font-size:11px; letter-spacing:2px; color:var(--text-secondary);">SENHA</label>
+                <InputText @bind-Value="modelo.Senha" type="password" required
+                           style="width:100%; padding:12px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(erro))
+            {
+                <p style="color:#E06565; font-size:12px; text-align:center;">@erro</p>
+            }
+
+            <button class="btn-gold" type="submit" disabled="@entrando">
+                @(entrando ? "Entrando..." : "ENTRAR")
+            </button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private LoginModelo modelo = new();
+    private string? erro;
+    private bool entrando;
+
+    private async Task EntrarAsync()
+    {
+        erro = null;
+        entrando = true;
+        try
+        {
+            var resposta = await Api.LoginAsync(modelo.Email, modelo.Senha);
+            if (resposta is null)
+            {
+                erro = "E-mail ou senha inválidos.";
+                return;
+            }
+
+            await TokenStore.DefinirAsync(resposta.Token, resposta.ExpiraEm, modelo.Email);
+            Nav.NavigateTo("/", forceLoad: false);
+        }
+        catch (Exception)
+        {
+            erro = "Não foi possível conectar à API. Verifique se o servidor está no ar e o endereço configurado (Api:BaseUrl).";
+        }
+        finally
+        {
+            entrando = false;
+        }
+    }
+
+    private class LoginModelo
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Senha { get; set; } = string.Empty;
+    }
+}
