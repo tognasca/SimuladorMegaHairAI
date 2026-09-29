@@ -1,5 +1,4 @@
 ﻿@page "/captura"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @inject IJSRuntime JS
@@ -87,7 +86,7 @@
     else
     {
         <div class="card photo-frame">
-            <img src="data:image/png;base64,@fotoBase64" class="photo-media" alt="Foto da cliente" />
+            <img src="data:@fotoMimeType;base64,@fotoBase64" class="photo-media" alt="Foto da cliente" />
         </div>
 
         @if (!gerando)
@@ -221,6 +220,7 @@
     private bool gerando;
     private bool mostrarAntes;
     private string? fotoBase64;
+    private string fotoMimeType = "image/png";
     private string? fotoServidorPath;
     private string? erro;
     private string mensagemLoading = "Preparando sua transformação...";
@@ -303,6 +303,7 @@
         }
 
         fotoBase64 = base64;
+        fotoMimeType = "image/png";
         fotoCapturada = true;
         fotoServidorPath = null;
         await JS.InvokeVoidAsync("megaHairCamera.parar");
@@ -313,6 +314,7 @@
     {
         fotoCapturada = false;
         fotoBase64 = null;
+        fotoMimeType = "image/png";
         fotoServidorPath = null;
         resultado = null;
         erro = null;
@@ -352,6 +354,9 @@
             await stream.CopyToAsync(memoria);
 
             fotoBase64 = Convert.ToBase64String(memoria.ToArray());
+            fotoMimeType = string.IsNullOrWhiteSpace(arquivo.ContentType)
+                ? "image/jpeg"
+                : arquivo.ContentType;
             fotoCapturada = true;
             fotoServidorPath = null;
             resultado = null;
@@ -403,9 +408,11 @@
 
             resultado = await Api.CriarSimulacaoAsync(request);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?";
+            erro = ApiClient.MensagemAmigavel(
+                ex,
+                "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?");
         }
         finally
         {

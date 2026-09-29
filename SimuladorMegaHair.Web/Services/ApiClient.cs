@@ -183,6 +183,18 @@ public class ApiClient
             || texto.Contains("Internal Server", StringComparison.OrdinalIgnoreCase)
             || texto.Contains("status code", StringComparison.OrdinalIgnoreCase)
             || texto.Contains("Replicate", StringComparison.OrdinalIgnoreCase)
-            || texto.Contains("NullReference", StringComparison.OrdinalIgnoreCase);
+            || texto.Contains("NullReference", StringComparison.OrdinalIgnoreCase)
+            || texto.Contains("connection", StringComparison.OrdinalIgnoreCase)
+            || texto.Contains("socket", StringComparison.OrdinalIgnoreCase)
+            || texto.Contains("failed to fetch", StringComparison.OrdinalIgnoreCase)
+            || texto.Contains("name or service", StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal static string MensagemAmigavel(Exception ex, string fallback)
+    {
+        var mensagem = ex.Message?.Trim();
+        return !string.IsNullOrWhiteSpace(mensagem) && !PareceErroTecnico(mensagem)
+            ? mensagem
+            : fallback;
     }
 }

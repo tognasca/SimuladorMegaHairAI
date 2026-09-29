@@ -342,8 +342,27 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
             using var resp = await _http.SendAsync(req, ct);
             var json = await resp.Content.ReadAsStringAsync(ct);
 
+            if (!resp.IsSuccessStatusCode)
+            {
+                _logger.LogError(
+                    "Falha HTTP ao consultar predição {PredId}: {Status}",
+                    predId, resp.StatusCode);
+
+                throw new HttpRequestException(
+                    "Falha ao consultar o processamento da imagem.",
+                    null,
+                    resp.StatusCode);
+            }
+
             using var doc = JsonDocument.Parse(json);
-            var status = doc.RootElement.GetProperty("status").GetString();
+            if (!doc.RootElement.TryGetProperty("status", out var statusElement)
+                || statusElement.ValueKind != JsonValueKind.String)
+            {
+                throw new InvalidOperationException(
+                    "Resposta inválida do provedor de IA.");
+            }
+
+            var status = statusElement.GetString();
 
             if (i % 5 == 0) _logger.LogDebug("[Poll {I}] {Status}", i, status);
 
@@ -495,13 +514,27 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
 
     private static string ExtrairOutput(JsonElement root)
     {
-        var o = root.GetProperty("output");
-        return o.ValueKind switch
+        if (!root.TryGetProperty("output", out var o))
+            throw new InvalidOperationException(
+                "Resposta inválida do provedor de IA.");
+
+        var output = o.ValueKind switch
         {
-            JsonValueKind.Array => o[0].GetString()!,
-            JsonValueKind.String => o.GetString()!,
+            JsonValueKind.Array when o.GetArrayLength() > 0
+                => o[0].GetString(),
+            JsonValueKind.String => o.GetString(),
             _ => throw new InvalidOperationException("Resposta inválida do provedor de IA.")
         };
+
+        if (string.IsNullOrWhiteSpace(output)
+            || !Uri.TryCreate(output, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+        {
+            throw new InvalidOperationException(
+                "Resposta inválida do provedor de IA.");
+        }
+
+        return output;
     }
 
     private static bool IsNsfw(Exception ex) =>

@@ -1,5 +1,6 @@
 using System.Net;
 using SimuladorMegaHair.Web.Services;
+using Xunit;
 
 namespace SimuladorMegaHair.Tests;
 

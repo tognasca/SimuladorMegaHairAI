@@ -1,6 +1,7 @@
 using SimuladorMegaHair.Domain.Enums;
 using SimuladorMegaHair.Infrastructure.Configuration;
 using SimuladorMegaHair.Infrastructure.Services;
+using Xunit;
 
 namespace SimuladorMegaHair.Tests;
 

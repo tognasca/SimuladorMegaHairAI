@@ -332,6 +332,10 @@ button {
     display: block;
 }
 
+.photo-frame img.photo-media {
+    background: #f4e9e2;
+}
+
 .photo-placeholder {
     display: flex;
     align-items: center;
@@ -509,6 +513,36 @@ button {
 
     .result-actions {
         grid-template-columns: 1fr;
+    }
+
+    .sim-page {
+        gap: 12px;
+    }
+
+    .card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .sim-steps {
+        font-size: 9px;
+    }
+
+    .sim-steps li {
+        padding-inline: 0;
+    }
+
+    .btn-gold,
+    .btn-outline {
+        width: 100%;
+        min-height: 48px;
+    }
+
+    .mode-toggle .btn-gold,
+    .mode-toggle .btn-outline,
+    .compare-toolbar .btn-gold,
+    .compare-toolbar .btn-outline {
+        width: auto;
     }
 }
 
