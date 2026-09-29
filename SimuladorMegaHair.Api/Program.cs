@@ -86,13 +86,24 @@ builder.Services.AddCors(options =>
 //  AUTENTICAÇÃO (JWT)
 // ═══════════════════════════════════════════════════════════
 
-var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException(
-        "Jwt:Key não configurado. Defina a variável de ambiente Jwt__Key " +
-        "(mín. 32 caracteres aleatórios) — nunca deixe isso em appsettings.json versionado.");
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32)
+{
+    throw new InvalidOperationException(
+        "Jwt:Key não configurado ou muito curto. Defina a variável de ambiente " +
+        "Jwt__Key com pelo menos 32 caracteres aleatórios — nunca deixe isso " +
+        "em appsettings.json versionado.");
+}
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SimuladorMegaHair";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SimuladorMegaHair.Clients";
 
 builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -101,9 +112,10 @@ builder.Services
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "SimuladorMegaHair",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "SimuladorMegaHair.Clients",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.FromMinutes(1)
         };
     });
 
