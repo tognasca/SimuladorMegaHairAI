@@ -382,7 +382,7 @@
             };
             resultado = await Api.CriarSimulacaoAsync(request);
         }
-        catch (Exception ex) { erro = ApiClient.MensagemAmigavel(ex, "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"); }
+        catch (Exception ex) { erro = ApiClient.MensagemAmigavel(ex, "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?", Api.BaseAddress); }
         finally { loadCts.Cancel(); gerando = false; }
     }
 

@@ -1,18 +1,18 @@
 :root {
-    --bg: #FBF6F1;
-    --card: #FFFFFF;
-    --input: #FFFDFB;
-    --sidebar: #F3E6DE;
-    --border-soft: #E8D5CB;
-    --border-gold: #C9A227;
-    --gold: #C9A227;
-    --gold-light: #D4B45A;
-    --terracotta: #C45C3E;
-    --terracotta-deep: #9E3F28;
-    --text-primary: #3A2A24;
-    --text-secondary: #6B534A;
-    --text-muted: #8A736A;
-    --error: #B42318;
+    --bg: #F5F3EF;
+    --card: #FFFEFC;
+    --input: #FAF9F6;
+    --sidebar: #ECE9E4;
+    --border-soft: #D9D4CC;
+    --border-gold: #B79C72;
+    --gold: #A98B61;
+    --gold-light: #C4AD89;
+    --terracotta: #8D7978;
+    --terracotta-deep: #4B3E3C;
+    --text-primary: #2F2C2A;
+    --text-secondary: #665F59;
+    --text-muted: #938A82;
+    --error: #9D5E58;
 }
 
 * {
@@ -171,8 +171,8 @@ button {
 }
 
 .btn-gold {
-    background: linear-gradient(180deg, #D4B45A 0%, var(--gold) 100%);
-    color: #3A2A24;
+    background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
+    color: #2F2C2A;
     border: none;
     border-radius: 14px;
     padding: 14px 20px;
@@ -333,7 +333,7 @@ button {
 }
 
 .photo-frame img.photo-media {
-    background: #f4e9e2;
+    background: #ECEAE5;
 }
 
 .photo-placeholder {
@@ -557,13 +557,13 @@ button {
    PREMIUM BEAUTY SIMULATOR — mobile-first experience
    ═══════════════════════════════════════════════════════════ */
 .beauty-sim-page {
-    --beauty-ink: #382923;
-    --beauty-muted: #806b60;
-    --beauty-soft: #f8f1eb;
-    --beauty-line: #eadbd1;
-    --beauty-gold: #b68a47;
-    --beauty-gold-soft: #f3e5ca;
-    --beauty-rose: #d78978;
+    --beauty-ink: #2F2C2A;
+    --beauty-muted: #756D66;
+    --beauty-soft: #F2F0EC;
+    --beauty-line: #DDD8D0;
+    --beauty-gold: #A98B61;
+    --beauty-gold-soft: #EEE8DE;
+    --beauty-rose: #A18D8B;
     max-width: 1180px;
     margin: 0 auto;
     padding: 12px 0 56px;
@@ -870,3 +870,13 @@ button {
     .beauty-error { align-items: flex-start; flex-direction: column; }
     .beauty-error .beauty-secondary-action, .beauty-error .beauty-primary-action { width: 100%; }
 }
+
+
+/* Final editorial neutral overrides */
+.beauty-camera-stage { background: linear-gradient(145deg, #E9E7E2, #F7F6F3 55%, #D7D3CD); }
+.beauty-dropzone { background: linear-gradient(145deg, #F7F6F3, #ECEAE5); }
+.beauty-dropzone:hover { background: #F0EEEA; }
+.beauty-method-icon { background: #ECEAE5; }
+.beauty-loading-panel { background: linear-gradient(145deg, #F8F7F4, #E9E5DF); }
+.beauty-result-cta .beauty-eyebrow { color: #C9B28D; }
+.beauty-result-cta small { color: #D6D0C9; }

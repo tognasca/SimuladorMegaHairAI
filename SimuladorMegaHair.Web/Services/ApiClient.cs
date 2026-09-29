@@ -22,6 +22,8 @@ public class ApiClient
         _http = http;
     }
 
+    public Uri? BaseAddress => _http.BaseAddress;
+
     /// <summary>
     /// Login contra a API (POST /api/auth/login). Não precisa de token
     /// prévio — o endpoint é anônimo por design.
@@ -190,8 +192,14 @@ public class ApiClient
             || texto.Contains("name or service", StringComparison.OrdinalIgnoreCase);
     }
 
-    internal static string MensagemAmigavel(Exception ex, string fallback)
+    internal static string MensagemAmigavel(Exception ex, string fallback, Uri? apiBaseAddress = null)
     {
+        if (ex is TaskCanceledException)
+            return $"A API não respondeu a tempo em {apiBaseAddress?.ToString().TrimEnd('/') ?? "http://localhost:5185"}. Confirme se ela está em execução e tente novamente.";
+
+        if (ex is HttpRequestException)
+            return $"Não foi possível conectar à API em {apiBaseAddress?.ToString().TrimEnd('/') ?? "http://localhost:5185"}. Inicie o SimuladorMegaHair.Api e tente novamente.";
+
         var mensagem = ex.Message?.Trim();
         return !string.IsNullOrWhiteSpace(mensagem) && !PareceErroTecnico(mensagem)
             ? mensagem
