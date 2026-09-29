@@ -894,3 +894,24 @@ button {
     cursor: pointer;
 }
 .beauty-cancel-action:hover { border-bottom-color: var(--beauty-ink); color: var(--beauty-ink); }
+
+
+/* Quiet editorial direction: sharper geometry, less decorative UI */
+.beauty-sim-page .beauty-primary-action,
+.beauty-sim-page .beauty-secondary-action,
+.beauty-sim-page .beauty-appointment-action { border-radius: 4px; letter-spacing: .13em; }
+.beauty-sim-page .beauty-upload-card,
+.beauty-sim-page .beauty-photo-card,
+.beauty-sim-page .beauty-result-card,
+.beauty-sim-page .beauty-loading-panel { border-radius: 4px; box-shadow: 0 14px 34px rgba(47, 44, 42, .07); }
+.beauty-sim-page .beauty-camera-stage,
+.beauty-sim-page .beauty-dropzone,
+.beauty-sim-page .beauty-result-hero { border-radius: 3px; }
+.beauty-sim-page .beauty-mode-switch,
+.beauty-sim-page .beauty-compare-toggle { border-radius: 4px; }
+.beauty-sim-page .beauty-choice,
+.beauty-sim-page .beauty-color-choice,
+.beauty-sim-page .beauty-method-card { border-radius: 4px; }
+.beauty-sim-page .beauty-method-card { min-height: 70px; }
+.beauty-sim-page .beauty-result-cta { border-radius: 4px; }
+.beauty-sim-page .beauty-page-title { letter-spacing: -.04em; }

@@ -5,6 +5,7 @@ using SimuladorMegaHair.Domain.Interfaces;
 using SimuladorMegaHair.Infrastructure.Configuration;
 using SimuladorMegaHair.Infrastructure.Data;
 using SimuladorMegaHair.Infrastructure.Services;
+using Microsoft.OpenApi;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +29,21 @@ builder.Services.AddSwaggerGen(options =>
         Title = "MegaHair AI API",
         Version = "v1",
         Description = "API para simulação de mega hair com inteligência artificial."
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Cole somente o token JWT obtido em /api/Auth/login. O Swagger adiciona o prefixo Bearer automaticamente."
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", null, null)] = new List<string>()
     });
 });
 
