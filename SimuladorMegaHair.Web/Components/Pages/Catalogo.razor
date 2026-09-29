@@ -104,9 +104,9 @@
                 string.IsNullOrWhiteSpace(filtroComprimento) ? null : filtroComprimento,
                 string.IsNullOrWhiteSpace(filtroTipo) ? null : filtroTipo);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            erro = $"Não foi possível conectar ao servidor. Verifique se a API está rodando. ({ex.Message})";
+            erro = "Não foi possível carregar o catálogo. Tente novamente em instantes.";
             itens = new();
         }
         finally

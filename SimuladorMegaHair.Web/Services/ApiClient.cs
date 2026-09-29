@@ -1,4 +1,6 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using SimuladorMegaHair.Domain.DTOs;
 using SimuladorMegaHair.Domain.Entities;
 using SimuladorMegaHair.Domain.Models;
@@ -47,7 +49,7 @@ public class ApiClient
         form.Add(content, "file", nomeArquivo);
 
         var response = await _http.PostAsync("api/simulacoes/upload", form);
-        response.EnsureSuccessStatusCode();
+        await GarantirSucessoAsync(response, "Não foi possível enviar a foto. Tente outra imagem.");
 
         var caminho = await response.Content.ReadAsStringAsync();
         return caminho.Trim('"');
@@ -56,7 +58,8 @@ public class ApiClient
     public async Task<SimulacaoResponse?> CriarSimulacaoAsync(CriarSimulacaoRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/simulacoes", request);
-        response.EnsureSuccessStatusCode();
+        await GarantirSucessoAsync(response,
+            "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?");
         return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();
     }
 
@@ -122,5 +125,64 @@ public class ApiClient
         var response = await _http.GetAsync(url);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<List<CatalogoItem>>() ?? new();
+    }
+
+    private static async Task GarantirSucessoAsync(HttpResponseMessage response, string fallback)
+    {
+        if (response.IsSuccessStatusCode)
+            return;
+
+        var corpo = await response.Content.ReadAsStringAsync();
+        throw new HttpRequestException(ExtrairMensagem(corpo, response.StatusCode, fallback));
+    }
+
+    internal static string ExtrairMensagem(string? corpo, HttpStatusCode status, string fallback)
+    {
+        var doJson = TentarLerErroJson(corpo);
+        if (!string.IsNullOrWhiteSpace(doJson) && !PareceErroTecnico(doJson))
+            return doJson.Trim();
+
+        if (!string.IsNullOrWhiteSpace(corpo)
+            && corpo.Length < 180
+            && !corpo.TrimStart().StartsWith('{')
+            && !PareceErroTecnico(corpo))
+            return corpo.Trim('"');
+
+        return status switch
+        {
+            HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
+                => "Sua sessão expirou. Entre novamente para continuar.",
+            HttpStatusCode.RequestTimeout or HttpStatusCode.GatewayTimeout
+                => "A simulação está demorando mais do que o esperado. Tente novamente.",
+            _ => fallback
+        };
+    }
+
+    private static string? TentarLerErroJson(string? corpo)
+    {
+        if (string.IsNullOrWhiteSpace(corpo))
+            return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(corpo);
+            if (doc.RootElement.TryGetProperty("erro", out var erro))
+                return erro.GetString();
+        }
+        catch (JsonException)
+        {
+            // corpo não é JSON
+        }
+
+        return null;
+    }
+
+    private static bool PareceErroTecnico(string texto)
+    {
+        return texto.Contains("Exception", StringComparison.OrdinalIgnoreCase)
+            || texto.Contains("Internal Server", StringComparison.OrdinalIgnoreCase)
+            || texto.Contains("status code", StringComparison.OrdinalIgnoreCase)
+            || texto.Contains("Replicate", StringComparison.OrdinalIgnoreCase)
+            || texto.Contains("NullReference", StringComparison.OrdinalIgnoreCase);
     }
 }

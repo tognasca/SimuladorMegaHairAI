@@ -5,7 +5,7 @@ public sealed class ReplicateOptions
 {
     public const string Section = "Replicate";
 
-    public string ApiToken { get; set; } = "";
+    public string ApiToken { get; set; } = string.Empty;
     public string FluxFillOwner { get; set; } = "black-forest-labs";
     public string FluxFillName { get; set; } = "flux-fill-dev";
     public string InsightFaceOwner { get; set; } = "zsxkib";

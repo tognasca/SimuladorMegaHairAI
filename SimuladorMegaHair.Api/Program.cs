@@ -13,7 +13,6 @@ var builder = WebApplication.CreateBuilder(args);
 //  CONTROLLERS + SWAGGER
 // ═══════════════════════════════════════════════════════════
 
-
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -43,7 +42,9 @@ builder.Services.Configure<ReplicateOptions>(
     builder.Configuration.GetSection(ReplicateOptions.Section));
 
 builder.Services.Configure<OpenAIOptions>(
-    builder.Configuration.GetSection(OpenAIOptions.Section));// ═══════════════════════════════════════════════════════════
+    builder.Configuration.GetSection(OpenAIOptions.Section));
+
+// ═══════════════════════════════════════════════════════════
 //  BANCO DE DADOS
 // ═══════════════════════════════════════════════════════════
 

@@ -95,17 +95,17 @@ public class SimulacoesController : ControllerBase
         CancellationToken ct)
     {
         if (file is null || file.Length == 0)
-            return BadRequest("Arquivo inválido.");
+            return BadRequest("Envie uma foto para começar.");
 
-        var extensoesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-        var extensao = Path.GetExtension(file.FileName).ToLowerInvariant();
-
-        if (!extensoesPermitidas.Contains(extensao))
-            return BadRequest("Formato não permitido.");
-
-        // Limite 10 MB
         if (file.Length > 10 * 1024 * 1024)
-            return BadRequest("Arquivo excede 10 MB.");
+            return BadRequest("A foto é grande demais. Use uma imagem de até 10 MB.");
+
+        await using var buffer = new MemoryStream();
+        await file.CopyToAsync(buffer, ct);
+        var bytes = buffer.ToArray();
+
+        if (!ImageFormatHelper.EhImagemValida(bytes, file.FileName, out var extensao))
+            return BadRequest("Use uma foto em JPG, PNG ou WEBP.");
 
         var uploadsFolder = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads");
         Directory.CreateDirectory(uploadsFolder);
@@ -113,8 +113,7 @@ public class SimulacoesController : ControllerBase
         var fileName = $"{Guid.NewGuid()}{extensao}";
         var fullPath = Path.Combine(uploadsFolder, fileName);
 
-        await using var stream = System.IO.File.Create(fullPath);
-        await file.CopyToAsync(stream, ct);
+        await System.IO.File.WriteAllBytesAsync(fullPath, bytes, ct);
 
         // ✅ Padroniza com forward slash (funciona em Windows e Linux)
         return Ok($"wwwroot/uploads/{fileName}");
@@ -132,18 +131,20 @@ public class SimulacoesController : ControllerBase
     {
         // ── Validações ──────────────────────────────────────
         if (string.IsNullOrWhiteSpace(request.FotoOriginalPath))
-            return BadRequest("Caminho da foto é obrigatório.");
+            return BadRequest("Envie uma foto para começar.");
 
         if (!ProviderHabilitado(request.Provider))
             return BadRequest(new
             {
-                erro = $"Provider '{request.Provider}' não está habilitado."
+                erro = "Esta opção de simulação não está disponível no momento."
             });
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
         // ── Cache: mesma foto + mesmos parâmetros + mesmo provider ──
-        var existente = await _dbContext.Simulacoes
+        var existente = request.ForcarNovaGeracao
+            ? null
+            : await _dbContext.Simulacoes
             .Where(s => s.FotoOriginalPath == request.FotoOriginalPath
                      && s.Comprimento == request.Comprimento
                      && s.Cor == request.Cor
@@ -179,11 +180,16 @@ public class SimulacoesController : ControllerBase
         }
         catch (FileNotFoundException ex)
         {
-            return NotFound(new { erro = ex.Message });
+            _logger.LogWarning(ex, "Foto não encontrada ao gerar simulação {ClienteId}", request.ClienteId);
+            return NotFound(new { erro = "Não encontramos a foto enviada. Envie novamente." });
         }
         catch (InvalidOperationException ex)
         {
-            return UnprocessableEntity(new { erro = ex.Message });
+            _logger.LogError(ex, "Falha ao gerar simulação {ClienteId}", request.ClienteId);
+            return UnprocessableEntity(new
+            {
+                erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
+            });
         }
         catch (HttpRequestException ex) when (
             ex.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
@@ -199,9 +205,7 @@ public class SimulacoesController : ControllerBase
 
             return StatusCode(StatusCodes.Status502BadGateway, new
             {
-                erro = "Não foi possível autenticar com o provedor de IA. " +
-                       "Verifique se o token do Replicate está configurado " +
-                       "corretamente (Replicate:ApiToken) e não expirou."
+                erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
             });
         }
         catch (HttpRequestException ex)
@@ -212,7 +216,16 @@ public class SimulacoesController : ControllerBase
 
             return StatusCode(StatusCodes.Status502BadGateway, new
             {
-                erro = "O provedor de IA não respondeu corretamente. Tente novamente em instantes."
+                erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
+            });
+        }
+        catch (TimeoutException ex)
+        {
+            _logger.LogError(ex, "Timeout ao gerar simulação {ClienteId}", request.ClienteId);
+
+            return StatusCode(StatusCodes.Status504GatewayTimeout, new
+            {
+                erro = "A simulação está demorando mais do que o esperado. Tente novamente."
             });
         }
         catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
@@ -222,20 +235,16 @@ public class SimulacoesController : ControllerBase
 
             return StatusCode(StatusCodes.Status504GatewayTimeout, new
             {
-                erro = "O processamento demorou demais e foi interrompido. Tente novamente."
+                erro = "A simulação está demorando mais do que o esperado. Tente novamente."
             });
         }
         catch (Exception ex)
         {
-            // Rede de segurança final: qualquer erro não previsto acima cai
-            // aqui em vez de virar um 500 sem corpo e sem log — o que era
-            // exatamente o problema relatado ("Response status code does
-            // not indicate success: 500", sem nenhuma pista do motivo real).
             _logger.LogError(ex, "Erro inesperado ao gerar simulação {ClienteId}", request.ClienteId);
 
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                erro = "Erro inesperado ao gerar a simulação. A equipe técnica já foi notificada pelo log do servidor."
+                erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
             });
         }
 

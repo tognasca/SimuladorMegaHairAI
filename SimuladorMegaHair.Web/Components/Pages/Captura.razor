@@ -1,161 +1,204 @@
 ﻿@page "/captura"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @rendermode InteractiveServer
+@implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject ApiClient Api
 
 <PageTitle>Nova Simulação</PageTitle>
 
-<div style="max-width:480px; margin:0 auto; display:flex; flex-direction:column; gap:18px;">
+<div class="sim-page">
 
-    <h2 style="text-align:center; letter-spacing:3px; font-size:20px;">NOVA SIMULAÇÃO</h2>
+    <header class="sim-header">
+        <p class="eyebrow">Simulador de Mega Hair</p>
+        <h1 class="sim-title">Sua transformação</h1>
+        @if (!string.IsNullOrWhiteSpace(ClienteNome))
+        {
+            <p class="sim-client">Simulação para <strong>@ClienteNome</strong></p>
+        }
+    </header>
 
-    @if (!string.IsNullOrWhiteSpace(ClienteNome))
-    {
-        <div class="card card-gold-border" style="text-align:center; padding:10px; font-size:12px; color:var(--gold-light);">
-            ♙ Simulação para: <b>@ClienteNome</b>
-        </div>
-    }
+    <ol class="sim-steps" aria-label="Etapas">
+        <li class="@(fotoCapturada ? "done" : "current")">1. Foto</li>
+        <li class="@(fotoCapturada && resultado is null && !gerando ? "current" : fotoCapturada ? "done" : "")">2. Estilo</li>
+        <li class="@(gerando ? "current" : resultado is not null ? "done" : "")">3. Simulação</li>
+        <li class="@(resultado is not null ? "current" : "")">4. Resultado</li>
+    </ol>
 
     @if (!fotoCapturada)
     {
-        <div class="card" style="display:flex; gap:8px; padding:6px;">
-            <button class="@(modo == ModoFoto.Camera ? "btn-gold" : "btn-outline")" style="flex:1; padding:10px;" @onclick="() => modo = ModoFoto.Camera">
-                📷 Câmera
-            </button>
-            <button class="@(modo == ModoFoto.Upload ? "btn-gold" : "btn-outline")" style="flex:1; padding:10px;" @onclick="() => modo = ModoFoto.Upload">
-                📁 Já tenho a foto
-            </button>
-        </div>
+        <section class="card card-gold-border sim-card">
+            <h2 class="section-title">Envie uma foto para começar</h2>
+            <p class="section-copy">Use a câmera do aparelho ou escolha uma foto já salva. O rosto da cliente permanece o mesmo — a IA altera o cabelo.</p>
+
+            <div class="mode-toggle">
+                <button type="button" class="@(modo == ModoFoto.Camera ? "btn-gold" : "btn-outline")" @onclick="() => modo = ModoFoto.Camera">
+                    Câmera
+                </button>
+                <button type="button" class="@(modo == ModoFoto.Upload ? "btn-gold" : "btn-outline")" @onclick="() => modo = ModoFoto.Upload">
+                    Galeria
+                </button>
+            </div>
+        </section>
 
         @if (modo == ModoFoto.Camera)
         {
-            <div class="card" style="padding:0; overflow:hidden; aspect-ratio:1/1; position:relative;">
-                <video id="videoPreview" style="width:100%; height:100%; object-fit:cover; display:@(cameraAtiva ? "block" : "none");"></video>
-
+            <div class="card photo-frame">
+                <video id="videoPreview" class="photo-media" style="display:@(cameraAtiva ? "block" : "none");"></video>
                 @if (!cameraAtiva)
                 {
-                    <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted);">
-                        Câmera desligada
-                    </div>
+                    <div class="photo-placeholder">Câmera desligada</div>
                 }
             </div>
 
             @if (!cameraAtiva)
             {
-                <button class="btn-gold" @onclick="IniciarCameraAsync">📷 Ligar câmera</button>
+                <button type="button" class="btn-gold" @onclick="IniciarCameraAsync">Ligar câmera</button>
             }
             else
             {
-                <button class="btn-gold" @onclick="CapturarFotoAsync">✦ Tirar foto</button>
-                <button class="btn-outline" @onclick="AlternarCameraAsync">🔄 Trocar câmera (frontal/traseira)</button>
+                <button type="button" class="btn-gold" @onclick="CapturarFotoAsync">Tirar foto</button>
+                <button type="button" class="btn-outline" @onclick="AlternarCameraAsync">Trocar câmera</button>
             }
         }
         else
         {
-            <div class="card" style="padding:20px; text-align:center;">
-                <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
-                    Use isso se a cliente já tirou a foto antes, veio de outro
-                    aparelho, ou a câmera deste dispositivo não está funcionando.
-                </p>
-                <InputFile OnChange="CarregarArquivoAsync" accept="image/png,image/jpeg,image/webp" />
+            <div class="card sim-card">
+                <p class="section-copy">Toque abaixo para escolher a imagem. JPG, PNG ou WEBP, até 10 MB.</p>
+                <label class="file-pick">
+                    <span>Escolher foto</span>
+                    <InputFile OnChange="CarregarArquivoAsync" accept="image/png,image/jpeg,image/webp" capture="environment" />
+                </label>
                 @if (carregandoArquivo)
                 {
-                    <p style="font-size:12px; color:var(--gold-light); margin-top:10px;">Carregando...</p>
+                    <p class="hint-gold">Carregando foto...</p>
                 }
             </div>
         }
 
         @if (!string.IsNullOrEmpty(erro))
         {
-            <div class="card" style="border-color:#E06565; text-align:center; display:flex; flex-direction:column; gap:8px;">
-                <p style="color:#E06565; font-size:12px;">@erro</p>
-                <button class="btn-outline" @onclick="TentarNovamenteAsync">↺ Tentar novamente</button>
+            <div class="card error-card">
+                <p>@erro</p>
+                <button type="button" class="btn-outline" @onclick="TentarNovamenteAsync">Tentar novamente</button>
             </div>
         }
     }
     else
     {
-        <div class="card" style="padding:0; overflow:hidden; aspect-ratio:1/1;">
-            <img src="data:image/png;base64,@fotoBase64" style="width:100%; height:100%; object-fit:cover;" />
+        <div class="card photo-frame">
+            <img src="data:image/png;base64,@fotoBase64" class="photo-media" alt="Foto da cliente" />
         </div>
 
-        <button class="btn-outline" @onclick="RefazerFoto">↺ Tirar outra foto</button>
+        @if (!gerando)
+        {
+            <button type="button" class="btn-outline" @onclick="RefazerFoto">Tirar outra foto</button>
+        }
 
-        <div class="card" style="display:flex; flex-direction:column; gap:14px;">
+        @if (resultado is null)
+        {
+            <div class="card sim-card">
+                <h2 class="section-title">Escolha o Mega Hair</h2>
 
-            <label style="font-size:11px; letter-spacing:2px; color:var(--text-secondary);">COMPRIMENTO</label>
-            <select @bind="comprimento" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
-                @foreach (var c in comprimentos)
-                {
-                    <option value="@c">@c</option>
-                }
-            </select>
+                <label class="field-label">Comprimento</label>
+                <select class="field-select" @bind="comprimento" disabled="@gerando">
+                    @foreach (var c in comprimentos)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
 
-            <label style="font-size:11px; letter-spacing:2px; color:var(--text-secondary);">COR</label>
-            <select @bind="cor" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
-                @foreach (var c in cores)
-                {
-                    <option value="@c">@c</option>
-                }
-            </select>
+                <label class="field-label">Cor</label>
+                <select class="field-select" @bind="cor" disabled="@gerando">
+                    @foreach (var c in cores)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
 
-            <label style="font-size:11px; letter-spacing:2px; color:var(--text-secondary);">TIPO DE CABELO</label>
-            <select @bind="tipoCabelo" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
-                @foreach (var t in tipos)
-                {
-                    <option value="@t">@t</option>
-                }
-            </select>
+                <label class="field-label">Tipo de cabelo</label>
+                <select class="field-select" @bind="tipoCabelo" disabled="@gerando">
+                    @foreach (var t in tipos)
+                    {
+                        <option value="@t">@t</option>
+                    }
+                </select>
 
-            <label style="font-size:11px; letter-spacing:2px; color:var(--text-secondary);">MÉTODO</label>
-            <select @bind="metodo" style="padding:10px; border-radius:8px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
-                @foreach (var m in metodos)
-                {
-                    <option value="@m">@m</option>
-                }
-            </select>
-
-        </div>
+                <label class="field-label">Método</label>
+                <select class="field-select" @bind="metodo" disabled="@gerando">
+                    @foreach (var m in metodos)
+                    {
+                        <option value="@m">@m</option>
+                    }
+                </select>
+            </div>
+        }
 
         @if (gerando)
         {
-            <div class="card" style="text-align:center; color:var(--gold-light);">
-                ✦ Gerando sua simulação com IA... isso pode levar até 1 minuto.
+            <div class="card loading-ia" aria-live="polite">
+                <div class="loading-ring"></div>
+                <p class="loading-title">@mensagemLoading</p>
+                <p class="section-copy">Isso pode levar cerca de um minuto. Não feche a tela.</p>
             </div>
         }
-        else
+        else if (resultado is null)
         {
-            <button class="btn-gold" @onclick="GerarSimulacaoAsync">✦ GERAR SIMULAÇÃO</button>
+            <button type="button" class="btn-gold" disabled="@gerando" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">
+                Gerar simulação
+            </button>
         }
 
-        @if (!string.IsNullOrEmpty(erro))
+        @if (!string.IsNullOrEmpty(erro) && !gerando)
         {
-            <div class="card" style="border-color:#E06565; text-align:center; display:flex; flex-direction:column; gap:8px;">
-                <p style="color:#E06565; font-size:12px;">@erro</p>
-                <button class="btn-outline" @onclick="GerarSimulacaoAsync">↺ Tentar novamente</button>
+            <div class="card error-card">
+                <p>@erro</p>
+                <button type="button" class="btn-gold" @onclick="() => GerarSimulacaoAsync(forcarNova: true)">Tentar novamente</button>
             </div>
         }
     }
 
-    @if (resultado is not null)
+    @if (resultado is not null && !gerando)
     {
-        <div class="card card-gold-border" style="display:flex; flex-direction:column; gap:12px;">
-            <h3 style="text-align:center; font-size:14px; letter-spacing:2px; color:var(--gold);">RESULTADO</h3>
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1;">
-                    <p style="font-size:10px; text-align:center; color:var(--text-muted);">ANTES</p>
-                    <img src="@resultado.FotoOriginalUrl" style="width:100%; border-radius:10px;" />
-                </div>
-                <div style="flex:1;">
-                    <p style="font-size:10px; text-align:center; color:var(--gold-light);">DEPOIS</p>
-                    <img src="@resultado.FotoResultadoUrl" style="width:100%; border-radius:10px; border:1px solid var(--border-gold);" />
-                </div>
+        <section class="card card-gold-border sim-card result-card">
+            <h2 class="section-title gold">Resultado</h2>
+
+            <div class="compare-toolbar">
+                <button type="button" class="@(mostrarAntes ? "btn-gold" : "btn-outline") btn-compact" @onclick="() => mostrarAntes = true">Antes</button>
+                <button type="button" class="@(!mostrarAntes ? "btn-gold" : "btn-outline") btn-compact" @onclick="() => mostrarAntes = false">Depois</button>
             </div>
-            <p style="text-align:center; font-size:16px; font-weight:700; color:var(--gold);">
-                R$ @resultado.ValorEstimado.ToString("N2")
-            </p>
-        </div>
+
+            <div class="result-hero">
+                @if (mostrarAntes)
+                {
+                    <img src="@resultado.FotoOriginalUrl" alt="Antes" />
+                }
+                else
+                {
+                    <img src="@resultado.FotoResultadoUrl" alt="Depois" />
+                }
+            </div>
+
+            <div class="compare-pair">
+                <figure>
+                    <figcaption>Antes</figcaption>
+                    <img src="@resultado.FotoOriginalUrl" alt="Foto original" />
+                </figure>
+                <figure>
+                    <figcaption class="gold">Depois</figcaption>
+                    <img src="@resultado.FotoResultadoUrl" alt="Simulação" />
+                </figure>
+            </div>
+
+            <p class="price">Estimativa R$ @resultado.ValorEstimado.ToString("N2")</p>
+
+            <div class="result-actions">
+                <button type="button" class="btn-gold" @onclick="() => GerarSimulacaoAsync(forcarNova: true)">Gerar novamente</button>
+                <button type="button" class="btn-outline" @onclick="EscolherOutroEstilo">Escolher outro estilo</button>
+                <a class="btn-outline" href="@resultado.FotoResultadoUrl" target="_blank" rel="noopener" download>Baixar</a>
+                <button type="button" class="btn-outline" @onclick="CompartilharAsync">Compartilhar</button>
+            </div>
+        </section>
     }
 
 </div>
@@ -176,14 +219,14 @@
     private bool usarCameraFrontal = true;
     private bool fotoCapturada;
     private bool gerando;
+    private bool mostrarAntes;
     private string? fotoBase64;
     private string? fotoServidorPath;
     private string? erro;
+    private string mensagemLoading = "Preparando sua transformação...";
     private SimulacaoResponse? resultado;
+    private CancellationTokenSource? loadCts;
 
-    // Comprimentos em CENTÍMETROS reais (mais preciso que "Curto/Médio/
-    // Longo" — o backend calcula a máscara e o corte de preço a partir
-    // do valor numérico; ver HairMaskGenerator.ExtrairCm).
     private readonly List<string> comprimentos = new()
     {
         "30 cm", "40 cm", "45 cm", "55 cm", "65 cm", "75 cm", "85 cm"
@@ -207,12 +250,17 @@
     private string tipoCabelo = "Liso";
     private string metodo = "Fita Adesiva";
 
+    private static readonly string[] MensagensProcessamento =
+    {
+        "Preparando sua transformação...",
+        "Analisando o cabelo...",
+        "Aplicando o novo visual...",
+        "Preservando o rosto e o fundo...",
+        "Finalizando os detalhes..."
+    };
+
     protected override void OnInitialized()
     {
-        // Pré-preenche com o que veio do Catálogo ("Simular este estilo")
-        // ou mantém o padrão. Só aceita valores que realmente existem nas
-        // listas — evita <select> quebrado por um valor desconhecido vindo
-        // da URL.
         if (!string.IsNullOrWhiteSpace(ComprimentoSugerido) && comprimentos.Contains(ComprimentoSugerido))
             comprimento = ComprimentoSugerido;
 
@@ -232,7 +280,7 @@
         var ok = await JS.InvokeAsync<bool>("megaHairCamera.iniciar", "videoPreview", usarCameraFrontal);
         if (!ok)
         {
-            erro = "Não foi possível acessar a câmera. Verifique se o site está em HTTPS e se a permissão de câmera foi concedida.";
+            erro = "Não foi possível acessar a câmera. Verifique a permissão e se o site está em HTTPS.";
             return;
         }
         cameraAtiva = true;
@@ -256,6 +304,7 @@
 
         fotoBase64 = base64;
         fotoCapturada = true;
+        fotoServidorPath = null;
         await JS.InvokeVoidAsync("megaHairCamera.parar");
         cameraAtiva = false;
     }
@@ -264,6 +313,7 @@
     {
         fotoCapturada = false;
         fotoBase64 = null;
+        fotoServidorPath = null;
         resultado = null;
         erro = null;
         if (modo == ModoFoto.Camera)
@@ -272,9 +322,14 @@
 
     private void TentarNovamenteAsync()
     {
-        // Erro na tela de captura (câmera/upload) — só limpa a mensagem
-        // e deixa a pessoa tentar a mesma ação de novo, sem perder nada.
         erro = null;
+    }
+
+    private void EscolherOutroEstilo()
+    {
+        resultado = null;
+        erro = null;
+        mostrarAntes = false;
     }
 
     private async Task CarregarArquivoAsync(InputFileChangeEventArgs e)
@@ -283,7 +338,7 @@
         carregandoArquivo = true;
         try
         {
-            const long tamanhoMaximo = 10 * 1024 * 1024; // 10 MB — mesmo limite do backend
+            const long tamanhoMaximo = 10 * 1024 * 1024;
             var arquivo = e.File;
 
             if (arquivo.Size > tamanhoMaximo)
@@ -298,6 +353,8 @@
 
             fotoBase64 = Convert.ToBase64String(memoria.ToArray());
             fotoCapturada = true;
+            fotoServidorPath = null;
+            resultado = null;
         }
         catch (Exception)
         {
@@ -309,17 +366,28 @@
         }
     }
 
-    private async Task GerarSimulacaoAsync()
+    private async Task GerarSimulacaoAsync(bool forcarNova)
     {
-        if (fotoBase64 is null) return;
+        if (fotoBase64 is null || gerando) return;
+
+        loadCts?.Cancel();
+        loadCts = new CancellationTokenSource();
+        var ctLoad = loadCts.Token;
+        _ = CiclarMensagensAsync(ctLoad);
 
         try
         {
             gerando = true;
             erro = null;
+            resultado = null;
+            mostrarAntes = false;
+            StateHasChanged();
 
-            var bytes = Convert.FromBase64String(fotoBase64);
-            fotoServidorPath = await Api.UploadFotoAsync(bytes, $"captura_{Guid.NewGuid():N}.png");
+            if (string.IsNullOrWhiteSpace(fotoServidorPath))
+            {
+                var bytes = Convert.FromBase64String(fotoBase64);
+                fotoServidorPath = await Api.UploadFotoAsync(bytes, $"captura_{Guid.NewGuid():N}.png");
+            }
 
             var request = new CriarSimulacaoRequest
             {
@@ -329,18 +397,66 @@
                 TipoCabelo = tipoCabelo,
                 MetodoMegaHair = metodo,
                 Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.Replicate,
-                ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null
+                ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null,
+                ForcarNovaGeracao = forcarNova
             };
 
             resultado = await Api.CriarSimulacaoAsync(request);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            erro = $"Erro ao gerar simulação: {ex.Message}";
+            erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?";
         }
         finally
         {
+            loadCts.Cancel();
             gerando = false;
+        }
+    }
+
+    private async Task CiclarMensagensAsync(CancellationToken ct)
+    {
+        var i = 0;
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                mensagemLoading = MensagensProcessamento[i % MensagensProcessamento.Length];
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(3200, ct);
+                i++;
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // esperado ao terminar
+        }
+    }
+
+    private async Task CompartilharAsync()
+    {
+        if (resultado is null) return;
+        try
+        {
+            await JS.InvokeVoidAsync("megaHairShare.compartilhar", resultado.FotoResultadoUrl);
+        }
+        catch
+        {
+            erro = "Não foi possível compartilhar agora. Use Baixar e envie pelo WhatsApp.";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        loadCts?.Cancel();
+        loadCts?.Dispose();
+        try
+        {
+            await JS.InvokeVoidAsync("megaHairCamera.parar");
+        }
+        catch
+        {
+            // circuito já encerrado
         }
     }
 }

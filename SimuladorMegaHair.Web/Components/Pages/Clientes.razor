@@ -113,9 +113,9 @@
         {
             clientes = await Api.BuscarClientesAsync(termoBusca);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            erro = $"Não foi possível conectar ao servidor. Verifique se a API está rodando. ({ex.Message})";
+            erro = "Não foi possível carregar os clientes. Tente novamente em instantes.";
             clientes = new();
         }
         finally

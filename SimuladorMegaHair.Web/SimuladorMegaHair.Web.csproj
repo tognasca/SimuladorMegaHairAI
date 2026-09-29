@@ -21,8 +21,12 @@
     <UserSecretsId>simuladormegahair-web-secrets</UserSecretsId>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\SimuladorMegaHair.Domain\SimuladorMegaHair.Domain.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\SimuladorMegaHair.Domain\SimuladorMegaHair.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="SimuladorMegaHair.Tests" />
+    </ItemGroup>
 
 </Project>

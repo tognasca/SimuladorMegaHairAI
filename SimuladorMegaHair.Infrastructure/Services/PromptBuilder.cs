@@ -73,10 +73,12 @@ public static class PromptBuilder
         yield return (BuildInpainting(comprimento, cor, tipoCabelo, metodo, modo),
                       BuildNegative(cor));
 
-        // Fallback 2: Estilo alternativo (mais descritivo para a IA "recuperar")
+        // Fallback 2: mesma identidade, só o cabelo muda
         yield return (
-            $"beautiful woman with {TraduzirComprimentoFeminino(comprimento)} {TraduzirCor(cor)} {TraduzirTipo(tipoCabelo)} hair, " +
-            $"{TraduzirMetodo(metodo)}, flowing over shoulders, luxury beauty photo",
+            $"same woman, identical face, identical skin tone, identical eyes nose and mouth, " +
+            $"keep original clothing and background, " +
+            $"{TraduzirComprimentoFeminino(comprimento)} {TraduzirCor(cor)} {TraduzirTipo(tipoCabelo)} hair extensions, " +
+            $"{TraduzirMetodo(metodo)}, hair over the shoulders, photorealistic salon photo",
             BuildNegative(cor));
 
         // Fallback 3: Foco em "seamless integration" (caso o primeiro altere rosto)

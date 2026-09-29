@@ -12,4 +12,10 @@ public class CriarSimulacaoRequest
 
     /// Provider de IA (Local=grátis, Replicate/OpenAI=pago)
     public ImageProvider Provider { get; set; } = ImageProvider.Local;
+
+    /// <summary>
+    /// Quando true, ignora o cache de simulações iguais (foto + parâmetros)
+    /// para permitir "gerar novamente".
+    /// </summary>
+    public bool ForcarNovaGeracao { get; set; }
 }

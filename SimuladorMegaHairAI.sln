@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimuladorMegaHair.Infrastru
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimuladorMegaHair.Web", "SimuladorMegaHair.Web\SimuladorMegaHair.Web.csproj", "{7F8B83D8-4155-49D2-A1CA-956C9381DAF1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimuladorMegaHair.Tests", "SimuladorMegaHair.Tests\SimuladorMegaHair.Tests.csproj", "{E8C4A1F0-9B2D-4E3A-8C11-7F6D2A1B0C9E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{7F8B83D8-4155-49D2-A1CA-956C9381DAF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7F8B83D8-4155-49D2-A1CA-956C9381DAF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7F8B83D8-4155-49D2-A1CA-956C9381DAF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8C4A1F0-9B2D-4E3A-8C11-7F6D2A1B0C9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8C4A1F0-9B2D-4E3A-8C11-7F6D2A1B0C9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8C4A1F0-9B2D-4E3A-8C11-7F6D2A1B0C9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8C4A1F0-9B2D-4E3A-8C11-7F6D2A1B0C9E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

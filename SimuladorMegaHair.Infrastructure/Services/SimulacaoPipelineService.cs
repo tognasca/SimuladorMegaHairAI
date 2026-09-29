@@ -78,6 +78,11 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
 
         _logger.LogInformation("═══ SIMULAÇÃO [{Provider}] ═══", req.Provider);
 
+        if (req.Provider == ImageProvider.Replicate && string.IsNullOrWhiteSpace(_rep.ApiToken))
+        {
+            throw new InvalidOperationException("Provedor de IA não configurado.");
+        }
+
         // 1. Resolve e prepara imagem
         var imagemAbs = ResolverCaminho(req.ImagemOriginalPath);
         var tempFolder = GarantirPasta("wwwroot", "temp");
@@ -229,10 +234,8 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         {
             try
             {
-                Console.WriteLine("==================================================");
-                Console.WriteLine($"[PROMPT ENVIADO À IA]: {prompt}");
-                Console.WriteLine($"[NEGATIVE PROMPT]: {negative}");
-                Console.WriteLine("==================================================");
+                _logger.LogDebug("Flux Fill prompt: {Prompt}", prompt);
+                _logger.LogDebug("Flux Fill negative: {Negative}", negative);
 
                 var body = new
                 {
@@ -241,8 +244,8 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
                         image = ConverterBase64(imagemPath),
                         mask = ConverterBase64(maskPath),
                         prompt = prompt,
-                        num_inference_steps = 30,
-                        guidance = 30,
+                        num_inference_steps = _rep.FluxSteps,
+                        guidance = _rep.FluxGuidance,
                         num_outputs = 1,
                         output_format = "png",
                         output_quality = 95,
@@ -311,8 +314,13 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         if (!resp.IsSuccessStatusCode)
         {
             var err = await resp.Content.ReadAsStringAsync(ct);
-            throw new HttpRequestException(
-                $"Replicate {resp.StatusCode}: {err}", null, resp.StatusCode);
+            _logger.LogError("Falha HTTP do provedor de IA: {Status} {Body}", resp.StatusCode, err);
+
+            var mensagem = resp.StatusCode == HttpStatusCode.TooManyRequests
+                ? err
+                : "Falha ao comunicar com o provedor de IA.";
+
+            throw new HttpRequestException(mensagem, null, resp.StatusCode);
         }
 
         var respJson = await resp.Content.ReadAsStringAsync(ct);
@@ -347,8 +355,8 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
                 case "canceled":
                     var err = doc.RootElement.TryGetProperty("error", out var e)
                         ? e.GetString() : "sem detalhe";
-                    throw new InvalidOperationException(
-                        $"Predição {predId} {status}: {err}");
+                    _logger.LogError("Predição {PredId} {Status}: {Erro}", predId, status, err);
+                    throw new InvalidOperationException("A geração da imagem não foi concluída.");
             }
         }
 
@@ -492,7 +500,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         {
             JsonValueKind.Array => o[0].GetString()!,
             JsonValueKind.String => o.GetString()!,
-            _ => throw new InvalidOperationException($"Output inesperado: {o.ValueKind}")
+            _ => throw new InvalidOperationException("Resposta inválida do provedor de IA.")
         };
     }
 

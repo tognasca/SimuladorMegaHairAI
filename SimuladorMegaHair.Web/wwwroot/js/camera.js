@@ -100,3 +100,17 @@ window.megaHairCamera = {
         }
     }
 };
+
+window.megaHairShare = {
+    compartilhar: async function (url) {
+        if (navigator.share) {
+            await navigator.share({
+                title: "Simulação Mega Hair",
+                url: url
+            });
+            return;
+        }
+        await navigator.clipboard.writeText(url);
+        alert("Link da simulação copiado.");
+    }
+};
