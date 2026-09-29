@@ -180,6 +180,7 @@
                     <p>Estamos criando uma versão personalizada para você. Não feche esta tela.</p>
                     <div class="beauty-loading-track"><span></span></div>
                     <small>O processo pode levar cerca de um minuto.</small>
+                    <button type="button" class="beauty-cancel-action" @onclick="CancelarGeracaoAsync">Cancelar geração</button>
                 </div>
             }
         </section>
@@ -372,7 +373,7 @@
             if (string.IsNullOrWhiteSpace(fotoServidorPath))
             {
                 var bytes = Convert.FromBase64String(fotoBase64);
-                fotoServidorPath = await Api.UploadFotoAsync(bytes, $"captura_{Guid.NewGuid():N}.png");
+                fotoServidorPath = await Api.UploadFotoAsync(bytes, $"captura_{Guid.NewGuid():N}.png", ctLoad);
             }
             var request = new CriarSimulacaoRequest
             {
@@ -380,10 +381,20 @@
                 MetodoMegaHair = metodo, Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.Replicate,
                 ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null, ForcarNovaGeracao = forcarNova
             };
-            resultado = await Api.CriarSimulacaoAsync(request);
+            resultado = await Api.CriarSimulacaoAsync(request, ctLoad);
+        }
+        catch (OperationCanceledException) when (ctLoad.IsCancellationRequested)
+        {
+            erro = "A geração foi cancelada ou excedeu o tempo máximo. Confirme se a API e o Replicate estão configurados e tente novamente.";
         }
         catch (Exception ex) { erro = ApiClient.MensagemAmigavel(ex, "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?", Api.BaseAddress); }
         finally { loadCts.Cancel(); gerando = false; }
+    }
+
+    private Task CancelarGeracaoAsync()
+    {
+        loadCts?.Cancel();
+        return Task.CompletedTask;
     }
 
     private async Task CiclarMensagensAsync(CancellationToken ct)

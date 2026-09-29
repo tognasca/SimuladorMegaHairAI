@@ -33,6 +33,9 @@ public sealed class SimulacaoOptions
     /// Gerações de IA executando ao mesmo tempo (acima disso: HTTP 429).
     public int MaxGeracoesSimultaneas { get; set; } = 3;
 
+    /// Tempo máximo total de uma geração, incluindo upload, máscara e Replicate.
+    public int TempoMaximoGeracaoSegundos { get; set; } = 180;
+
     // ── Privacidade ──
 
     /// Salvar máscara e overlay de auditoria (mostram o rosto). Só para

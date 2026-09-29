@@ -43,23 +43,23 @@ public class ApiClient
     /// Envia os bytes de uma foto (ex: capturada pela câmera do
     /// navegador) e retorna o caminho salvo no servidor.
     /// </summary>
-    public async Task<string> UploadFotoAsync(byte[] bytes, string nomeArquivo)
+    public async Task<string> UploadFotoAsync(byte[] bytes, string nomeArquivo, CancellationToken cancellationToken = default)
     {
         using var form = new MultipartFormDataContent();
         using var content = new ByteArrayContent(bytes);
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
         form.Add(content, "file", nomeArquivo);
 
-        var response = await _http.PostAsync("api/simulacoes/upload", form);
+        var response = await _http.PostAsync("api/simulacoes/upload", form, cancellationToken);
         await GarantirSucessoAsync(response, "Não foi possível enviar a foto. Tente outra imagem.");
 
         var caminho = await response.Content.ReadAsStringAsync();
         return caminho.Trim('"');
     }
 
-    public async Task<SimulacaoResponse?> CriarSimulacaoAsync(CriarSimulacaoRequest request)
+    public async Task<SimulacaoResponse?> CriarSimulacaoAsync(CriarSimulacaoRequest request, CancellationToken cancellationToken = default)
     {
-        var response = await _http.PostAsJsonAsync("api/simulacoes", request);
+        var response = await _http.PostAsJsonAsync("api/simulacoes", request, cancellationToken);
         await GarantirSucessoAsync(response,
             "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?");
         return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();

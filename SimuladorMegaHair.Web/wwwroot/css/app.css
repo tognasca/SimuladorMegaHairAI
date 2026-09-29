@@ -880,3 +880,17 @@ button {
 .beauty-loading-panel { background: linear-gradient(145deg, #F8F7F4, #E9E5DF); }
 .beauty-result-cta .beauty-eyebrow { color: #C9B28D; }
 .beauty-result-cta small { color: #D6D0C9; }
+
+.beauty-cancel-action {
+    margin-top: 22px;
+    border: 0;
+    border-bottom: 1px solid var(--beauty-line);
+    background: transparent;
+    color: var(--beauty-muted);
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.beauty-cancel-action:hover { border-bottom-color: var(--beauty-ink); color: var(--beauty-ink); }

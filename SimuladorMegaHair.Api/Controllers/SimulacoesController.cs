@@ -161,6 +161,9 @@ public class SimulacoesController : ControllerBase
         // ── Chama pipeline de IA ────────────────────────────
         SimulacaoResult resultado;
 
+        using var geracaoCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        geracaoCts.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(_simOpts.TempoMaximoGeracaoSegundos, 30, 600)));
+
         try
         {
             // NOTA (correção da auditoria): antes havia aqui uma chamada extra a
@@ -176,7 +179,7 @@ public class SimulacoesController : ControllerBase
                     TipoCabelo = request.TipoCabelo,
                     MetodoMegaHair = request.MetodoMegaHair,
                     Provider = request.Provider
-                }, ct);
+                }, geracaoCts.Token);
         }
         catch (FileNotFoundException ex)
         {
@@ -228,7 +231,7 @@ public class SimulacoesController : ControllerBase
                 erro = "A simulação está demorando mais do que o esperado. Tente novamente."
             });
         }
-        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
         {
             // Timeout do HttpClient (não foi o usuário/requisição que cancelou).
             _logger.LogError(ex, "Timeout ao gerar simulação {ClienteId}", request.ClienteId);
