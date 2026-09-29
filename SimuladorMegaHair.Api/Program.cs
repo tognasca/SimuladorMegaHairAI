@@ -157,6 +157,10 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "MegaHair AI v1");
         options.RoutePrefix = "swagger";
     });
+
+    // Compatibilidade com o endereço padrão aberto por alguns perfis/IDE:
+    // https://localhost:7064/index.html.
+    app.MapGet("/index.html", () => Results.Redirect("/swagger"));
 }
 
 // Middlewares
