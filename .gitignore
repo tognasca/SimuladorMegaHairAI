@@ -372,3 +372,6 @@ SimuladorMegaHair.App/resultados/
 appsettings.Production.json
 appsettings.*.local.json
 *.secrets.json
+.env
+.env.*
+!.env.example

@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+.env.*
+**/bin
+**/obj
+**/wwwroot/uploads
+**/wwwroot/resultados
+**/wwwroot/temp
+**/wwwroot/masks
+SimuladorMegaHair.App

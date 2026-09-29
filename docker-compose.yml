@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: megahair-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-simulacaomegahairdb}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - megahair-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: megahair-api
+    restart: unless-stopped
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-simulacaomegahairdb};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      Jwt__Key: ${JWT_KEY:?Defina JWT_KEY no arquivo .env}
+      Jwt__Issuer: ${JWT_ISSUER:-SimuladorMegaHair}
+      Jwt__Audience: ${JWT_AUDIENCE:-SimuladorMegaHair.Clients}
+      Replicate__ApiToken: ${REPLICATE_API_TOKEN:?Defina REPLICATE_API_TOKEN no arquivo .env}
+      AllowedOrigins__0: http://localhost:5180
+      AllowedOrigins__1: http://localhost:7180
+    ports:
+      - "5185:5185"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: megahair-web
+    restart: unless-stopped
+    environment:
+      Api__BaseUrl: http://api:5185/
+    ports:
+      - "5180:5180"
+    depends_on:
+      - api
+
+volumes:
+  megahair-postgres-data:
