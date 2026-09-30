@@ -49,6 +49,7 @@ public class SimulacoesController : ControllerBase
     /// Retorna os providers de IA disponíveis para o frontend
     /// </summary>
     [HttpGet("providers")]
+    [AllowAnonymous]
     public ActionResult<List<ProviderInfoResponse>> GetProviders()
     {
         var providers = new List<ProviderInfoResponse>
@@ -90,6 +91,7 @@ public class SimulacoesController : ControllerBase
     // ═══════════════════════════════════════════════════════════
 
     [HttpPost("upload")]
+    [AllowAnonymous]
     public async Task<ActionResult<string>> Upload(
         IFormFile file,
         CancellationToken ct)
@@ -125,6 +127,7 @@ public class SimulacoesController : ControllerBase
     // ═══════════════════════════════════════════════════════════
 
     [HttpPost]
+    [AllowAnonymous]
     public async Task<ActionResult<SimulacaoResponse>> Criar(
         [FromBody] CriarSimulacaoRequest request,
         CancellationToken ct)
@@ -338,6 +341,7 @@ public class SimulacoesController : ControllerBase
     /// Não reprocessa a IA; usa filtros de imagem inteligentes.
     /// </summary>
     [HttpPost("{id}/volume")]
+    [AllowAnonymous]
     public async Task<ActionResult<SimulacaoResponse>> AjustarVolume(
     Guid id,
     [FromBody] AjustarVolumeRequest request,
