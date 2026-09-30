@@ -193,7 +193,10 @@ public class ApiClient
             return;
 
         var corpo = await response.Content.ReadAsStringAsync();
-        throw new HttpRequestException(ExtrairMensagem(corpo, response.StatusCode, fallback));
+        throw new HttpRequestException(
+            ExtrairMensagem(corpo, response.StatusCode, fallback),
+            inner: null,
+            statusCode: response.StatusCode);
     }
 
     internal static string ExtrairMensagem(string? corpo, HttpStatusCode status, string fallback)
@@ -255,8 +258,16 @@ public class ApiClient
         if (ex is TaskCanceledException)
             return $"A API não respondeu a tempo em {apiBaseAddress?.ToString().TrimEnd('/') ?? "http://localhost:5185"}. Confirme se ela está em execução e tente novamente.";
 
-        if (ex is HttpRequestException)
+        if (ex is HttpRequestException httpEx)
+        {
+            if (httpEx.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                return httpEx.Message;
+
+            if (httpEx.StatusCode == HttpStatusCode.MethodNotAllowed)
+                return "O upload precisa ser enviado pelo simulador usando POST. Não abra o endpoint de upload diretamente no navegador.";
+
             return $"Não foi possível conectar à API em {apiBaseAddress?.ToString().TrimEnd('/') ?? "http://localhost:5185"}. Inicie o SimuladorMegaHair.Api e tente novamente.";
+        }
 
         var mensagem = ex.Message?.Trim();
         return !string.IsNullOrWhiteSpace(mensagem) && !PareceErroTecnico(mensagem)
