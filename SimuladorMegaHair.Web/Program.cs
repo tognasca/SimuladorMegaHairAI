@@ -13,7 +13,6 @@ builder.Services.AddRazorComponents()
 // ApiClient nunca mandava Authorization — todo 401/403 da Api virava
 // um "Response status code does not indicate success" genérico.
 builder.Services.AddScoped<AuthTokenStore>();
-builder.Services.AddScoped<AuthHeaderHandler>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider, JwtAuthStateProvider>();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
@@ -40,7 +39,7 @@ builder.Services.AddHttpClient<ApiClient>(client =>
     var baseUrl = builder.Configuration["Api:BaseUrl"] ?? "http://localhost:5185/";
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromMinutes(10); // simulações de IA demoram
-}).AddHttpMessageHandler<AuthHeaderHandler>();
+});
 
 var app = builder.Build();
 

@@ -915,3 +915,84 @@ button {
 .beauty-sim-page .beauty-method-card { min-height: 70px; }
 .beauty-sim-page .beauty-result-cta { border-radius: 4px; }
 .beauty-sim-page .beauty-page-title { letter-spacing: -.04em; }
+
+
+/* High-end simulator direction: quiet luxury, strong grid, minimal ornament */
+.beauty-sim-page {
+    --beauty-ink: #171716;
+    --beauty-muted: #686762;
+    --beauty-soft: #F3F3F0;
+    --beauty-line: #D8D8D2;
+    --beauty-gold: #9D855E;
+    --beauty-gold-soft: #EEEAE1;
+    --beauty-rose: #8D8B83;
+    max-width: 1240px;
+    padding-top: 28px;
+}
+.beauty-page-header { padding: 30px 0 38px; border-bottom: 1px solid var(--beauty-line); }
+.beauty-eyebrow, .beauty-step-kicker { color: var(--beauty-gold); letter-spacing: .2em; }
+.beauty-page-title { max-width: 760px; font-family: "Outfit", Arial, sans-serif; font-size: clamp(36px, 5vw, 68px); font-weight: 500; letter-spacing: -.055em; line-height: .98; }
+.beauty-trust-mark { padding: 9px 12px; border: 1px solid var(--beauty-line); border-radius: 3px; background: transparent; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.beauty-trust-mark span { color: var(--beauty-gold); }
+.beauty-steps { gap: 0; margin-bottom: 52px; }
+.beauty-steps li { padding: 14px 12px 12px 0; border-top: 1px solid var(--beauty-line); border-bottom: 0; font-size: 10px; letter-spacing: .13em; }
+.beauty-steps li.current { border-top-color: var(--beauty-ink); border-bottom-color: transparent; }
+.beauty-upload-layout { grid-template-columns: minmax(280px, .72fr) minmax(480px, 1.28fr); gap: 82px; min-height: 570px; }
+.beauty-upload-copy h2, .beauty-style-panel h2, .beauty-loading-panel h2, .beauty-result-heading h2 { font-family: "Outfit", Arial, sans-serif; font-weight: 500; letter-spacing: -.045em; }
+.beauty-upload-copy p { max-width: 370px; color: var(--beauty-muted); font-size: 15px; }
+.beauty-mini-benefits { gap: 13px; font-size: 11px; letter-spacing: .02em; }
+.beauty-upload-card { padding: 12px; border: 0; border-radius: 3px; background: var(--beauty-soft); box-shadow: none; }
+.beauty-mode-switch { margin-bottom: 12px; padding: 0; border-radius: 0; background: transparent; border-bottom: 1px solid var(--beauty-line); }
+.beauty-mode-switch button { min-height: 42px; border-radius: 0; font-size: 10px; letter-spacing: .14em; }
+.beauty-mode-switch button.active { background: transparent; color: var(--beauty-ink); box-shadow: inset 0 -2px 0 var(--beauty-ink); }
+.beauty-camera-stage { min-height: 430px; background: #E5E5E0; }
+.beauty-camera-placeholder { height: 430px; }
+.beauty-camera-icon, .beauty-upload-icon { width: 52px; height: 52px; margin-bottom: 18px; border: 1px solid var(--beauty-gold); border-radius: 3px; font-size: 24px; }
+.beauty-camera-placeholder strong, .beauty-dropzone strong { font-family: "Outfit", Arial, sans-serif; font-size: 20px; font-weight: 500; letter-spacing: -.02em; }
+.beauty-dropzone { min-height: 430px; border: 1px dashed var(--beauty-line); border-radius: 3px; background: #EAEAE6; }
+.beauty-dropzone:hover { background: #E2E2DD; }
+.beauty-upload-button { border-radius: 3px; background: var(--beauty-ink); font-size: 10px; letter-spacing: .14em; }
+.beauty-primary-action, .beauty-secondary-action { min-height: 48px; border-radius: 3px; font-size: 10px; letter-spacing: .14em; }
+.beauty-primary-action { background: var(--beauty-ink); box-shadow: none; }
+.beauty-primary-action:hover { transform: none; box-shadow: none; background: #333331; }
+.beauty-secondary-action:hover { border-color: var(--beauty-ink); background: var(--beauty-gold-soft); }
+.beauty-workspace { grid-template-columns: minmax(260px, .58fr) minmax(460px, 1.42fr); gap: 72px; }
+.beauty-photo-column { top: 28px; }
+.beauty-photo-card { border-radius: 3px; background: var(--beauty-soft); box-shadow: none; }
+.beauty-photo-card .beauty-card-label { background: var(--beauty-soft); }
+.beauty-style-panel { padding-top: 0; }
+.beauty-field-group { margin-top: 28px; }
+.beauty-field-group > label { margin-bottom: 9px; color: var(--beauty-muted); font-size: 9px; letter-spacing: .2em; }
+.beauty-choice, .beauty-color-choice, .beauty-method-card { border-radius: 3px; }
+.beauty-choice { border-color: var(--beauty-line); background: transparent; font-size: 11px; }
+.beauty-choice:hover, .beauty-choice.selected { border-color: var(--beauty-ink); background: var(--beauty-ink); color: #fff; }
+.beauty-color-choice:hover, .beauty-color-choice.selected { border-color: var(--beauty-ink); background: transparent; }
+.beauty-method-card { border-color: var(--beauty-line); background: transparent; }
+.beauty-method-card:hover, .beauty-method-card.selected { border-color: var(--beauty-ink); background: var(--beauty-gold-soft); }
+.beauty-method-icon { border-radius: 3px; background: #E4E1D9; color: var(--beauty-ink); }
+.beauty-loading-panel { min-height: 430px; padding: 42px; border-radius: 3px; background: #F1F1EE; box-shadow: none; }
+.beauty-loading-orbit { border-radius: 3px; box-shadow: none; }
+.beauty-loading-track { border-radius: 0; background: var(--beauty-line); }
+.beauty-loading-track span { border-radius: 0; background: var(--beauty-ink); }
+.beauty-result-section { margin-top: 68px; }
+.beauty-result-card { padding: 12px; border-radius: 3px; background: var(--beauty-soft); box-shadow: none; }
+.beauty-result-hero { border-radius: 2px; background: #E6E6E1; }
+.beauty-result-hero span { border-radius: 2px; background: rgba(23, 23, 22, .88); }
+.beauty-compare-pair img { border-radius: 2px; }
+.beauty-result-meta { padding-top: 16px; border-top: 1px solid var(--beauty-line); }
+.beauty-result-actions { gap: 6px; }
+
+@media (max-width: 700px) {
+    .beauty-sim-page { padding: 8px 16px 38px; }
+    .beauty-page-header { align-items: flex-start; flex-direction: column; gap: 18px; padding: 22px 0 28px; }
+    .beauty-page-title { font-size: 42px; }
+    .beauty-trust-mark { align-self: flex-start; }
+    .beauty-steps { margin-bottom: 30px; }
+    .beauty-steps li { display: block; padding-right: 5px; font-size: 8px; line-height: 1.4; }
+    .beauty-steps li span { display: block; margin-bottom: 5px; }
+    .beauty-upload-layout, .beauty-workspace { grid-template-columns: 1fr; gap: 30px; min-height: 0; }
+    .beauty-upload-copy { padding: 0; }
+    .beauty-upload-copy h2 { font-size: 38px; }
+    .beauty-camera-stage, .beauty-camera-placeholder, .beauty-dropzone { min-height: 330px; height: 330px; }
+    .beauty-result-actions { grid-template-columns: 1fr 1fr; }
+}

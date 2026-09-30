@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using SimuladorMegaHair.Domain.DTOs;
@@ -8,26 +9,24 @@ using SimuladorMegaHair.Domain.Models;
 namespace SimuladorMegaHair.Web.Services;
 
 /// <summary>
-/// Cliente HTTP para o backend (SimuladorMegaHair.Api), espelhando
-/// exatamente o mesmo contrato usado pelo app MAUI (ApiService.cs) —
-/// para garantir que web e app nativo se comportem de forma idêntica
-/// contra o mesmo servidor.
+/// Cliente HTTP para o backend. O JWT é copiado para cada HttpRequestMessage
+/// no momento do envio. Isso evita manter AuthTokenStore scoped dentro de um
+/// DelegatingHandler reutilizado pelo IHttpClientFactory entre circuitos.
 /// </summary>
 public class ApiClient
 {
     private readonly HttpClient _http;
+    private readonly AuthTokenStore _tokenStore;
 
-    public ApiClient(HttpClient http)
+    public ApiClient(HttpClient http, AuthTokenStore tokenStore)
     {
         _http = http;
+        _tokenStore = tokenStore;
     }
 
     public Uri? BaseAddress => _http.BaseAddress;
 
-    /// <summary>
-    /// Login contra a API (POST /api/auth/login). Não precisa de token
-    /// prévio — o endpoint é anônimo por design.
-    /// </summary>
+    /// <summary>Login anônimo contra POST /api/auth/login.</summary>
     public async Task<LoginResponse?> LoginAsync(string email, string senha)
     {
         var response = await _http.PostAsJsonAsync("api/auth/login",
@@ -39,84 +38,112 @@ public class ApiClient
         return await response.Content.ReadFromJsonAsync<LoginResponse>();
     }
 
-    /// <summary>
-    /// Envia os bytes de uma foto (ex: capturada pela câmera do
-    /// navegador) e retorna o caminho salvo no servidor.
-    /// </summary>
-    public async Task<string> UploadFotoAsync(byte[] bytes, string nomeArquivo, CancellationToken cancellationToken = default)
+    public async Task<string> UploadFotoAsync(
+        byte[] bytes,
+        string nomeArquivo,
+        CancellationToken cancellationToken = default)
     {
         using var form = new MultipartFormDataContent();
         using var content = new ByteArrayContent(bytes);
-        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
         form.Add(content, "file", nomeArquivo);
 
-        var response = await _http.PostAsync("api/simulacoes/upload", form, cancellationToken);
+        using var request = CriarRequisicao(HttpMethod.Post, "api/simulacoes/upload");
+        request.Content = form;
+        using var response = await _http.SendAsync(request, cancellationToken);
         await GarantirSucessoAsync(response, "Não foi possível enviar a foto. Tente outra imagem.");
 
-        var caminho = await response.Content.ReadAsStringAsync();
+        var caminho = await response.Content.ReadAsStringAsync(cancellationToken);
         return caminho.Trim('"');
     }
 
-    public async Task<SimulacaoResponse?> CriarSimulacaoAsync(CriarSimulacaoRequest request, CancellationToken cancellationToken = default)
+    public async Task<SimulacaoResponse?> CriarSimulacaoAsync(
+        CriarSimulacaoRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var response = await _http.PostAsJsonAsync("api/simulacoes", request, cancellationToken);
+        using var httpRequest = CriarRequisicao(HttpMethod.Post, "api/simulacoes");
+        httpRequest.Content = JsonContent.Create(request);
+        using var response = await _http.SendAsync(httpRequest, cancellationToken);
         await GarantirSucessoAsync(response,
             "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?");
-        return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();
+        return await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: cancellationToken);
     }
 
-    public async Task<SimulacaoResponse?> AjustarVolumeAsync(Guid simulacaoId, AjustarVolumeRequest request)
+    public async Task<SimulacaoResponse?> AjustarVolumeAsync(
+        Guid simulacaoId,
+        AjustarVolumeRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var response = await _http.PostAsJsonAsync($"api/simulacoes/{simulacaoId}/volume", request);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();
+        using var httpRequest = CriarRequisicao(HttpMethod.Post, $"api/simulacoes/{simulacaoId}/volume");
+        httpRequest.Content = JsonContent.Create(request);
+        using var response = await _http.SendAsync(httpRequest, cancellationToken);
+        await GarantirSucessoAsync(response, "Não foi possível ajustar o volume da simulação.");
+        return await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: cancellationToken);
     }
 
-    public async Task<List<SimulacaoResponse>> GetHistoricoAsync(string? fotoOriginalPath = null)
+    public async Task<List<SimulacaoResponse>> GetHistoricoAsync(
+        string? fotoOriginalPath = null,
+        CancellationToken cancellationToken = default)
     {
         var url = "api/simulacoes/historico";
         if (!string.IsNullOrWhiteSpace(fotoOriginalPath))
             url += $"?fotoOriginalPath={Uri.EscapeDataString(fotoOriginalPath)}";
 
-        var response = await _http.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<List<SimulacaoResponse>>() ?? new();
+        using var response = await EnviarAutorizadaAsync(HttpMethod.Get, url, cancellationToken: cancellationToken);
+        await GarantirSucessoAsync(response, "Não foi possível carregar o histórico.");
+        return await response.Content.ReadFromJsonAsync<List<SimulacaoResponse>>(cancellationToken: cancellationToken) ?? new();
     }
 
-    public async Task<List<ClienteResponse>> BuscarClientesAsync(string? busca = null)
+    public async Task<List<ClienteResponse>> BuscarClientesAsync(
+        string? busca = null,
+        CancellationToken cancellationToken = default)
     {
         var url = "api/clientes";
         if (!string.IsNullOrWhiteSpace(busca))
             url += $"?busca={Uri.EscapeDataString(busca)}";
 
-        var response = await _http.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<List<ClienteResponse>>() ?? new();
+        using var response = await EnviarAutorizadaAsync(HttpMethod.Get, url, cancellationToken: cancellationToken);
+        await GarantirSucessoAsync(response, "Não foi possível carregar os clientes.");
+        return await response.Content.ReadFromJsonAsync<List<ClienteResponse>>(cancellationToken: cancellationToken) ?? new();
     }
 
-    public async Task<ClienteDetalheResponse?> ObterClienteAsync(Guid id)
+    public async Task<ClienteDetalheResponse?> ObterClienteAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
     {
-        var response = await _http.GetAsync($"api/clientes/{id}");
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ClienteDetalheResponse>();
+        using var response = await EnviarAutorizadaAsync(HttpMethod.Get, $"api/clientes/{id}", cancellationToken: cancellationToken);
+        await GarantirSucessoAsync(response, "Não foi possível carregar o cliente.");
+        return await response.Content.ReadFromJsonAsync<ClienteDetalheResponse>(cancellationToken: cancellationToken);
     }
 
-    public async Task<ClienteResponse?> CriarClienteAsync(CriarClienteRequest request)
+    public async Task<ClienteResponse?> CriarClienteAsync(
+        CriarClienteRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var response = await _http.PostAsJsonAsync("api/clientes", request);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ClienteResponse>();
+        using var httpRequest = CriarRequisicao(HttpMethod.Post, "api/clientes");
+        httpRequest.Content = JsonContent.Create(request);
+        using var response = await _http.SendAsync(httpRequest, cancellationToken);
+        await GarantirSucessoAsync(response, "Não foi possível criar o cliente.");
+        return await response.Content.ReadFromJsonAsync<ClienteResponse>(cancellationToken: cancellationToken);
     }
 
-    public async Task<ClienteResponse?> AtualizarClienteAsync(Guid id, AtualizarClienteRequest request)
+    public async Task<ClienteResponse?> AtualizarClienteAsync(
+        Guid id,
+        AtualizarClienteRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var response = await _http.PutAsJsonAsync($"api/clientes/{id}", request);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ClienteResponse>();
+        using var httpRequest = CriarRequisicao(HttpMethod.Put, $"api/clientes/{id}");
+        httpRequest.Content = JsonContent.Create(request);
+        using var response = await _http.SendAsync(httpRequest, cancellationToken);
+        await GarantirSucessoAsync(response, "Não foi possível atualizar o cliente.");
+        return await response.Content.ReadFromJsonAsync<ClienteResponse>(cancellationToken: cancellationToken);
     }
 
     public async Task<List<CatalogoItem>> GetCatalogoAsync(
-        string? cor = null, string? comprimento = null, string? tipoCabelo = null)
+        string? cor = null,
+        string? comprimento = null,
+        string? tipoCabelo = null,
+        CancellationToken cancellationToken = default)
     {
         var query = new List<string>();
         if (!string.IsNullOrWhiteSpace(cor)) query.Add($"cor={Uri.EscapeDataString(cor)}");
@@ -124,9 +151,36 @@ public class ApiClient
         if (!string.IsNullOrWhiteSpace(tipoCabelo)) query.Add($"tipoCabelo={Uri.EscapeDataString(tipoCabelo)}");
 
         var url = "api/catalogo" + (query.Count > 0 ? "?" + string.Join("&", query) : "");
-        var response = await _http.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<List<CatalogoItem>>() ?? new();
+        using var response = await EnviarAutorizadaAsync(HttpMethod.Get, url, cancellationToken: cancellationToken);
+        await GarantirSucessoAsync(response, "Não foi possível carregar o catálogo.");
+        return await response.Content.ReadFromJsonAsync<List<CatalogoItem>>(cancellationToken: cancellationToken) ?? new();
+    }
+
+    private HttpRequestMessage CriarRequisicao(HttpMethod method, string url)
+    {
+        var request = new HttpRequestMessage(method, url);
+        if (_tokenStore.EstaAutenticado && !string.IsNullOrWhiteSpace(_tokenStore.Token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _tokenStore.Token);
+        return request;
+    }
+
+    private Task<HttpResponseMessage> EnviarAutorizadaAsync(
+        HttpMethod method,
+        string url,
+        HttpContent? content = null,
+        CancellationToken cancellationToken = default)
+    {
+        var request = CriarRequisicao(method, url);
+        request.Content = content;
+        return EnviarETransferirPosseAsync(request, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> EnviarETransferirPosseAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        using (request)
+            return await _http.SendAsync(request, cancellationToken);
     }
 
     private static async Task GarantirSucessoAsync(HttpResponseMessage response, string fallback)
@@ -153,7 +207,7 @@ public class ApiClient
         return status switch
         {
             HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
-                => "Sua sessão expirou. Entre novamente para continuar.",
+                => "Sua sessão expirou ou não está autenticada. Entre novamente para continuar.",
             HttpStatusCode.RequestTimeout or HttpStatusCode.GatewayTimeout
                 => "A simulação está demorando mais do que o esperado. Tente novamente.",
             _ => fallback
