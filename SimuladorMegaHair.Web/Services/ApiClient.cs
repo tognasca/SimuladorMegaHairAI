@@ -159,7 +159,11 @@ public class ApiClient
     private HttpRequestMessage CriarRequisicao(HttpMethod method, string url)
     {
         var request = new HttpRequestMessage(method, url);
-        if (_tokenStore.EstaAutenticado && !string.IsNullOrWhiteSpace(_tokenStore.Token))
+        // O servidor é a autoridade final sobre expiração/validade do JWT.
+        // Não bloqueie o header por uma divergência local de DateTime após
+        // restauração do Local Storage; sem o header a API responde 401 antes
+        // de poder validar o token real.
+        if (!string.IsNullOrWhiteSpace(_tokenStore.Token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _tokenStore.Token);
         return request;
     }
