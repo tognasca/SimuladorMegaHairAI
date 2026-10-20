@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SimuladorMegaHair.App.ViewModels"
+             x:Class="SimuladorMegaHair.App.Views.ResultPage"
+             x:DataType="vm:ResultViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="#FDF6F0">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <Label Text="Antes ⇄ Depois"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   TextColor="#5C4033"
+                   HorizontalOptions="Center"
+                   Margin="0,10" />
+
+            <Grid ColumnDefinitions="*, *" ColumnSpacing="10">
+
+                <VerticalStackLayout Grid.Column="0" Spacing="8">
+                    <Label Text="Antes"
+                           FontSize="16"
+                           HorizontalOptions="Center"
+                           TextColor="#5C4033" />
+                    <Border Stroke="#8B4513"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 15"
+                            HeightRequest="350">
+                        <Image Source="{Binding FotoOriginalUrl}" Aspect="AspectFill" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Grid.Column="1" Spacing="8">
+                    <Label Text="Depois"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           TextColor="#556B2F" />
+                    <Border Stroke="#556B2F"
+                            StrokeThickness="3"
+                            StrokeShape="RoundRectangle 15"
+                            HeightRequest="350">
+                        <Image Source="{Binding FotoResultadoUrl}" Aspect="AspectFill" />
+                    </Border>
+                </VerticalStackLayout>
+            </Grid>
+
+            <Border Stroke="#8B4513"
+                    StrokeShape="RoundRectangle 15"
+                    BackgroundColor="White"
+                    Padding="20">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Estimativa"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="#5C4033" />
+                    <Label FontSize="16" TextColor="#5C4033">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Método: " FontAttributes="Bold" />
+                                <Span Text="{Binding Metodo}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                    <Label FontSize="16" TextColor="#5C4033">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Comprimento: " FontAttributes="Bold" />
+                                <Span Text="{Binding Comprimento}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                    <Label FontSize="22"
+                           FontAttributes="Bold"
+                           TextColor="#556B2F">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="R$ " />
+                                <Span Text="{Binding ValorEstimado, StringFormat='{0:N2}'}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="💰 Gerar orçamento"
+                    FontSize="18"
+                    HeightRequest="55"
+                    CornerRadius="27"
+                    BackgroundColor="#556B2F"
+                    TextColor="White"
+                    Command="{Binding GerarOrcamentoCommand}" />
+
+            <Button Text="🔄 Nova simulação"
+                    FontSize="16"
+                    HeightRequest="50"
+                    CornerRadius="25"
+                    BackgroundColor="#A0522D"
+                    TextColor="White"
+                    Command="{Binding NovaSimulacaoCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

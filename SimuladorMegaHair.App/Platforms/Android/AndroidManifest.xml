@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!--
+    android:usesCleartextTraffic="true"
+    ═══════════════════════════════════════════════════════════════
+    Necessário porque o servidor (API) roda na REDE LOCAL do salão via
+    HTTP simples (ex: http://192.168.1.100:5185/), não HTTPS — desde o
+    Android 9 (API 28), o sistema BLOQUEIA tráfego HTTP por padrão.
+
+    Isso é aceitável aqui porque o tráfego nunca sai da rede interna do
+    salão (TV, tablets e celulares conversando com um servidor na mesma
+    rede Wi-Fi). NÃO deve ser mantido assim se a API algum dia for
+    exposta pela internet — nesse caso, coloque um certificado HTTPS
+    válido no servidor e remova esta linha.
+    ═══════════════════════════════════════════════════════════════
+  -->
+  <application
+    android:allowBackup="true"
+    android:icon="@mipmap/appicon"
+    android:roundIcon="@mipmap/appicon_round"
+    android:supportsRtl="true"
+    android:theme="@style/Maui.MainTheme"
+    android:usesCleartextTraffic="true">
+  </application>
+
+  <!-- Chamadas à API (Replicate, servidor local do salão) -->
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+  <!-- Captura de foto da cliente (CameraService → MediaPicker) -->
+  <uses-permission android:name="android.permission.CAMERA" />
+  <uses-feature android:name="android.hardware.camera" android:required="false" />
+  <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+
+  <!--
+    Salvar/ler a foto capturada antes do upload. READ/WRITE_EXTERNAL_STORAGE
+    só têm efeito prático até o Android 9 (API 28) — em versões mais novas o
+    MediaPicker do MAUI já usa escopo de app (sem precisar de permissão),
+    mas mantemos por compatibilidade com aparelhos mais antigos que ainda
+    possam existir em algum salão.
+  -->
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+
+</manifest>

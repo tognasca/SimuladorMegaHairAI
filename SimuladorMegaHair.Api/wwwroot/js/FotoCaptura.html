@@ -1,0 +1,68 @@
+<!-- CONTROLADOR DE DISTÂNCIA E ENQUADRAMENTO — cole ao lado do guia de foto.
+     Precisa de: /js/foto-captura.js (copie o arquivo para wwwroot/js), a API em /api/foto/avaliar
+     e HTTPS (ou localhost) para o navegador liberar a câmera. -->
+<style>
+  .captura{--ouro:#d4a72c;--fundo:#17181c;--borda:#2b2d34;--texto:#e9e6dc;--suave:#8b8f98;--ok:#58d68d;--erro:#e57373;
+    background:var(--fundo);border:1px solid var(--borda);border-radius:16px;padding:16px;color:var(--texto);font-family:inherit}
+  .captura h3{margin:0 0 10px;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--ouro)}
+  .captura .cam{position:relative;width:100%;aspect-ratio:3/4;max-height:70vh;background:#0c0d10;border-radius:12px;overflow:hidden;margin:0 auto}
+  .captura .cam video,.captura .cam canvas{position:absolute;inset:0;width:100%;height:100%}
+  .captura .cam video{object-fit:fill}
+  .captura .cam.espelho video,.captura .cam.espelho canvas{transform:scaleX(-1)}
+  .captura .contagem{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:96px;font-weight:700;color:var(--ouro);background:rgba(0,0,0,.35)}
+  .captura .contagem[hidden]{display:none}
+  .captura .msg{margin:12px 0 6px;padding:10px 12px;border-radius:10px;font-size:15px;font-weight:600;
+    background:rgba(212,167,44,.10);border:1px solid rgba(212,167,44,.35)}
+  .captura .msg[data-estado="ok"]{background:rgba(88,214,141,.12);border-color:rgba(88,214,141,.5);color:var(--ok)}
+  .captura .msg[data-estado="erro"]{background:rgba(229,115,115,.10);border-color:rgba(229,115,115,.45)}
+  .captura .barra{height:10px;border-radius:6px;background:#23252b;overflow:hidden}
+  .captura .barra>div{height:100%;width:0;background:var(--ouro);transition:width .25s,background .25s}
+  .captura .barra>div[data-estado="ok"]{background:var(--ok)}
+  .captura .barra>div[data-estado="erro"]{background:var(--erro)}
+  .captura .detalhe{margin:6px 0 0;font-size:12px;color:var(--suave);min-height:1.2em}
+  .captura .botoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .captura button{padding:10px 14px;border-radius:10px;border:1px solid var(--borda);background:#202228;color:var(--texto);font-size:14px;cursor:pointer}
+  .captura button.principal{background:var(--ouro);color:#111;border-color:var(--ouro);font-weight:700}
+  .captura button:disabled{opacity:.45;cursor:not-allowed}
+  .captura button.link{background:none;border:none;color:var(--suave);text-decoration:underline;padding:10px 4px}
+</style>
+
+<section class="captura">
+  <h3>Câmera guiada</h3>
+  <div class="cam espelho">
+    <video id="cam-video" playsinline muted autoplay></video>
+    <canvas id="cam-overlay"></canvas>
+    <div id="cam-contagem" class="contagem" hidden></div>
+  </div>
+
+  <p id="cam-msg" class="msg" data-estado="aguarde">Ligue a câmera para começar.</p>
+  <div class="barra"><div id="cam-barra"></div></div>
+  <p id="cam-detalhe" class="detalhe"></p>
+
+  <div class="botoes">
+    <button id="cam-ligar" class="principal">Ligar câmera</button>
+    <button id="cam-virar">Virar câmera</button>
+    <button id="cam-foto" disabled>Tirar foto (3s)</button>
+    <button id="cam-forcar" class="link">Tirar mesmo assim</button>
+  </div>
+</section>
+
+<script type="module">
+  import { iniciarCaptura } from '/js/foto-captura.js';
+  const $ = id => document.getElementById(id);
+
+  iniciarCaptura({
+    video: $('cam-video'), overlay: $('cam-overlay'),
+    botaoLigar: $('cam-ligar'), botaoVirar: $('cam-virar'),
+    botaoFoto: $('cam-foto'), botaoForcar: $('cam-forcar'),
+    msg: $('cam-msg'), detalhe: $('cam-detalhe'), barra: $('cam-barra'), contagem: $('cam-contagem'),
+
+    endpoint: '/api/foto/avaliar',                 // se a API estiver em outro endereço, use a URL completa
+    // AJUSTE: seletor do seu campo de comprimento (select) e do input de arquivo da foto.
+    getCm: () => parseInt(document.querySelector('#comprimento')?.value) || 65,
+    input: document.querySelector('#foto-input'),  // a foto tirada é colocada aqui e dispara "change"
+    // getHeaders: () => ({ Authorization: 'Bearer ' + token }),   // se o endpoint exigir login
+    onCapture: file => console.log('Foto capturada', file.size, 'bytes')
+  });
+</script>

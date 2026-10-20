@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SimuladorMegaHair.App.Views.Components.SidebarMenu"
+             x:Name="Menu">
+
+    <Border x:Name="RootBorder"
+            WidthRequest="220"
+            BackgroundColor="{StaticResource SidebarColor}"
+            Stroke="{StaticResource BorderSoft}"
+            StrokeThickness="0,0,1,0"
+            Padding="0">
+
+        <ScrollView>
+            <VerticalStackLayout Padding="14,30" Spacing="8">
+
+                <!-- LOGO -->
+                <VerticalStackLayout Margin="0,0,0,35"
+                     HorizontalOptions="Center"
+                     Spacing="10">
+
+                    <Image Source="logo_tati.png"
+           HeightRequest="60"
+           WidthRequest="60"
+           Aspect="AspectFit"
+           HorizontalOptions="Center"/>
+
+                    <VerticalStackLayout x:Name="LogoTitulo" Spacing="10" HorizontalOptions="Center">
+                        <Label Text="SALÃO DE BELEZA"
+               FontSize="9"
+               CharacterSpacing="4"
+               HorizontalOptions="Center"
+               TextColor="{StaticResource TextSecondary}"/>
+
+                        <BoxView HeightRequest="1"
+                 WidthRequest="120"
+                 HorizontalOptions="Center"
+                 Color="{StaticResource GoldPrimary}"
+                 Opacity="0.35"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+
+                <!-- INÍCIO -->
+                <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                        <Label Text="⌂" FontSize="18" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelInicio" Grid.Column="1" Spacing="2">
+                            <Label Text="INÍCIO" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="Dashboard" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnInicioTapped" />
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </Border>
+
+                <!-- SIMULAÇÃO -->
+                <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                        <Label Text="✦" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelSimulacao" Grid.Column="1" Spacing="2">
+                            <Label Text="SIMULAÇÃO" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="Corte / Mega Hair" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSimulacaoTapped" />
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </Border>
+
+                <!-- CATÁLOGO -->
+                <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                        <Label Text="▣" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelCatalogo" Grid.Column="1" Spacing="2">
+                            <Label Text="CATÁLOGO" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="Cabelos &amp; Cores" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnCatalogoTapped" />
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </Border>
+
+                <!-- CLIENTES -->
+                <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                        <Label Text="♙" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelClientes" Grid.Column="1" Spacing="2">
+                            <Label Text="CLIENTES" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="Seus atendimentos" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnClientesTapped" />
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </Border>
+
+                <!-- ORÇAMENTOS -->
+                <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                        <Label Text="▤" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelOrcamentos" Grid.Column="1" Spacing="2">
+                            <Label Text="ORÇAMENTOS" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="Propostas &amp; Valores" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnOrcamentosTapped" />
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </Border>
+
+                <!-- CONFIGURAÇÕES -->
+                <Border StrokeShape="RoundRectangle 10" Padding="15,12" BackgroundColor="Transparent">
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                        <Label Text="⚙" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" HorizontalOptions="Center" />
+                        <VerticalStackLayout x:Name="LabelConfiguracoes" Grid.Column="1" Spacing="2">
+                            <Label Text="CONFIGURAÇÕES" FontSize="12" FontAttributes="Bold" CharacterSpacing="3" TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="Geral do sistema" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnConfiguracoesTapped" />
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </Border>
+
+                <!-- SELO EXPERIÊNCIA -->
+                <Border x:Name="SeloExperiencia"
+        BackgroundColor="{StaticResource CardColor}"
+        Stroke="{StaticResource BorderGold}"
+        StrokeThickness="1"
+        StrokeShape="RoundRectangle 12"
+        Padding="15,20"
+        Margin="0,30,0,0">
+
+                    <VerticalStackLayout HorizontalOptions="Center"
+                         Spacing="8">
+
+                        <Image Source="logo_tati.png"
+               HeightRequest="70"
+               Aspect="AspectFit"/>
+
+                        <Label Text="TATI MEGA HAIR"
+               FontSize="11"
+               FontAttributes="Bold"
+               CharacterSpacing="3"
+               TextColor="{StaticResource GoldPrimary}"
+               HorizontalOptions="Center"/>
+
+                        <Label Text="Tecnologia de Simulação"
+               FontSize="10"
+               TextColor="{StaticResource TextSecondary}"
+               HorizontalOptions="Center"/>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Border>
+</ContentView>

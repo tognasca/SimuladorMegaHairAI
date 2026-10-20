@@ -1,0 +1,1069 @@
+{
+ "canvas": [
+  1200,
+  1800
+ ],
+ "head_center_x": 600,
+ "head_top_y": 200,
+ "head_height_px": 340,
+ "head_width_px": 250,
+ "px_per_cm": 14.782608695652174,
+ "files": [
+  {
+   "cm": 10,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_10cm_liso_classico.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_10cm_liso_colado.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_10cm_liso_volumoso.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_10cm_liso_lateral.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_10cm_ondulado_classico.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_10cm_ondulado_colado.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_10cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_10cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_10cm_cacheado_classico.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_10cm_cacheado_colado.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_10cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_10cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_10cm_crespo_classico.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_10cm_crespo_colado.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_10cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 10,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_10cm_crespo_lateral.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_15cm_liso_classico.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_15cm_liso_colado.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_15cm_liso_volumoso.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_15cm_liso_lateral.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_15cm_ondulado_classico.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_15cm_ondulado_colado.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_15cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_15cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_15cm_cacheado_classico.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_15cm_cacheado_colado.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_15cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_15cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_15cm_crespo_classico.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_15cm_crespo_colado.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_15cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 15,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_15cm_crespo_lateral.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_20cm_liso_classico.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_20cm_liso_colado.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_20cm_liso_volumoso.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_20cm_liso_lateral.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_20cm_ondulado_classico.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_20cm_ondulado_colado.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_20cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_20cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_20cm_cacheado_classico.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_20cm_cacheado_colado.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_20cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_20cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_20cm_crespo_classico.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_20cm_crespo_colado.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_20cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 20,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_20cm_crespo_lateral.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_25cm_liso_classico.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_25cm_liso_colado.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_25cm_liso_volumoso.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_25cm_liso_lateral.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_25cm_ondulado_classico.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_25cm_ondulado_colado.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_25cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_25cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_25cm_cacheado_classico.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_25cm_cacheado_colado.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_25cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_25cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_25cm_crespo_classico.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_25cm_crespo_colado.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_25cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 25,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_25cm_crespo_lateral.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_30cm_liso_classico.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_30cm_liso_colado.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_30cm_liso_volumoso.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_30cm_liso_lateral.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_30cm_ondulado_classico.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_30cm_ondulado_colado.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_30cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_30cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_30cm_cacheado_classico.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_30cm_cacheado_colado.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_30cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_30cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_30cm_crespo_classico.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_30cm_crespo_colado.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_30cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 30,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_30cm_crespo_lateral.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_40cm_liso_classico.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_40cm_liso_colado.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_40cm_liso_volumoso.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_40cm_liso_lateral.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_40cm_ondulado_classico.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_40cm_ondulado_colado.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_40cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_40cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_40cm_cacheado_classico.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_40cm_cacheado_colado.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_40cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_40cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_40cm_crespo_classico.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_40cm_crespo_colado.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_40cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 40,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_40cm_crespo_lateral.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_50cm_liso_classico.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_50cm_liso_colado.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_50cm_liso_volumoso.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_50cm_liso_lateral.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_50cm_ondulado_classico.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_50cm_ondulado_colado.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_50cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_50cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_50cm_cacheado_classico.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_50cm_cacheado_colado.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_50cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_50cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_50cm_crespo_classico.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_50cm_crespo_colado.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_50cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 50,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_50cm_crespo_lateral.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_60cm_liso_classico.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_60cm_liso_colado.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_60cm_liso_volumoso.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_60cm_liso_lateral.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_60cm_ondulado_classico.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_60cm_ondulado_colado.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_60cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_60cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_60cm_cacheado_classico.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_60cm_cacheado_colado.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_60cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_60cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_60cm_crespo_classico.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_60cm_crespo_colado.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_60cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 60,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_60cm_crespo_lateral.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_70cm_liso_classico.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_70cm_liso_colado.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_70cm_liso_volumoso.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_70cm_liso_lateral.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_70cm_ondulado_classico.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_70cm_ondulado_colado.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_70cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_70cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_70cm_cacheado_classico.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_70cm_cacheado_colado.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_70cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_70cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_70cm_crespo_classico.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_70cm_crespo_colado.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_70cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 70,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_70cm_crespo_lateral.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_80cm_liso_classico.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_80cm_liso_colado.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_80cm_liso_volumoso.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_80cm_liso_lateral.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_80cm_ondulado_classico.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_80cm_ondulado_colado.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_80cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_80cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_80cm_cacheado_classico.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_80cm_cacheado_colado.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_80cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_80cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_80cm_crespo_classico.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_80cm_crespo_colado.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_80cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 80,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_80cm_crespo_lateral.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "liso",
+   "estilo": "classico",
+   "mask": "mask_90cm_liso_classico.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "liso",
+   "estilo": "colado",
+   "mask": "mask_90cm_liso_colado.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "liso",
+   "estilo": "volumoso",
+   "mask": "mask_90cm_liso_volumoso.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "liso",
+   "estilo": "lateral",
+   "mask": "mask_90cm_liso_lateral.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "ondulado",
+   "estilo": "classico",
+   "mask": "mask_90cm_ondulado_classico.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "ondulado",
+   "estilo": "colado",
+   "mask": "mask_90cm_ondulado_colado.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "ondulado",
+   "estilo": "volumoso",
+   "mask": "mask_90cm_ondulado_volumoso.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "ondulado",
+   "estilo": "lateral",
+   "mask": "mask_90cm_ondulado_lateral.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "cacheado",
+   "estilo": "classico",
+   "mask": "mask_90cm_cacheado_classico.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "cacheado",
+   "estilo": "colado",
+   "mask": "mask_90cm_cacheado_colado.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "cacheado",
+   "estilo": "volumoso",
+   "mask": "mask_90cm_cacheado_volumoso.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "cacheado",
+   "estilo": "lateral",
+   "mask": "mask_90cm_cacheado_lateral.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "crespo",
+   "estilo": "classico",
+   "mask": "mask_90cm_crespo_classico.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "crespo",
+   "estilo": "colado",
+   "mask": "mask_90cm_crespo_colado.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "crespo",
+   "estilo": "volumoso",
+   "mask": "mask_90cm_crespo_volumoso.png"
+  },
+  {
+   "cm": 90,
+   "tipo": "crespo",
+   "estilo": "lateral",
+   "mask": "mask_90cm_crespo_lateral.png"
+  }
+ ]
+}

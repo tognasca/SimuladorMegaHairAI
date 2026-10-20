@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SimuladorMegaHair.App.Views.Components.LoadingOverlay"
+             x:Name="RootView"
+             IsVisible="False"
+             InputTransparent="False">
+
+    <!-- Fundo escuro semi-transparente -->
+    <Grid BackgroundColor="#DD08090B">
+
+        <!-- Card central -->
+        <Border HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Padding="45,40"
+                StrokeShape="RoundRectangle 25"
+                BackgroundColor="#111316"
+                Stroke="#C8A96E"
+                StrokeThickness="1"
+                MinimumWidthRequest="320">
+
+            <VerticalStackLayout Spacing="22" HorizontalOptions="Center">
+
+                <!-- Anel animado dourado -->
+                <Grid WidthRequest="90" HeightRequest="90"
+                      HorizontalOptions="Center">
+
+                    <!-- Anel externo (base) -->
+                    <Ellipse WidthRequest="90" HeightRequest="90"
+                             Stroke="#332A1F"
+                             StrokeThickness="4"
+                             Fill="Transparent" />
+
+                    <!-- Activity indicator dourado -->
+                    <ActivityIndicator x:Name="Spinner"
+                                       IsRunning="True"
+                                       Color="#C8A96E"
+                                       WidthRequest="70"
+                                       HeightRequest="70"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center" />
+
+                    <!-- Ícone central -->
+                    <Label Text="✧"
+                           FontSize="28"
+                           TextColor="#E4C187"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+                </Grid>
+
+                <!-- Título -->
+                <Label x:Name="LblTitulo"
+                       Text="GERANDO SEU NOVO VISUAL"
+                       FontSize="13"
+                       FontAttributes="Bold"
+                       CharacterSpacing="4"
+                       TextColor="#E4C187"
+                       HorizontalOptions="Center" />
+
+                <!-- Mensagem dinâmica -->
+                <Label x:Name="LblMensagem"
+                       Text="Analisando seu rosto..."
+                       FontSize="11"
+                       TextColor="#A9A5A0"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
+
+                <!-- Barra de progresso visual (fake, apenas estética) -->
+                <Border WidthRequest="240"
+                        HeightRequest="4"
+                        StrokeShape="RoundRectangle 2"
+                        StrokeThickness="0"
+                        BackgroundColor="#1A1D2A">
+                    <Border x:Name="BarraProgresso"
+                            WidthRequest="20"
+                            HeightRequest="4"
+                            StrokeShape="RoundRectangle 2"
+                            StrokeThickness="0"
+                            BackgroundColor="#C8A96E"
+                            HorizontalOptions="Start" />
+                </Border>
+
+                <!-- Rodapé -->
+                <Label Text="Tecnologia Tatiane Tognasca"
+                       FontSize="9"
+                       CharacterSpacing="3"
+                       TextColor="#77788B"
+                       HorizontalOptions="Center"
+                       Margin="0,5,0,0" />
+
+            </VerticalStackLayout>
+        </Border>
+
+    </Grid>
+</ContentView>

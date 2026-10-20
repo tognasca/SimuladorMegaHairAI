@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+    <!--
+      Cores usadas apenas na tela de splash nativa do Android (antes do
+      MAUI carregar). Combinam com a identidade visual dourado/preto do
+      app (ver Resources/Styles/Colors.xaml).
+    -->
+    <color name="colorPrimary">#0A0A0C</color>
+    <color name="colorPrimaryDark">#000000</color>
+    <color name="colorAccent">#C9A227</color>
+    <color name="splash_background">#0A0A0C</color>
+</resources>

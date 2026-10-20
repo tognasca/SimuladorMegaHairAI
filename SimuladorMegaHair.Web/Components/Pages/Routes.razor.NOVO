@@ -1,0 +1,44 @@
+﻿@inject AuthTokenStore TokenStore
+@using Microsoft.AspNetCore.Components.Authorization
+@using SimuladorMegaHair.Web.Services
+
+<CascadingAuthenticationState>
+    @if (!restaurado)
+    {
+        <div style="display:flex; align-items:center; justify-content:center; min-height:100vh; color:var(--text-muted);">
+            Carregando...
+        </div>
+    }
+    else
+    {
+        <Router AppAssembly="@typeof(Program).Assembly">
+            <Found Context="routeData">
+                <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                    <NotAuthorized>
+                        <RedirecionaLogin />
+                    </NotAuthorized>
+                </AuthorizeRouteView>
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </Found>
+            <NotFound>
+                <LayoutView Layout="typeof(Layout.MainLayout)">
+                    <p>Página não encontrada.</p>
+                </LayoutView>
+            </NotFound>
+        </Router>
+    }
+</CascadingAuthenticationState>
+
+@code {
+    private bool restaurado;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Tenta restaurar um login salvo neste navegador (Local Storage)
+        // antes de decidir se mostra a rota pedida ou redireciona para
+        // /login — evita pedir login de novo a cada F5 no tablet/TV do
+        // salão, que fica ligado o dia todo com o mesmo usuário.
+        await TokenStore.RestaurarAsync();
+        restaurado = true;
+    }
+}
