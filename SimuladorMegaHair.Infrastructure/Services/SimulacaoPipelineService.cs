@@ -28,6 +28,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
     private readonly ILogger<SimulacaoPipelineService> _logger;
     private readonly HairZoneGenerator _zona;
     private readonly HairSegmenter _segmenter;
+    private readonly OpenAiHairClient _openAi;
     private readonly Dictionary<string, string> _b64Cache = new();
 
     private const string ReplicateBaseUrl = "https://api.replicate.com/v1";
@@ -43,7 +44,8 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         IWebHostEnvironment env,
         ILogger<SimulacaoPipelineService> logger,
         HairZoneGenerator zona,
-        HairSegmenter segmenter)
+        HairSegmenter segmenter,
+        OpenAiHairClient openAi)
     {
         _http = http;
         _rep = rep.Value;
@@ -53,6 +55,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         _logger = logger;
         _zona = zona;
         _segmenter = segmenter;
+        _openAi = openAi;
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -185,13 +188,29 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
                 GarantirPasta("wwwroot", "masks", "audit"),
                 _logger, ct);
 
-            // 4. Pipeline
-            var (resultadoUrl, aviso) = req.Provider switch
+            // 4. Pipeline — OpenAI gpt-image-1 (tipo ChatGPT) é o caminho recomendado.
+            var metodoEnv = (Environment.GetEnvironmentVariable("MEGAHAIR_METODO") ?? "").Trim().ToLowerInvariant();
+            var providerEfetivo = metodoEnv is "openai" or "gpt" or "chatgpt"
+                ? ImageProvider.OpenAI
+                : req.Provider;
+
+            string resultadoUrl;
+            string? aviso;
+
+            if (providerEfetivo == ImageProvider.OpenAI)
             {
-                ImageProvider.Replicate => await PipelineKontextHairAsync(imagemPrep, maskPath, zonaAjustadaPath, guiaPath, req, modoEdit, foraDoQuadro, yAlvoPx, faceRect, ct),
-                _ => throw new InvalidOperationException(
-                    $"Provider '{req.Provider}' ainda não está implementado nesta versão da API.")
-            };
+                (resultadoUrl, aviso) = await PipelineOpenAiAsync(imagemPrep, req, faceRect, ct);
+            }
+            else if (providerEfetivo == ImageProvider.Replicate)
+            {
+                (resultadoUrl, aviso) = await PipelineKontextHairAsync(
+                    imagemPrep, maskPath, zonaAjustadaPath, guiaPath, req, modoEdit, foraDoQuadro, yAlvoPx, faceRect, ct);
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"Provider '{req.Provider}' não implementado. Use OpenAI (recomendado) ou Replicate.");
+            }
 
             // 5. Salva resultado
             var path = await SalvarResultadoAsync(resultadoUrl, ct);
@@ -260,6 +279,70 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
     // ═══════════════════════════════════════════════════════════
     //  PIPELINE NOVO: Kontext (gera o cabelo) + composite (só dentro da zona)
     // ═══════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════
+    //  OPENAI gpt-image-1 (mesma família do ChatGPT)
+    // ═══════════════════════════════════════════════════════════
+    private async Task<(string url, string? aviso)> PipelineOpenAiAsync(
+        string imagemPath,
+        SimulacaoRequest req,
+        Rectangle faceRect,
+        CancellationToken ct)
+    {
+        if (!_openAi.Configurado)
+            throw new InvalidOperationException(
+                "OpenAI:ApiToken não configurada. Defina appsettings, User Secrets ou OpenAI__ApiToken.");
+
+        var prompt = OpenAiHairClient.BuildPromptChatGptStyle(
+            req.Comprimento, req.Cor, req.TipoCabelo, req.Modo.ToString());
+        _logger.LogInformation("[OPENAI] Prompt: {Prompt}", prompt);
+
+        var bytes = await _openAi.EditarCabeloAsync(imagemPath, prompt, ct);
+
+        var outFolder = GarantirPasta("wwwroot", "resultados");
+        var nome = $"{Guid.NewGuid():N}.png";
+        var finalPath = Path.Combine(outFolder, nome);
+        await File.WriteAllBytesAsync(finalPath, bytes, ct);
+
+        // Cópia raw para auditoria (mesmo arquivo base)
+        var rawPath = Path.Combine(outFolder, $"raw_openai_{Path.GetFileNameWithoutExtension(nome)}.png");
+        File.Copy(finalPath, rawPath, overwrite: true);
+        _logger.LogInformation("[OPENAI] Resultado salvo (sem composição de rosto): {Path}", finalPath);
+
+        // NÃO colar o rosto original por cima: isso causava "rosto duplicado"
+        // quando o modelo deslocava levemente a face. O gpt-image já preserva identidade.
+        // Se no futuro precisar de proteção extra, alinhar landmarks antes de compor.
+
+        var rel = "resultados/" + nome;
+        return (rel, "OpenAI gpt-image (resultado direto, sem overlay de rosto).");
+    }
+
+    private static async Task CriarMascaraProtecaoRostoAsync(
+        string imagemPath, Rectangle face, string outPath, CancellationToken ct)
+    {
+        using var img = await Image.LoadAsync<Rgba32>(imagemPath, ct);
+        int W = img.Width, H = img.Height;
+        using var m = new Image<L8>(W, H);
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+                m[x, y] = new L8(255);
+
+        float cx = face.X + face.Width / 2f;
+        float cy = face.Y + face.Height * 0.48f;
+        float rx = face.Width * 0.42f;
+        float ry = face.Height * 0.48f;
+        for (int y = Math.Max(0, (int)(cy - ry)); y <= Math.Min(H - 1, (int)(cy + ry)); y++)
+            for (int x = Math.Max(0, (int)(cx - rx)); x <= Math.Min(W - 1, (int)(cx + rx)); x++)
+            {
+                float nx = (x - cx) / rx, ny = (y - cy) / ry;
+                if (nx * nx + ny * ny <= 1f)
+                    m[x, y] = new L8(0);
+            }
+
+        m.Mutate(c => c.GaussianBlur(2.5f));
+        await m.SaveAsPngAsync(outPath, ct);
+    }
+
     private async Task<(string url, string? aviso)> PipelineKontextHairAsync(
         string imagemPath,
         string zonaPath,

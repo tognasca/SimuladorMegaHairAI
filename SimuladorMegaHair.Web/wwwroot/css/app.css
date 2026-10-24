@@ -799,12 +799,12 @@ button {
 .beauty-result-heading p { margin: 0 0 3px; color: var(--beauty-muted); font-size: 13px; }
 .beauty-result-card { padding: 18px; border: 1px solid var(--beauty-line); border-radius: 26px; background: #fff; box-shadow: 0 24px 60px rgba(92, 56, 37, .1); }
 .beauty-compare-toggle { display: none; gap: 5px; max-width: 260px; margin: 0 auto 15px; padding: 4px; border-radius: 12px; background: var(--beauty-soft); }
-.beauty-result-hero { position: relative; overflow: hidden; border-radius: 16px; background: var(--beauty-soft); }
-.beauty-result-hero img { display: block; width: 100%; max-height: 640px; object-fit: contain; }
+.beauty-result-hero { position: relative; overflow: visible; border-radius: 16px; background: var(--beauty-soft); }
+.beauty-result-hero img { display: block; width: 100%; height: auto; max-height: none; object-fit: contain; }
 .beauty-result-hero span { position: absolute; bottom: 16px; left: 16px; padding: 8px 12px; border-radius: 999px; background: rgba(56, 41, 35, .82); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .beauty-compare-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
 .beauty-compare-pair figure { margin: 0; }
-.beauty-compare-pair img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 14px; }
+.beauty-compare-pair img { display: block; width: 100%; height: auto; aspect-ratio: auto; object-fit: contain; border-radius: 14px; background: #f3f1ec; }
 .beauty-compare-pair figcaption { margin-top: 8px; color: var(--beauty-muted); font-size: 10px; font-weight: 700; letter-spacing: .14em; text-align: center; text-transform: uppercase; }
 .beauty-compare-pair figure:last-child figcaption { color: var(--terracotta); }
 .beauty-result-meta { display: flex; justify-content: space-between; gap: 14px; margin: 18px 2px; color: var(--beauty-muted); font-size: 13px; }

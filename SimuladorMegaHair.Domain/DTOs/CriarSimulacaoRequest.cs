@@ -13,7 +13,7 @@ public class CriarSimulacaoRequest
     public HairEditMode Modo { get; set; } = HairEditMode.Extend;
 
     /// Provider de IA (Local=grátis, Replicate/OpenAI=pago)
-    public ImageProvider Provider { get; set; } = ImageProvider.Local;
+    public ImageProvider Provider { get; set; } = ImageProvider.OpenAI;
 
     /// <summary>
     /// Quando true, ignora o cache de simulações iguais (foto + parâmetros)

@@ -141,11 +141,16 @@ public class SimulacoesController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.FotoOriginalPath))
             return BadRequest("Envie uma foto para começar.");
 
-        if (!ProviderHabilitado(request.Provider))
+        // Provider efetivo: usa o pedido se estiver habilitado; senão cai no DefaultProvider (OpenAI).
+        var providerEfetivo = request.Provider;
+        if (!ProviderHabilitado(providerEfetivo))
+            providerEfetivo = _simOpts.DefaultProvider;
+        if (!ProviderHabilitado(providerEfetivo))
             return BadRequest(new
             {
-                erro = "Esta opção de simulação não está disponível no momento."
+                erro = "Nenhum provedor de simulação está habilitado. Configure OpenAI ou Replicate."
             });
+        request.Provider = providerEfetivo;
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
 

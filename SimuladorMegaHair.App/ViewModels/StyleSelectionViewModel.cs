@@ -469,7 +469,7 @@ public partial class StyleSelectionViewModel : BaseViewModel
                     Cor = CorSelecionada,
                     TipoCabelo = TipoCabeloSelecionado,
                     MetodoMegaHair = MetodoSelecionado,
-                    Provider = ImageProvider.Replicate,
+                    Provider = ImageProvider.OpenAI,
                     ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null
                 };
 

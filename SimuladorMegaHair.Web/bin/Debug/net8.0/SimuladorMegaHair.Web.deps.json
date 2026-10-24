@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "SimuladorMegaHair.Web/1.0.0": {
+        "dependencies": {
+          "SimuladorMegaHair.Domain": "1.0.0"
+        },
+        "runtime": {
+          "SimuladorMegaHair.Web.dll": {}
+        }
+      },
+      "SimuladorMegaHair.Domain/1.0.0": {
+        "runtime": {
+          "SimuladorMegaHair.Domain.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "SimuladorMegaHair.Web/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "SimuladorMegaHair.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

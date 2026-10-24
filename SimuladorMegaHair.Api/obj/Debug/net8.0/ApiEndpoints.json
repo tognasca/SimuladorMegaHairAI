@@ -1,0 +1,509 @@
+[
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.AuthController",
+    "Method": "Login",
+    "RelativePath": "api/Auth/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "SimuladorMegaHair.Domain.DTOs.LoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SimuladorMegaHair.Domain.DTOs.LoginResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.AuthController",
+    "Method": "SetupInicial",
+    "RelativePath": "api/Auth/setup-inicial",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "SimuladorMegaHair.Domain.DTOs.CriarUsuarioRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SimuladorMegaHair.Domain.DTOs.LoginResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.AuthController",
+    "Method": "CriarUsuario",
+    "RelativePath": "api/Auth/usuarios",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "SimuladorMegaHair.Domain.DTOs.CriarUsuarioRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MegaHair.Api.Controllers.CatalogoController",
+    "Method": "Listar",
+    "RelativePath": "api/Catalogo",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "cor",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "comprimento",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "tipoCabelo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "metodo",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[SimuladorMegaHair.Domain.Entities.CatalogoItem, SimuladorMegaHair.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "MegaHair.Api.Controllers.CatalogoController",
+    "Method": "Adicionar",
+    "RelativePath": "api/Catalogo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "titulo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "comprimento",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "cor",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "tipoCabelo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "metodoMegaHair",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "precoBase",
+        "Type": "System.Decimal",
+        "IsRequired": false
+      },
+      {
+        "Name": "autorizadoUsoImagem",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
+        "Name": "foto",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SimuladorMegaHair.Domain.Entities.CatalogoItem",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.ClientesController",
+    "Method": "Listar",
+    "RelativePath": "api/Clientes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "busca",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "take",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[SimuladorMegaHair.Domain.DTOs.ClienteResponse, SimuladorMegaHair.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.ClientesController",
+    "Method": "Criar",
+    "RelativePath": "api/Clientes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "SimuladorMegaHair.Domain.DTOs.CriarClienteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SimuladorMegaHair.Domain.DTOs.ClienteResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.ClientesController",
+    "Method": "ObterPorId",
+    "RelativePath": "api/Clientes/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SimuladorMegaHair.Domain.DTOs.ClienteDetalheResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.ClientesController",
+    "Method": "Atualizar",
+    "RelativePath": "api/Clientes/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "SimuladorMegaHair.Domain.DTOs.AtualizarClienteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SimuladorMegaHair.Domain.DTOs.ClienteResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.ClientesController",
+    "Method": "Excluir",
+    "RelativePath": "api/Clientes/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.BenchmarkController",
+    "Method": "Benchmark",
+    "RelativePath": "api/dev/benchmark",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "SimuladorMegaHair.Domain.DTOs.CriarSimulacaoRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "modelos",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.SimulacoesController",
+    "Method": "Criar",
+    "RelativePath": "api/Simulacoes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "SimuladorMegaHair.Domain.DTOs.CriarSimulacaoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SimuladorMegaHair.Domain.DTOs.SimulacaoResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.SimulacoesController",
+    "Method": "AjustarVolume",
+    "RelativePath": "api/Simulacoes/{id}/volume",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "SimuladorMegaHair.Domain.Models.AjustarVolumeRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SimuladorMegaHair.Domain.DTOs.SimulacaoResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.SimulacoesController",
+    "Method": "ObterHistorico",
+    "RelativePath": "api/Simulacoes/historico",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "fotoOriginalPath",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "provider",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "take",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[SimuladorMegaHair.Domain.DTOs.SimulacaoResponse, SimuladorMegaHair.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.SimulacoesController",
+    "Method": "GetProviders",
+    "RelativePath": "api/Simulacoes/providers",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[SimuladorMegaHair.Domain.DTOs.ProviderInfoResponse, SimuladorMegaHair.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.SimulacoesController",
+    "Method": "Upload",
+    "RelativePath": "api/Simulacoes/upload",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.String",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Program\u002B\u003C\u003Ec",
+    "Method": "\u003C\u003CMain\u003E$\u003Eb__0_12",
+    "RelativePath": "index.html",
+    "HttpMethod": "GET",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "SimuladorMegaHair.Api.Controllers.MediaController",
+    "Method": "Obter",
+    "RelativePath": "media/{pasta}/{arquivo}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "pasta",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "arquivo",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "exp",
+        "Type": "System.Int64",
+        "IsRequired": false
+      },
+      {
+        "Name": "sig",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

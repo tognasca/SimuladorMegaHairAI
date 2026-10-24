@@ -11,5 +11,5 @@ public sealed class SimulacaoRequest
     public required string MetodoMegaHair { get; init; }
 
     public HairEditMode Modo { get; set; } = HairEditMode.Extend;
-    public ImageProvider Provider { get; init; } = ImageProvider.Local;
+    public ImageProvider Provider { get; init; } = ImageProvider.OpenAI;
 }

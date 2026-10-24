@@ -377,14 +377,14 @@
             var request = new CriarSimulacaoRequest
             {
                 FotoOriginalPath = fotoServidorPath, Comprimento = comprimento, Cor = cor, TipoCabelo = tipoCabelo,
-                MetodoMegaHair = metodo, Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.Replicate,
+                MetodoMegaHair = metodo, Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.OpenAI,
                 ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null, ForcarNovaGeracao = forcarNova
             };
             resultado = await Api.CriarSimulacaoAsync(request, ctLoad);
         }
         catch (OperationCanceledException) when (ctLoad.IsCancellationRequested)
         {
-            erro = "A geração foi cancelada ou excedeu o tempo máximo. Confirme se a API e o Replicate estão configurados e tente novamente.";
+            erro = "A geração foi cancelada ou excedeu o tempo máximo. Confirme se a API está rodando e se OpenAI:ApiToken está configurado.";
         }
         catch (Exception ex) { erro = ApiClient.MensagemAmigavel(ex, "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?", Api.BaseAddress); }
         finally { loadCts.Cancel(); gerando = false; }

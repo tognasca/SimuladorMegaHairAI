@@ -9,7 +9,7 @@ public sealed class SimulacaoOptions
 
     /// Provider padrão se o usuário não escolher.
     /// Só "Replicate" está implementado hoje (ver SimulacaoPipelineService).
-    public ImageProvider DefaultProvider { get; set; } = ImageProvider.Replicate;
+    public ImageProvider DefaultProvider { get; set; } = ImageProvider.OpenAI;
 
     /// NÃO IMPLEMENTADO: mantido em false para não anunciar uma opção que falha.
     public bool HabilitarProviderLocal { get; set; } = false;
@@ -18,7 +18,7 @@ public sealed class SimulacaoOptions
     public bool HabilitarProviderReplicate { get; set; } = true;
 
     /// NÃO IMPLEMENTADO: mantido em false para não anunciar uma opção que falha.
-    public bool HabilitarProviderOpenAI { get; set; } = false;
+    public bool HabilitarProviderOpenAI { get; set; } = true;
 
     // ── Limites de uso (protegem o crédito da IA e a memória do servidor) ──
 

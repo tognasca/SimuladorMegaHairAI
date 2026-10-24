@@ -2,11 +2,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using SimuladorMegaHair.Domain.Interfaces;
 using SimuladorMegaHair.Infrastructure.Configuration;
 using SimuladorMegaHair.Infrastructure.Data;
 using SimuladorMegaHair.Infrastructure.Services;
-using Microsoft.OpenApi;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,12 +15,18 @@ var builder = WebApplication.CreateBuilder(args);
 // CAMINHOS DOS ASSETS
 // ==========================================================
 
-var assetsPath = Path.Combine(AppContext.BaseDirectory, "Assets");
-var catalogPath = Path.Combine(assetsPath, "catalogo");
-var manifestPath = Path.Combine(catalogPath, "manifest.json");
+var assetsPath = Path.Combine(
+    builder.Environment.ContentRootPath,
+    "Assets");
 
-// Validação antecipada: falha na inicialização, com mensagem clara,
-// em vez de falhar na primeira simulação.
+var catalogPath = Path.Combine(
+    assetsPath,
+    "catalogo");
+
+var manifestPath = Path.Combine(
+    catalogPath,
+    "manifest.json");
+
 if (!Directory.Exists(catalogPath))
 {
     throw new DirectoryNotFoundException(
@@ -35,10 +41,11 @@ if (!File.Exists(manifestPath))
 }
 
 // ==========================================================
-// CONTROLLERS E SWAGGER
+// CONTROLLERS
 // ==========================================================
 
-builder.Services.AddControllers()
+builder.Services
+    .AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(
@@ -47,82 +54,173 @@ builder.Services.AddControllers()
 
 builder.Services.AddEndpointsApiExplorer();
 
+// ==========================================================
+// SWAGGER + JWT
+// ==========================================================
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new()
     {
         Title = "MegaHair AI API",
         Version = "v1",
-        Description = "API para simulação de mega hair com inteligência artificial."
+        Description =
+            "API para simulação de mega hair com inteligência artificial."
     });
 
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Cole somente o token JWT obtido em /api/Auth/login. O Swagger adiciona o prefixo Bearer automaticamente."
-    });
+    options.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description =
+                "Informe somente o token JWT. " +
+                "O Swagger adicionará Bearer automaticamente."
+        });
+});
 
 // ==========================================================
 // CONFIGURAÇÕES
 // ==========================================================
 
 builder.Services.Configure<SimulacaoOptions>(
-    builder.Configuration.GetSection(SimulacaoOptions.Section));
+    builder.Configuration.GetSection(
+        SimulacaoOptions.Section));
 
 builder.Services.Configure<ReplicateOptions>(
-    builder.Configuration.GetSection(ReplicateOptions.Section));
+    builder.Configuration.GetSection(
+        ReplicateOptions.Section));
 
 builder.Services.Configure<OpenAIOptions>(
-    builder.Configuration.GetSection(OpenAIOptions.Section));
+    builder.Configuration.GetSection(
+        OpenAIOptions.Section));
+
+// ==========================================================
+// CONFIGURAÇÃO DO PIPELINE
+// ==========================================================
+
+var metodo = (
+    builder.Configuration["Pipeline:Metodo"]
+    ?? "fill-mascara"
+)
+.Trim()
+.ToLowerInvariant();
+
+var segmentacao = builder.Configuration
+    .GetValue<int>("Pipeline:Segmentacao", 0);
+
+var metodosPermitidos = new[]
+{
+    "openai",
+    "fill-mascara"
+};
+
+if (!metodosPermitidos.Contains(metodo))
+{
+    throw new InvalidOperationException(
+        $"Método de pipeline inválido: {metodo}. " +
+        $"Métodos permitidos: {string.Join(", ", metodosPermitidos)}");
+}
 
 // ==========================================================
 // BANCO DE DADOS
 // ==========================================================
 
+var connectionString = builder.Configuration
+    .GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "ConnectionStrings:DefaultConnection não configurada.");
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseSqlServer(connectionString);
+});
 
 // ==========================================================
-// CATÁLOGO, ZONA DE EDIÇÃO E SEGMENTAÇÃO DE CABELO
-// (cada item registrado UMA única vez)
+// CATÁLOGO DE CABELOS
 // ==========================================================
 
-builder.Services.AddSingleton(_ => new HairMaskBuilder(catalogPath));
+builder.Services.AddSingleton(
+    _ => new HairMaskBuilder(catalogPath));
+
+// ==========================================================
+// GERADOR DE ZONA DE CABELO
+// ==========================================================
+
 builder.Services.AddScoped<HairZoneGenerator>();
 
-// Versão verificada do modelo schananas/grounded_sam no Replicate.
-// Pode ser sobrescrita em Replicate:SegmentVersion (appsettings / variável de ambiente).
+// ==========================================================
+// SEGMENTAÇÃO VIA REPLICATE
+// ==========================================================
+
 const string DefaultSegmentVersion =
     "171d73909aa0cd42bc873d5b82d795eef90ecb24001da095af8708d37548b02a";
 
-builder.Services.AddHttpClient<HairSegmenter>()
+builder.Services
+    .AddHttpClient<HairSegmenter>(client =>
+    {
+        client.Timeout = TimeSpan.FromMinutes(5);
+    })
     .AddTypedClient((http, sp) =>
-        new HairSegmenter(
+    {
+        var apiToken =
+            builder.Configuration["Replicate:ApiToken"]
+            ?? string.Empty;
+
+        var segmentVersion =
+            builder.Configuration["Replicate:SegmentVersion"]
+            ?? DefaultSegmentVersion;
+
+        return new HairSegmenter(
             http,
-            builder.Configuration["Replicate:ApiToken"] ?? string.Empty,
-            builder.Configuration["Replicate:SegmentVersion"] ?? DefaultSegmentVersion,
-            sp.GetRequiredService<ILogger<HairSegmenter>>()));
+            apiToken,
+            segmentVersion,
+            sp.GetRequiredService<ILogger<HairSegmenter>>());
+    });
 
 // ==========================================================
-// SERVIÇOS DE DOMÍNIO E SIMULAÇÃO
+// SERVIÇOS DE DOMÍNIO
 // ==========================================================
 
-builder.Services.AddScoped<IOrcamentoService, OrcamentoService>();
+builder.Services.AddScoped<
+    IOrcamentoService,
+    OrcamentoService>();
 
-// Detecção de rosto em tempo real para a tela de captura (um único detector em memória).
+// ==========================================================
+// AVALIAÇÃO DE FOTO
+// ==========================================================
+
 builder.Services.AddSingleton<FotoAvaliadorService>();
 
-builder.Services.AddHttpClient<
-    IImageSimulationService,
-    SimulacaoPipelineService>(client =>
+// ==========================================================
+// OPENAI - GERAÇÃO DE MEGA HAIR
+// ==========================================================
+
+builder.Services
+    .AddHttpClient<OpenAiHairClient>(client =>
     {
         client.Timeout = TimeSpan.FromMinutes(10);
     });
+
+// ==========================================================
+// PIPELINE DE SIMULAÇÃO
+// ==========================================================
+
+builder.Services
+    .AddHttpClient<
+        IImageSimulationService,
+        SimulacaoPipelineService>(client =>
+        {
+            client.Timeout = TimeSpan.FromMinutes(10);
+        });
 
 // ==========================================================
 // CORS
@@ -130,15 +228,20 @@ builder.Services.AddHttpClient<
 
 var allowedOrigins = builder.Configuration
     .GetSection("AllowedOrigins")
-    .Get<string[]>() ?? Array.Empty<string>();
+    .Get<string[]>()
+    ?? Array.Empty<string>();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Default", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        if (allowedOrigins.Length > 0)
+        {
+            policy
+                .WithOrigins(allowedOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        }
     });
 });
 
@@ -146,10 +249,13 @@ builder.Services.AddCors(options =>
 // AUTENTICAÇÃO JWT
 // ==========================================================
 
-var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException(
-        "Jwt:Key não configurado. Defina Jwt__Key por variável de ambiente " +
-        "ou User Secrets, com pelo menos 32 caracteres aleatórios.");
+var jwtKey = builder.Configuration["Jwt:Key"];
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new InvalidOperationException(
+        "Jwt:Key não configurado.");
+}
 
 if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
 {
@@ -157,35 +263,42 @@ if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
         "Jwt:Key deve possuir pelo menos 32 bytes.");
 }
 
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SimuladorMegaHair";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SimuladorMegaHair.Clients";
+var jwtIssuer =
+    builder.Configuration["Jwt:Issuer"]
+    ?? "SimuladorMegaHair";
+
+var jwtAudience =
+    builder.Configuration["Jwt:Audience"]
+    ?? "SimuladorMegaHair.Clients";
 
 builder.Services
     .AddAuthentication(options =>
     {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultAuthenticateScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+
+        options.DefaultChallengeScheme =
+            JwtBearerDefaults.AuthenticationScheme;
     })
     .AddJwtBearer(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
 
-            ValidIssuer =
-                builder.Configuration["Jwt:Issuer"] ?? "SimuladorMegaHair",
+                ValidIssuer = jwtIssuer,
+                ValidAudience = jwtAudience,
 
-            ValidAudience =
-                builder.Configuration["Jwt:Audience"] ?? "SimuladorMegaHair.Clients",
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtKey)),
 
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey)),
-
-            ClockSkew = TimeSpan.FromMinutes(1)
-        };
+                ClockSkew = TimeSpan.FromMinutes(1)
+            };
     });
 
 builder.Services.AddAuthorization();
@@ -196,32 +309,105 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Diagnóstico inicial
+// ==========================================================
+// DIAGNÓSTICO DE INICIALIZAÇÃO
+// ==========================================================
+
 app.Logger.LogInformation(
-    "Catálogo carregado do diretório: {CatalogPath}",
+    "MegaHair AI inicializado.");
+
+app.Logger.LogInformation(
+    "Ambiente: {Environment}",
+    app.Environment.EnvironmentName);
+
+app.Logger.LogInformation(
+    "Catálogo: {CatalogPath}",
     catalogPath);
 
 app.Logger.LogInformation(
-    "Manifesto localizado em: {ManifestPath}",
+    "Manifesto: {ManifestPath}",
     manifestPath);
+
+app.Logger.LogInformation(
+    "Pipeline selecionado: {Metodo}",
+    metodo);
+
+app.Logger.LogInformation(
+    "Segmentação configurada: {Segmentacao}",
+    segmentacao);
+
+// ==========================================================
+// VALIDAÇÃO DAS CONFIGURAÇÕES DE IA
+// ==========================================================
 
 using (var scope = app.Services.CreateScope())
 {
-    var replicateOpts = scope.ServiceProvider
+    var replicateOptions = scope.ServiceProvider
         .GetRequiredService<
             Microsoft.Extensions.Options.IOptions<ReplicateOptions>>()
         .Value;
 
-    if (string.IsNullOrWhiteSpace(replicateOpts.ApiToken))
+    var openAiOptions = scope.ServiceProvider
+        .GetRequiredService<
+            Microsoft.Extensions.Options.IOptions<OpenAIOptions>>()
+        .Value;
+
+    if (string.IsNullOrWhiteSpace(replicateOptions.ApiToken))
     {
         app.Logger.LogWarning(
-            "Replicate:ApiToken não configurado. " +
-            "As operações que dependem do Replicate não funcionarão.");
+            "Replicate:ApiToken não configurado.");
+    }
+
+    if (metodo == "openai")
+    {
+        app.Logger.LogInformation(
+            "Pipeline OPENAI selecionado.");
+
+        if (string.IsNullOrWhiteSpace(openAiOptions.ApiKey))
+        {
+            app.Logger.LogWarning(
+                "OpenAI:ApiKey não configurado. " +
+                "A geração de imagens não funcionará.");
+        }
     }
 }
 
 // ==========================================================
-// PIPELINE HTTP
+// TRATAMENTO GLOBAL DE EXCEÇÕES
+// ==========================================================
+
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exception = context.Features
+            .Get<IExceptionHandlerFeature>()
+            ?.Error;
+
+        var logger = context.RequestServices
+            .GetRequiredService<ILogger<Program>>();
+
+        logger.LogError(
+            exception,
+            "Erro não tratado em {Method} {Path}",
+            context.Request.Method,
+            context.Request.Path);
+
+        context.Response.StatusCode = 500;
+
+        await context.Response.WriteAsJsonAsync(new
+        {
+            erro = "Erro interno ao processar a requisição.",
+
+            detalhe = app.Environment.IsDevelopment()
+                ? exception?.ToString()
+                : null
+        });
+    });
+});
+
+// ==========================================================
+// SWAGGER
 // ==========================================================
 
 if (app.Environment.IsDevelopment())
@@ -237,34 +423,31 @@ if (app.Environment.IsDevelopment())
         options.RoutePrefix = "swagger";
     });
 
-    // Compatibilidade com o endereço padrão aberto por alguns perfis/IDE:
-    // https://localhost:7064/index.html.
-    app.MapGet("/index.html", () => Results.Redirect("/swagger"));
+    app.MapGet(
+        "/index.html",
+        () => Results.Redirect("/swagger"));
 }
 
-app.UseExceptionHandler(erro => erro.Run(async ctx =>
-{
-    var ex = ctx.Features.Get<IExceptionHandlerFeature>()?.Error;
-    ctx.RequestServices.GetRequiredService<ILogger<Program>>()
-        .LogError(ex, "Erro não tratado em {Metodo} {Caminho}", ctx.Request.Method, ctx.Request.Path);
-    ctx.Response.StatusCode = 500;
-    await ctx.Response.WriteAsJsonAsync(new
-    {
-        erro = "Erro interno ao processar a requisição.",
-        detalhe = app.Environment.IsDevelopment() ? ex?.ToString() : null
-    });
-}));
+// ==========================================================
+// PIPELINE HTTP
+// ==========================================================
 
 app.UseHttpsRedirection();
-app.UseCors("Default");
-app.UseAuthentication();
-app.UseAuthorization();
+
 app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseCors("Default");
+
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 app.MapControllers();
 
 // ==========================================================
-// MIGRAÇÃO DO BANCO
+// MIGRAÇÃO DO BANCO DE DADOS
 // ==========================================================
 
 using (var scope = app.Services.CreateScope())
@@ -272,7 +455,33 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider
         .GetRequiredService<AppDbContext>();
 
-    db.Database.Migrate();
+    try
+    {
+        app.Logger.LogInformation(
+            "Verificando migrations do banco de dados.");
+
+        db.Database.Migrate();
+
+        app.Logger.LogInformation(
+            "Banco de dados atualizado com sucesso.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogCritical(
+            ex,
+            "Falha ao aplicar migrations. " +
+            "Verifique a compatibilidade das migrations " +
+            "com o SQL Server.");
+
+        throw;
+    }
 }
+
+// ==========================================================
+// INICIALIZAÇÃO
+// ==========================================================
+
+app.Logger.LogInformation(
+    "MegaHair AI API pronta para receber requisições.");
 
 app.Run();
