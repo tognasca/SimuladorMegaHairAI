@@ -198,3 +198,70 @@ body { background-image:radial-gradient(ellipse at 78% 12%,rgba(111,56,35,.23),t
 /* The redesigned dashboard owns its own header and side rail; avoid duplicating MainLayout navigation on this route. */
 .app-shell:has(.tat-dashboard)>.sidebar{display:none!important}
 .app-shell:has(.tat-dashboard)>.app-main{width:100%;max-width:none;margin:0;padding:0;overflow:visible}
+
+
+/* ── Hero cinematográfico inspirado na referência Tati Mega Hair ── */
+.tat-workspace { display:block; min-height:0; }
+.tat-rail { display:none; }
+.tat-main { width:100%; max-width:1600px; margin:0 auto; padding:clamp(18px,2.3vw,34px) clamp(16px,3vw,48px) 30px; }
+.tat-hero {
+    position:relative; display:grid; grid-template-columns:minmax(300px,.94fr) minmax(0,1.06fr);
+    min-height:clamp(420px,42vw,640px); overflow:hidden; isolation:isolate;
+    border:1px solid rgba(247,190,163,.28); border-radius:8px;
+    background:linear-gradient(112deg,#1a100c 0%,#24140e 48%,#100a08 100%);
+    box-shadow:0 28px 80px rgba(0,0,0,.36);
+}
+.tat-hero-photo { position:relative; min-width:0; min-height:100%; overflow:hidden; isolation:isolate; }
+.tat-hero-photo:before { content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,transparent 65%,rgba(23,13,9,.2)),linear-gradient(0deg,rgba(13,8,6,.22),transparent 45%); }
+.tat-hero-photo img { display:block;width:100%;height:100%;min-height:inherit;position:absolute;inset:0;object-fit:cover;object-position:center 27%;filter:saturate(.96) contrast(1.02); }
+.tat-hero-photo-glow { position:absolute;z-index:2;inset:0;pointer-events:none;background:radial-gradient(ellipse at 52% 25%,rgba(255,206,171,.08),transparent 52%); }
+.tat-hero-content { position:relative;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-width:0;padding:clamp(26px,4vw,58px);background:radial-gradient(ellipse at 80% 20%,rgba(176,100,66,.17),transparent 46%),linear-gradient(115deg,rgba(31,18,12,.88),rgba(14,9,7,.98)); }
+.tat-hero-wordmark { position:relative;display:flex;align-items:baseline;flex-wrap:wrap;gap:10px;line-height:.85;margin:0 0 8px;white-space:nowrap; }
+.tat-hero-tati { color:#fff0e7;font:600 clamp(54px,6.3vw,96px)/.78 "Cormorant Garamond",Georgia,serif;letter-spacing:-.075em;text-shadow:0 5px 25px #0006; }
+.tat-hero-mega { color:#f6b69b;font:italic 500 clamp(31px,3.5vw,54px)/1 "Cormorant Garamond",Georgia,serif;letter-spacing:-.06em; }
+.tat-hero-heart { position:absolute;top:-15px;left:clamp(108px,12vw,176px);color:#f6b69b;font-size:21px; }
+.tat-hero-wordmark small { flex-basis:100%;padding-left:8px;color:#f2d9ca;font:500 9px/1 Outfit,Arial,sans-serif;letter-spacing:.62em; }
+.tat-hero-kicker { margin:clamp(15px,2vw,25px) 0 8px;color:#f3b497;font-size:10px;font-weight:700;letter-spacing:.23em; }
+.tat-hero-content h1 { max-width:650px;margin:0;color:#fff4ec;font:500 clamp(38px,4.2vw,64px)/.96 "Cormorant Garamond",Georgia,serif;letter-spacing:-.045em; }
+.tat-hero-content h1 em { color:#f6b69b;font-weight:500; }
+.tat-hero-copy { max-width:430px;margin:13px 0 0;color:#e7d2c7;font-size:clamp(12px,1vw,15px);line-height:1.55; }
+.tat-hero-handwritten { align-self:flex-end;margin:0 0 2px;color:#f5b79b;font:italic 500 clamp(18px,2vw,27px)/.95 "Cormorant Garamond",Georgia,serif;text-align:right;transform:rotate(-6deg); }
+.tat-hero-handwritten span { padding-left:8px;font-size:21px; }
+.tat-hero .tat-benefit-row { width:100%;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:clamp(18px,2.4vw,30px) 0 18px;padding-top:16px;border-top:1px solid rgba(246,182,155,.19); }
+.tat-hero .tat-benefit-row>div { display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:7px;text-align:center; }
+.tat-hero .tat-benefit-row>div>span { display:block;color:#f5b79b;font-size:27px;line-height:1; }
+.tat-hero .tat-benefit-row p { color:#f4e6de;font-size:10px;line-height:1.35; }
+.tat-hero-cta { display:flex;align-items:center;justify-content:space-between;gap:18px;width:100%;max-width:380px;min-height:48px;margin-top:auto;padding:12px 18px;border:1px solid rgba(255,211,188,.45);border-radius:999px;background:linear-gradient(110deg,#ffd5c0,#e9a184);color:#24120c;font-size:12px;font-weight:700;box-shadow:0 10px 28px rgba(0,0,0,.2);transition:transform .2s,filter .2s; }
+.tat-hero-cta:hover { transform:translateY(-2px);filter:brightness(1.05); }
+.tat-hero-cta span { font-size:20px; }
+.tat-panels { margin-top:clamp(20px,3vw,38px); }
+@media(max-width:980px) {
+ .tat-hero { grid-template-columns:minmax(240px,.82fr) minmax(0,1.18fr);min-height:480px; }
+ .tat-hero-content { padding:26px 22px; }
+ .tat-hero-tati { font-size:clamp(52px,7vw,72px); }
+ .tat-hero-mega { font-size:clamp(29px,4vw,42px); }
+ .tat-hero-content h1 { font-size:clamp(36px,5vw,52px); }
+ .tat-hero .tat-benefit-row { gap:6px; }
+ .tat-hero .tat-benefit-row p { font-size:9px; }
+}
+@media(max-width:700px) {
+ .tat-main { padding:12px 10px 24px; }
+ .tat-hero { display:flex;flex-direction:column;min-height:0;border-radius:15px; }
+ .tat-hero-photo { height:clamp(300px,92vw,440px);min-height:0;flex:0 0 auto; }
+ .tat-hero-photo img { object-position:center 24%; }
+ .tat-hero-photo:before { background:linear-gradient(0deg,rgba(18,10,7,.5),transparent 32%); }
+ .tat-hero-content { padding:24px 17px 20px; }
+ .tat-hero-wordmark { gap:8px; }
+ .tat-hero-tati { font-size:clamp(54px,15vw,76px); }
+ .tat-hero-mega { font-size:clamp(29px,8vw,40px); }
+ .tat-hero-heart { top:-13px;left:110px; }
+ .tat-hero-kicker { margin-top:19px;font-size:9px; }
+ .tat-hero-content h1 { font-size:clamp(42px,11vw,56px); }
+ .tat-hero-copy { font-size:13px; }
+ .tat-hero-handwritten { margin:18px 4px 0 auto;font-size:24px; }
+ .tat-hero .tat-benefit-row { grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:20px 0 18px;padding-top:15px; }
+ .tat-hero .tat-benefit-row>div { gap:7px; }
+ .tat-hero .tat-benefit-row>div>span { font-size:23px; }
+ .tat-hero .tat-benefit-row p { font-size:9px;overflow-wrap:anywhere; }
+ .tat-hero-cta { max-width:none; }
+}
