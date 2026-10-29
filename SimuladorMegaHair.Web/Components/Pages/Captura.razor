@@ -28,9 +28,10 @@
 
             <div class="mh-moldura" aria-hidden="true">
                 <svg viewBox="0 0 200 300" focusable="false">
-                    <ellipse cx="100" cy="88" rx="36" ry="46" class="mh-moldura-rosto" />
-                    <path d="M18 300 C 20 205, 62 168, 100 168 C 138 168, 180 205, 182 300" class="mh-moldura-ombros" />
-                    <path d="M66 76 C 40 112, 52 196, 28 272 M134 76 C 160 112, 148 196, 172 272" class="mh-moldura-fios" /><path d="M72 70 C 52 108, 62 190, 44 262 M128 70 C 148 108, 138 190, 156 262" class="mh-moldura-fios mh-moldura-fios-2" />
+                    <ellipse cx="100" cy="60" rx="27" ry="35" class="mh-moldura-rosto" />
+                    <path d="M72 102 C53 112 44 135 39 163 L26 286 M128 102 C147 112 156 135 161 163 L174 286" class="mh-moldura-ombros" />
+                    <path d="M72 105 C58 136 63 185 51 224 L42 270 M128 105 C142 136 137 185 149 224 L158 270" class="mh-moldura-fios" />
+                    <path d="M43 229 Q100 245 157 229" class="mh-moldura-ombros" />
                     <g class="mh-brilho"><path d="M164 40 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 l10 -4z" /></g>
                 </svg>
             </div>
@@ -44,7 +45,7 @@
                 <button type="button" class="mh-btn mh-btn-primario" @onclick="AbrirEspelhoAsync">📸 TIRAR FOTO</button>
                 <label for="mh-arquivo" class="mh-btn mh-btn-secundario" role="button" tabindex="0">🖼️ ESCOLHER DA GALERIA</label>
             </div>
-            <p class="mh-nota">Use uma foto de frente, com boa iluminação, mostrando rosto e ombros.</p>
+            <p class="mh-nota">Use uma foto de frente, com boa iluminação, enquadrando do topo da cabeça até a cintura.</p>
         </section>
     }
 
@@ -279,12 +280,13 @@
                 <div class="mh-palco" id="mh-palco">
                     <canvas id="mh-preview" class="mh-preview"></canvas>
                     <svg class="mh-guia" viewBox="0 0 200 300" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-                        <ellipse cx="100" cy="88" rx="38" ry="48" />
-                        <path d="M14 300 C 16 205, 58 170, 100 170 C 142 170, 184 205, 186 300" />
+                        <ellipse cx="100" cy="59" rx="27" ry="35" />
+                        <path d="M72 103 C52 113 43 137 38 165 L24 292 M128 103 C148 113 157 137 162 165 L176 292" />
+                        <path d="M39 229 Q100 247 161 229" />
                     </svg>
                     <div class="mh-palco-dicas">
-                        <span>Posicione seu rosto e ombros dentro da área indicada.</span>
-                        <small>Utilize uma boa iluminação para um resultado mais realista.</small>
+                        <span>Afaste-se um pouco e enquadre do topo da cabeça até a cintura.</span>
+                        <small>Deixe os ombros e a cintura visíveis para um resultado mais fiel.</small>
                     </div>
 
                     @if (erroCamera is not null)
