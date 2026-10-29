@@ -328,7 +328,7 @@
                     <button type="button" class="mh-link" data-remover-efeitos>Remover efeitos</button>
                 </div>
                 <div class="mh-obturador-linha">
-                    <button type="button" class="mh-obturador" @onclick="CapturarAsync" disabled="@(erroCamera is not null || !cameraPronta)" aria-label="Tirar foto"><span></span></button>
+                    <button type="button" class="mh-obturador" @onclick="CapturarAsync" disabled="@(erroCamera is not null || !cameraPronta)" aria-label="Tirar foto"><span aria-hidden="true">✦</span><strong>Tirar foto</strong><b aria-hidden="true">→</b></button>
                 </div>
             </footer>
         </div>
