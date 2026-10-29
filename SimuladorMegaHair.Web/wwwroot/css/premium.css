@@ -115,3 +115,82 @@ body { background-image:radial-gradient(ellipse at 78% 12%,rgba(111,56,35,.23),t
 @media(prefers-reduced-motion:reduce) {
   *,*::before,*::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; }
 }
+
+
+/* ── Novo dashboard Tati Mega Hair: composição baseada nas referências ── */
+.tat-dashboard{--tat-ink:#120b08;--tat-panel:#1b120e;--tat-rose:#f6b69b;--tat-cream:#fff5ee;--tat-muted:#d2b8aa;min-height:100vh;color:var(--tat-cream);background:#100a08;position:relative;isolation:isolate;font-family:Outfit,Arial,sans-serif}
+.tat-dashboard:before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:linear-gradient(90deg,rgba(13,8,6,.93),rgba(17,9,6,.78) 46%,rgba(17,9,6,.87)),url("../images/tati-cabelo-escuro.jpg") center 38%/cover no-repeat}
+.tat-dashboard:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 78% 12%,rgba(183,100,65,.19),transparent 35%),linear-gradient(0deg,rgba(12,7,5,.26),transparent 45%)}
+.tat-topbar{height:112px;display:flex;align-items:center;gap:clamp(20px,4vw,70px);padding:14px clamp(20px,3vw,54px);border-bottom:1px solid rgba(246,182,155,.2);background:rgba(17,10,7,.58);backdrop-filter:blur(18px)}
+.tat-wordmark{display:flex;flex-direction:column;flex-shrink:0;min-width:260px;color:var(--tat-cream)}
+.tat-logo-main{position:relative;display:block;font:700 clamp(36px,4vw,62px)/.78 "Cormorant Garamond",Georgia,serif;letter-spacing:-.065em}
+.tat-logo-main>span{margin-left:7px;color:var(--tat-rose);font:italic 500 clamp(25px,2.8vw,45px)/1 "Cormorant Garamond",Georgia,serif;letter-spacing:-.06em}
+.tat-logo-main>b{position:absolute;top:-8px;margin-left:4px;color:var(--tat-rose);font-size:20px}
+.tat-logo-sub{padding:12px 0 0 10px;font-size:9px;letter-spacing:.62em;color:#f3d9ca}
+.tat-topnav{display:flex;justify-content:center;align-items:center;gap:clamp(16px,3vw,48px);flex:1}
+.tat-topnav a{position:relative;padding:13px 0;color:#f1e1d9;font-size:14px;white-space:nowrap}
+.tat-topnav a.active:after{content:"";position:absolute;left:0;right:0;bottom:3px;height:2px;background:var(--tat-rose)}
+.tat-login{display:flex;align-items:center;justify-content:center;gap:10px;flex-shrink:0;padding:13px 30px;border-radius:99px;background:linear-gradient(110deg,#ffd5c0,#efa78a);color:#21120c;font-size:13px;font-weight:700}
+.tat-workspace{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:calc(100vh - 112px)}
+.tat-rail{position:relative;display:flex;flex-direction:column;gap:14px;padding:30px 12px 26px 20px;border-right:1px solid rgba(246,182,155,.17);background:rgba(14,10,8,.72);backdrop-filter:blur(10px)}
+.tat-rail>a{display:flex;align-items:center;gap:16px;padding:17px 18px;border:1px solid transparent;border-radius:12px;color:#f2e2d9;font-size:14px;transition:.2s}
+.tat-rail>a span{width:22px;text-align:center;color:#ffd0b9;font-size:23px}
+.tat-rail>a.selected,.tat-rail>a:hover{border-color:rgba(255,208,185,.28);background:linear-gradient(100deg,#f6b69b,#8e5944);color:#21120c;box-shadow:0 8px 24px #0005}
+.tat-rail>a.selected span,.tat-rail>a:hover span{color:#21120c}
+.tat-rail-note{margin:auto 12px 0;padding:22px 15px;border:1px solid rgba(246,182,155,.3);border-radius:12px;color:#ffcfb8;font:italic 25px/1.12 "Cormorant Garamond",Georgia,serif;transform:rotate(-2deg);background:rgba(35,20,14,.6)}
+.tat-rail-note span{display:block;text-align:right;font-size:30px}
+.tat-main{min-width:0;padding:clamp(22px,2.5vw,42px) clamp(18px,2vw,36px) 24px}
+.tat-intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.72fr) minmax(150px,.45fr);align-items:center;gap:clamp(20px,2vw,38px)}
+.tat-kicker{margin:0 0 12px;color:var(--tat-rose);font-size:10px;letter-spacing:.2em;font-weight:700}
+.tat-intro h1{margin:0;font:500 clamp(48px,4.4vw,76px)/.85 "Cormorant Garamond",Georgia,serif;letter-spacing:-.055em;color:#fff8f3}
+.tat-intro h1 em{color:var(--tat-rose);font-weight:500}
+.tat-intro-copy{border-left:1px solid #e7aa8e;padding:4px 0 4px 26px;color:#f2e3db;font-size:clamp(13px,1.1vw,17px);line-height:1.65}
+.tat-handwritten{justify-self:end;color:#f7bea5;font:italic 500 clamp(23px,2.3vw,36px)/.95 "Cormorant Garamond",Georgia,serif;transform:rotate(-9deg);text-align:center}
+.tat-handwritten span{display:block;text-align:right;font-size:30px}
+.tat-benefit-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin:32px 0 24px}
+.tat-benefit-row>div{display:flex;align-items:center;gap:12px;min-width:0}
+.tat-benefit-row>div>span{flex-shrink:0;color:#ffb998;font-size:36px;font-weight:300}
+.tat-benefit-row p{margin:0;color:#f4e6de;font-size:12px;line-height:1.45}
+.tat-panels{display:grid;grid-template-columns:minmax(0,.88fr) minmax(0,.92fr) minmax(0,1.12fr);gap:12px;align-items:stretch}
+.tat-panel{min-width:0;position:relative;padding:14px;border:1px solid rgba(235,184,158,.32);border-radius:19px;background:linear-gradient(145deg,rgba(42,29,23,.94),rgba(16,12,10,.96));box-shadow:0 16px 44px #0005;overflow:hidden}
+.tat-panel-heading{display:flex;align-items:center;gap:13px;min-height:35px;margin-bottom:12px}
+.tat-step{display:grid;place-items:center;flex-shrink:0;width:34px;height:34px;border-radius:50%;background:linear-gradient(130deg,#ffd4bd,#e9a184);color:#24120b;font-size:17px;font-weight:700}
+.tat-panel-heading h2{margin:0;color:#fff6f0;font-size:16px;font-weight:600;letter-spacing:-.02em}
+.tat-photo-frame{position:relative;display:block;height:clamp(310px,30vw,460px);overflow:hidden;border-radius:15px;background:radial-gradient(ellipse at 45% 20%,#94563b,#3b2118 68%,#130c09)}
+.tat-photo-frame img,.tat-style-grid img,.tat-result-image img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 28%}
+.tat-photo-frame img{transition:transform .45s}
+.tat-photo-frame:hover img{transform:scale(1.025)}
+.tat-photo-overlay{position:absolute;left:12px;right:12px;bottom:12px;padding:8px;border-radius:7px;background:rgba(12,7,5,.58);text-align:center;font-size:11px;color:#fff0e7;opacity:0;transition:opacity .2s}
+.tat-photo-frame:hover .tat-photo-overlay{opacity:1}
+.tat-frame-corner{position:absolute;width:27px;height:27px;border-color:#fff0e7;border-style:solid;opacity:.9}
+.tat-frame-corner.top-left{top:14px;left:14px;border-width:3px 0 0 3px;border-radius:9px 0 0}
+.tat-frame-corner.top-right{top:14px;right:14px;border-width:3px 3px 0 0;border-radius:0 9px 0 0}
+.tat-frame-corner.bottom-left{bottom:14px;left:14px;border-width:0 0 3px 3px;border-radius:0 0 0 9px}
+.tat-frame-corner.bottom-right{bottom:14px;right:14px;border-width:0 3px 3px 0;border-radius:0 0 9px}
+.tat-photo-actions{display:flex;align-items:center;justify-content:space-around;gap:6px;padding:15px 0 5px}
+.tat-photo-actions>a{display:flex;align-items:center;flex-direction:column;gap:4px;color:#f8eae2;font-size:11px}
+.tat-photo-actions>a>span{font-size:24px}
+.tat-photo-actions .tat-camera{display:grid;place-items:center;width:66px;height:66px;border:3px solid #f8b99b;border-radius:50%;background:#fff8f3;box-shadow:inset 0 0 0 5px #21130e;color:#24120b}
+.tat-photo-actions .tat-camera span{font-size:29px}
+.tat-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:0 0 14px;border:1px solid rgba(235,184,158,.18);border-radius:12px;overflow:hidden;background:#100b09}
+.tat-tabs a{padding:12px 3px;text-align:center;color:#ead8ce;font-size:12px;border-radius:10px}
+.tat-tabs a.chosen{background:linear-gradient(120deg,#ffd4bd,#e9a184);color:#24120b;font-weight:700}
+.tat-style-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tat-style-grid a{position:relative;display:block;height:clamp(135px,13vw,190px);overflow:hidden;border:1px solid rgba(235,184,158,.18);border-radius:12px;background:#261710}
+.tat-style-grid a.style-selected{outline:3px solid #ffb998;outline-offset:-3px}
+.tat-style-grid a span{position:absolute;left:0;right:0;bottom:0;padding:9px 2px;background:rgba(16,10,7,.88);text-align:center;color:white;font-size:11px}
+.tat-panel-hint{color:#bfa79a;font-size:10px;line-height:1.5;margin:12px 2px}
+.tat-panel-cta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:12px 14px;border:1px solid rgba(246,182,155,.4);border-radius:10px;color:#ffd0b9;font-size:12px}
+.tat-result-panel{display:flex;flex-direction:column}
+.tat-result-image{position:relative;display:block;flex:1;min-height:300px;max-height:460px;overflow:hidden;border-radius:13px;background:radial-gradient(ellipse at 45% 20%,#94563b,#3b2118 68%,#130c09)}
+.tat-result-image span{position:absolute;left:10px;right:10px;bottom:10px;padding:10px;border-radius:9px;background:rgba(15,9,6,.68);color:#fff0e7;font-size:11px;text-align:center}
+.tat-result-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:12px 0}
+.tat-result-tools>span{display:flex;flex-direction:column;align-items:center;gap:4px;color:#ffcfb8;font-size:23px}
+.tat-result-tools small{color:#f2e4dc;font-size:10px}
+.tat-generate{display:flex;align-items:center;justify-content:center;gap:12px;min-height:52px;padding:12px 14px;border-radius:999px;background:linear-gradient(110deg,#ffd4bd,#eda486);color:#21120c;font-weight:700;font-size:14px;box-shadow:0 8px 25px #d68b6a24}
+.tat-generate>span{font-size:22px}.tat-generate>b{margin-left:auto;font-size:20px}
+.tat-footer-note{margin:18px 0 0;text-align:center;color:#bda294;font-size:10px;letter-spacing:.08em}.tat-footer-note span{color:#f4b69a;margin:0 8px}
+@media(min-width:1500px){.tat-main{padding-left:42px;padding-right:42px}.tat-panels{gap:16px}.tat-panel{padding:18px}.tat-photo-frame{height:clamp(380px,29vw,520px)}.tat-style-grid a{height:clamp(165px,13vw,220px)}}
+@media(max-width:1200px){.tat-topbar{height:90px}.tat-wordmark{min-width:210px}.tat-workspace{grid-template-columns:200px minmax(0,1fr)}.tat-rail{padding-left:10px}.tat-rail>a{gap:10px;padding:14px 10px;font-size:12px}.tat-intro{grid-template-columns:1fr 1fr}.tat-handwritten{display:none}.tat-panels{grid-template-columns:repeat(2,minmax(0,1fr))}.tat-result-panel{grid-column:1/-1}.tat-result-image{height:390px;max-height:55vw}.tat-photo-frame{height:390px}.tat-style-grid a{height:180px}}
+@media(max-width:760px){.tat-topbar{height:76px;padding:10px 15px;gap:10px;justify-content:space-between}.tat-wordmark{min-width:0}.tat-logo-main{font-size:36px}.tat-logo-main>span{font-size:25px}.tat-logo-sub{padding-top:8px;font-size:7px}.tat-topnav{display:none}.tat-login{padding:10px 16px;font-size:12px}.tat-workspace{display:block;min-height:calc(100dvh - 76px)}.tat-rail{display:none}.tat-main{padding:22px 12px 28px}.tat-intro{display:block}.tat-kicker{font-size:9px}.tat-intro h1{font-size:clamp(49px,13vw,68px)}.tat-intro-copy{margin-top:20px;padding-left:16px;font-size:14px}.tat-handwritten{display:block;margin:22px 6px 0 auto;font-size:25px;width:max-content}.tat-benefit-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px 10px;margin:26px 0}.tat-benefit-row>div>span{font-size:29px}.tat-benefit-row p{font-size:11px}.tat-benefit-row>div:last-child{grid-column:1/-1}.tat-panels{grid-template-columns:minmax(0,1fr);gap:13px}.tat-panel{padding:13px;border-radius:16px}.tat-panel-heading h2{font-size:15px}.tat-photo-frame{height:clamp(330px,105vw,510px)}.tat-style-grid{gap:7px}.tat-style-grid a{height:clamp(155px,48vw,225px)}.tat-style-grid a span{font-size:10px;padding:8px 2px}.tat-result-panel{grid-column:auto}.tat-result-image{height:clamp(360px,112vw,530px);max-height:none;flex:initial}.tat-result-tools small{font-size:9px}.tat-generate{font-size:13px}.tat-footer-note{line-height:1.7;padding:0 10px}}
+@media(max-width:380px){.tat-logo-main{font-size:31px}.tat-logo-main>span{font-size:22px}.tat-login{padding:9px 12px}.tat-intro h1{font-size:47px}.tat-style-grid a{height:145px}.tat-panel{padding:10px}}
