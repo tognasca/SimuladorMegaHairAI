@@ -333,3 +333,58 @@ body { background-image:radial-gradient(ellipse at 78% 12%,rgba(111,56,35,.23),t
   .sidebar-logo-monogram { width:39px;height:39px;flex-basis:39px;font-size:26px; }
   .sidebar-logo .sidebar-logo-text { font-size:19px; }
 }
+
+
+/* Sidebar: mesma marca tipográfica, cores e coração do cabeçalho principal. */
+.sidebar .sidebar-logo.tat-wordmark {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:0;
+  width:100%;
+  min-width:0;
+  margin:0 auto 0 0;
+  padding:0 0 24px;
+  color:#fff5ee;
+  text-decoration:none;
+  background:transparent;
+  flex-shrink:0;
+}
+.sidebar .sidebar-logo .tat-logo-main {
+  position:relative;
+  display:block;
+  color:#fff5ee;
+  font:700 31px/.88 "Cormorant Garamond",Georgia,serif;
+  letter-spacing:-.065em;
+  white-space:nowrap;
+}
+.sidebar .sidebar-logo .tat-logo-main > span {
+  margin-left:4px;
+  color:#f6b69b;
+  font:italic 500 22px/1 "Cormorant Garamond",Georgia,serif;
+  letter-spacing:-.06em;
+}
+.sidebar .sidebar-logo .tat-logo-main > b {
+  position:absolute;
+  top:-5px;
+  margin-left:3px;
+  color:#f6b69b;
+  font-size:14px;
+  font-weight:700;
+}
+.sidebar .sidebar-logo .tat-logo-sub {
+  display:block;
+  padding:8px 0 0 4px;
+  margin:0;
+  color:#f3d9ca;
+  font:500 7px/1 Outfit,Arial,sans-serif;
+  letter-spacing:.48em;
+  white-space:nowrap;
+}
+@media(max-width:700px) {
+  .sidebar .sidebar-logo.tat-wordmark { padding-bottom:12px; }
+  .sidebar .sidebar-logo .tat-logo-main { font-size:28px; }
+  .sidebar .sidebar-logo .tat-logo-main > span { font-size:20px; }
+  .sidebar .sidebar-logo .tat-logo-sub { font-size:6px; letter-spacing:.43em; }
+}
