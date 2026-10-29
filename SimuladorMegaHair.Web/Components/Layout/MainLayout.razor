@@ -1,32 +1,60 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Nav
 
-<div class="app-shell">
+@if (EhInicio)
+{
+    @Body
+}
+else
+{
+    <main class="tat-dashboard tat-internal-dashboard">
+        <header class="tat-topbar">
+            <a class="tat-wordmark" href="/" aria-label="Tati Mega Hair início">
+                <span class="tat-logo-main">Tati<span>Mega Hair</span><b>♡</b></span>
+                <span class="tat-logo-sub">S I M U L A D O R</span>
+            </a>
+            <nav class="tat-topnav" aria-label="Navegação principal">
+                <a class="@ClasseTopo("")" href="/">Início</a>
+                <a class="@ClasseTopo("captura")" href="/captura">Simulador</a>
+                <a class="@ClasseTopo("catalogo")" href="/catalogo">Galeria</a>
+                <a href="/catalogo">Dicas</a>
+                <a href="/catalogo">Planos</a>
+            </nav>
+            <a class="tat-login" href="/login"><span>♙</span> Entrar</a>
+        </header>
 
-    <nav class="sidebar">
-        <a class="sidebar-logo tat-wordmark" href="/" aria-label="Tati Mega Hair início">
-            <span class="tat-logo-main">Tati<span>Mega Hair</span><b>♡</b></span>
-            <span class="tat-logo-sub">S I M U L A D O R</span>
-        </a>
-
-        <a class="sidebar-item" href="/">
-            <span class="sidebar-icon">⌂</span>
-            <span class="sidebar-label">Início</span>
-        </a>
-        <a class="sidebar-item" href="/captura">
-            <span class="sidebar-icon">✦</span>
-            <span class="sidebar-label">Nova Simulação</span>
-        </a>
-        <a class="sidebar-item" href="/clientes">
-            <span class="sidebar-icon">♙</span>
-            <span class="sidebar-label">Clientes</span>
-        </a>
-        <a class="sidebar-item" href="/catalogo">
-            <span class="sidebar-icon">▣</span>
-            <span class="sidebar-label">Catálogo</span>
-        </a>
-    </nav>
-    <main class="app-main">
-        @Body
+        <div class="tat-workspace">
+            <aside class="tat-rail" aria-label="Menu principal">
+                <a class="@ClasseRail("")" href="/"><span>⌂</span> Início</a>
+                <a class="@ClasseRail("captura")" href="/captura"><span>◎</span> Simulador</a>
+                <a class="@ClasseRail("catalogo")" href="/catalogo"><span>▦</span> Galeria de Estilos</a>
+                <a class="@ClasseRail("clientes")" href="/clientes"><span>♙</span> Clientes</a>
+                <a href="/catalogo"><span>♧</span> Dicas de Megahair</a>
+                <a href="/catalogo"><span>◇</span> Planos e Preços</a>
+                <div class="tat-rail-note">Beleza real,<br />possibilidades<br />infinitas. <span>♡</span></div>
+            </aside>
+            <section class="tat-main tat-inner-main">
+                @Body
+                <p class="tat-footer-note">TATI MEGA HAIR <span>•</span> Sua beleza. Suas escolhas. Seu próximo visual.</p>
+            </section>
+        </div>
     </main>
+}
 
-</div>
+@code {
+    private string CaminhoAtual =>
+        "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].Trim('/');
+
+    private bool EhInicio => CaminhoAtual == "/";
+
+    private string ClasseTopo(string caminho) =>
+        caminho == "captura" && CaminhoAtual == "/captura" ? "active" :
+        caminho == "catalogo" && CaminhoAtual == "/catalogo" ? "active" :
+        caminho == "" && EhInicio ? "active" : string.Empty;
+
+    private string ClasseRail(string caminho) =>
+        caminho == "captura" && CaminhoAtual == "/captura" ? "selected" :
+        caminho == "catalogo" && CaminhoAtual == "/catalogo" ? "selected" :
+        caminho == "clientes" && CaminhoAtual.StartsWith("/clientes", StringComparison.OrdinalIgnoreCase) ? "selected" :
+        caminho == "" && EhInicio ? "selected" : string.Empty;
+}
