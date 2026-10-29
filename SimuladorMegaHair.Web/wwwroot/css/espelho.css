@@ -697,3 +697,16 @@ html.mh-sem-rolagem, html.mh-sem-rolagem body { overflow: hidden; }
     .mh-efeito-icone { width:46px;height:46px;flex-basis:46px;font-size:24px; }
     .mh-efeito-nome { font-size:10px;max-width:68px; }
 }
+
+
+/* O palco usa o mesmo 9:16 do sensor: não cortar a cabeça para preencher 2:3. */
+.mh-palco {
+    width: min(100cqw, calc(100cqh * .5625));
+    aspect-ratio: 9 / 16;
+}
+@media (max-width: 699px) {
+    .mh-palco {
+        width: min(100cqw, calc(100cqh * .5625));
+        aspect-ratio: 9 / 16;
+    }
+}
