@@ -120,3 +120,35 @@ html, body { background:#100d0d; color:#fff0e7; }
   .app-main .mh-app { max-width:100%; }
   .app-main .mh-tela { padding:18px 12px 20px; border-radius:18px !important; }
 }
+
+
+/* Marca do login seguindo o wordmark da tela inicial. */
+.login-brand-lockup {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  color:#fff2e9;
+  text-decoration:none;
+  text-align:center;
+}
+.login-brand-name {
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+  color:#fff2e9;
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:clamp(34px,8vw,43px);
+  font-weight:600;
+  line-height:1;
+  letter-spacing:-.06em;
+  white-space:nowrap;
+}
+.login-brand-name span { color:#f3b69d; font-weight:500; }
+.login-brand-name b { color:#f3b69d; font-size:.78em; font-weight:500; }
+.login-brand-sub {
+  margin-left:5px;
+  color:#f3d7c8;
+  font-size:9px;
+  letter-spacing:.55em;
+}
