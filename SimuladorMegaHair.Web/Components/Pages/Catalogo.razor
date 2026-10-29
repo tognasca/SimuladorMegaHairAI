@@ -250,7 +250,7 @@
         if (Uri.TryCreate(url, UriKind.Absolute, out var absoluta))
             return url;
 
-        return new Uri(new Uri(Api.BaseAddress ?? Nav.BaseUri), url.TrimStart('/')).ToString();
+        return new Uri(Api.BaseAddress ?? new Uri(Nav.BaseUri), url.TrimStart('/')).ToString();
     }
 
     private void SimularEsteEstilo(CatalogoItem item)
