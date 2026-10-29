@@ -19,15 +19,16 @@
 (function () {
     'use strict';
 
-    const ASPECTO = 2 / 3;          // largura / altura do enquadramento
-    const SAIDA_MAX_ALTURA = 1536;  // = altura do formato 1024x1536 da OpenAI
-    // Níveis de resolução da pré-visualização. Começa no melhor e desce sozinho
-    // se o aparelho não conseguir manter a fluidez (aparelhos simples).
-    const NIVEIS = [[480, 720], [400, 600], [320, 480], [240, 360]];
+    // Formato vertical 9:16: preserva a altura da câmera e evita cortar o topo
+    // da cabeça ao converter a imagem do sensor para o enquadramento de captura.
+    const ASPECTO = 9 / 16;         // largura / altura do enquadramento
+    const SAIDA_MAX_ALTURA = 1536;
+    // Resoluções da pré-visualização no mesmo formato 9:16 da captura final.
+    const NIVEIS = [[432, 768], [360, 640], [288, 512], [216, 384]];
     const JANELA_QUADROS = 12;
     const LIMITE_MS_QUADRO = 38;
     const MINI_W = 56;
-    const MINI_H = 84;
+    const MINI_H = 100;
     const QUALIDADE_JPEG = 0.92;
     const FPS_MAX = 30;
 
