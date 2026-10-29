@@ -10,3 +10,16 @@ C:\Users\adema\Downloads\SimuladorMegaHairAI-openai-pronto\SimuladorMegaHair.Dom
 C:\Users\adema\Downloads\SimuladorMegaHairAI-openai-pronto\SimuladorMegaHair.Domain\obj\Debug\net8.0\SimuladorMegaHair.Domain.pdb
 C:\Users\adema\Downloads\SimuladorMegaHairAI-openai-pronto\SimuladorMegaHair.Domain\obj\Debug\net8.0\ref\SimuladorMegaHair.Domain.dll
 C:\Users\adema\Downloads\SimuladorMegaHairAI-openai-pronto\SimuladorMegaHair.Domain\obj\Debug\net8.0\Simulado.71D7D639.Up2Date
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\bin\Debug\net8.0\SimuladorMegaHair.Domain.deps.json
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\bin\Debug\net8.0\SimuladorMegaHair.Domain.dll
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\bin\Debug\net8.0\SimuladorMegaHair.Domain.pdb
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\obj\Debug\net8.0\SimuladorMegaHair.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\obj\Debug\net8.0\SimuladorMegaHair.Domain.AssemblyInfoInputs.cache
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\obj\Debug\net8.0\SimuladorMegaHair.Domain.AssemblyInfo.cs
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\obj\Debug\net8.0\SimuladorMegaHair.Domain.csproj.CoreCompileInputs.cache
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\obj\Debug\net8.0\SimuladorMegaHair.Domain.sourcelink.json
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\obj\Debug\net8.0\SimuladorMegaHair.Domain.dll
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\obj\Debug\net8.0\refint\SimuladorMegaHair.Domain.dll
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\obj\Debug\net8.0\SimuladorMegaHair.Domain.pdb
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\obj\Debug\net8.0\ref\SimuladorMegaHair.Domain.dll
+C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Domain\obj\Debug\net8.0\Simulado.71D7D639.Up2Date
