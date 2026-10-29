@@ -265,3 +265,71 @@ body { background-image:radial-gradient(ellipse at 78% 12%,rgba(111,56,35,.23),t
  .tat-hero .tat-benefit-row p { font-size:9px;overflow-wrap:anywhere; }
  .tat-hero-cta { max-width:none; }
 }
+
+
+/* Marca Tati Mega Hair em vetor tipográfico: sem imagem branca no sidebar. */
+.sidebar .sidebar-logo {
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  width:100%;
+  min-width:0;
+  margin:0 auto 0 0;
+  padding:0;
+  color:var(--lux-cream);
+  text-decoration:none;
+  background:transparent;
+}
+.sidebar-logo-monogram {
+  position:relative;
+  display:grid;
+  place-items:center;
+  width:48px;
+  height:48px;
+  flex:0 0 48px;
+  border:1px solid rgba(243,182,157,.72);
+  border-radius:50% 50% 44% 44%;
+  background:radial-gradient(circle at 35% 25%,rgba(243,182,157,.19),rgba(28,19,16,.8) 72%);
+  color:#ffe4d5;
+  font:500 31px/.9 "Cormorant Garamond",Georgia,serif;
+  box-shadow:inset 0 0 0 3px rgba(243,182,157,.06),0 4px 18px rgba(0,0,0,.2);
+}
+.sidebar-logo-monogram>span {
+  position:absolute;
+  top:3px;
+  right:2px;
+  color:#e7bf91;
+  font:12px/1 Georgia,serif;
+}
+.sidebar-logo-wordmark {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:4px;
+  min-width:0;
+}
+.sidebar-logo .sidebar-logo-text {
+  display:block;
+  color:#fff0e7;
+  font:600 22px/.95 "Cormorant Garamond",Georgia,serif;
+  letter-spacing:-.035em;
+  white-space:nowrap;
+}
+.sidebar-logo .sidebar-logo-text em {
+  color:#f3b69d;
+  font-weight:500;
+  font-style:italic;
+}
+.sidebar-logo-wordmark small {
+  color:#d0b8aa;
+  font:500 7px/1 Outfit,Arial,sans-serif;
+  letter-spacing:.48em;
+  padding-left:2px;
+}
+@media(max-width:700px) {
+  .sidebar .sidebar-logo { gap:9px; }
+  .sidebar-logo-monogram { width:39px;height:39px;flex-basis:39px;font-size:26px; }
+  .sidebar-logo .sidebar-logo-text { font-size:19px; }
+}
