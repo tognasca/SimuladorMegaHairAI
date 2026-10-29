@@ -12,13 +12,12 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="css/espelho.css?v=20261029-darkwizard4" />
     <link rel="stylesheet" href="css/premium.css?v=20261029-wordmark5" />
+    <link rel="stylesheet" href="css/unified-pages.css?v=20261029-theme1" />
     <link rel="icon" type="image/png" href="images/logo_tati.png" />
 
     <!--
         theme-color + apple-mobile-web-app: permite "Adicionar à Tela de
-        Início" no iPad/iPhone (Safari) e no Android, fazendo o site
-        abrir em tela cheia, sem barra de endereço — parecido com um app
-        nativo, sem passar pela App Store/Play Store.
+        Início" no iPad/iPhone e Android, abrindo em tela cheia como app.
     -->
     <meta name="theme-color" content="#100D0D" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -30,13 +29,7 @@
 </head>
 
 <body>
-    <!--
-        prerender:false — sem isso, o Blazor tenta renderizar a página uma
-        vez no servidor ANTES do circuito SignalR conectar (prerender),
-        momento em que interop com JavaScript (incl. Protected Local
-        Storage, usado para restaurar o login) ainda não está disponível
-        e lança "JavaScript interop calls cannot be issued at this time".
-    -->
+    <!-- prerender desativado para permitir a restauração do login via JS interop. -->
     <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
     <script src="_framework/blazor.web.js"></script>
     <script src="js/camera.js"></script>
