@@ -26,14 +26,19 @@
                 <p class="mh-cliente">Simulação para <strong>@ClienteNome</strong></p>
             }
 
-            <div class="mh-moldura" aria-hidden="true">
-                <svg viewBox="0 0 200 300" focusable="false">
-                    <ellipse cx="100" cy="60" rx="27" ry="35" class="mh-moldura-rosto" />
-                    <path d="M72 102 C53 112 44 135 39 163 L26 286 M128 102 C147 112 156 135 161 163 L174 286" class="mh-moldura-ombros" />
-                    <path d="M72 105 C58 136 63 185 51 224 L42 270 M128 105 C142 136 137 185 149 224 L158 270" class="mh-moldura-fios" />
-                    <path d="M43 229 Q100 245 157 229" class="mh-moldura-ombros" />
-                    <g class="mh-brilho"><path d="M164 40 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 l10 -4z" /></g>
-                </svg>
+            <div class="mh-moldura mh-moldura-camera" aria-hidden="true">
+                <div class="mh-camera-ornamento">
+                    <svg viewBox="0 0 160 160" focusable="false">
+                        <rect x="31" y="43" width="98" height="73" rx="16" class="mh-camera-corpo" />
+                        <path d="M48 43 L58 29 H83 L94 43" class="mh-camera-detalhe" />
+                        <circle cx="80" cy="79" r="22" class="mh-camera-lente-aro" />
+                        <circle cx="80" cy="79" r="14" class="mh-camera-lente" />
+                        <path d="M21 22 Q8 80 22 138 M139 22 Q152 80 138 138" class="mh-camera-fio" />
+                        <path d="M39 128 Q80 144 121 128" class="mh-camera-fio" />
+                        <path d="M123 23 l4 9 l9 4 l-9 4 l-4 9 l-4 -9 l-9 -4 l9 -4z" class="mh-camera-estrela" />
+                    </svg>
+                </div>
+                <span class="mh-moldura-legenda">ENQUADRE SUA BELEZA</span>
             </div>
 
             @if (!string.IsNullOrEmpty(erro))
@@ -108,11 +113,15 @@
             {
                 <h2 class="mh-titulo mh-titulo-menor">Qual comprimento você sonha?</h2>
                 <div class="mh-comprimento-visual" aria-hidden="true">
-                    <svg viewBox="0 0 120 190" focusable="false">
-                        <circle cx="60" cy="34" r="17" class="mh-sil" />
-                        <path d="M44 56 C 20 62, 12 82, 10 190 L110 190 C 108 82, 100 62, 76 56 C 70 62, 50 62, 44 56Z" class="mh-sil" />
+                    <svg viewBox="0 0 120 190" focusable="false" class="mh-cabelo-comprimento">
+                        <path d="M38 18 C22 34 28 65 24 93 C21 124 16 153 21 177" class="mh-mecha mh-mecha-a" />
+                        <path d="M49 17 C35 40 41 70 37 102 C34 130 31 155 34 178" class="mh-mecha mh-mecha-b" />
+                        <path d="M60 16 C48 43 55 78 52 108 C50 137 49 159 51 179" class="mh-mecha mh-mecha-c" />
+                        <path d="M72 17 C84 43 76 78 80 108 C83 137 85 159 82 179" class="mh-mecha mh-mecha-b" />
+                        <path d="M83 18 C99 34 92 65 96 93 C99 124 104 153 99 177" class="mh-mecha mh-mecha-a" />
+                        <path d="M30 23 Q60 7 90 23" class="mh-mecha-topo" />
                         <g class="mh-regua" style="transform:translateY(@(OffsetComprimento())px)">
-                            <line x1="6" x2="114" y1="0" y2="0" />
+                            <line x1="8" x2="112" y1="0" y2="0" />
                             <circle cx="60" cy="0" r="4" />
                         </g>
                     </svg>
