@@ -509,3 +509,71 @@ html.mh-sem-rolagem, html.mh-sem-rolagem body { overflow: hidden; }
     .mh-miniatura { border-radius: 50%; width: 48px; height: 48px; }
     .mh-filtro { width: 62px; }
 }
+
+
+/* ── Coerência visual: etapa "Sua foto" no mesmo tema escuro do espelho ── */
+.mh-app .mh-tela-foto {
+    color: #fff4ed;
+    background:
+        radial-gradient(ellipse at 50% 28%, rgba(151, 83, 65, .22), transparent 54%),
+        linear-gradient(165deg, #211613 0%, #120d0c 64%, #0d0908 100%);
+    border: 1px solid rgba(227, 176, 145, .24);
+    box-shadow: 0 18px 46px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 240, 229, .035);
+}
+.mh-app .mh-tela-foto .mh-passos li {
+    color: #a8958b;
+    border-bottom-color: rgba(227, 196, 138, .2);
+}
+.mh-app .mh-tela-foto .mh-passos li.mh-atual {
+    color: #f4c4a9;
+    border-bottom-color: #e3b08f;
+}
+.mh-app .mh-tela-foto .mh-titulo {
+    color: #fff1e8;
+    text-shadow: 0 2px 22px rgba(218, 151, 119, .12);
+}
+.mh-app .mh-tela-foto .mh-subtitulo,
+.mh-app .mh-tela-foto .mh-cliente,
+.mh-app .mh-tela-foto .mh-nota {
+    color: #d2bdb1;
+}
+.mh-app .mh-tela-foto .mh-nota {
+    max-width: 34ch;
+}
+.mh-app .mh-tela-foto .mh-moldura {
+    background: radial-gradient(circle at 50% 28%, #35241f 0%, #1c1210 100%);
+    border-color: #d7a77c;
+    box-shadow: inset 0 0 0 5px rgba(255, 235, 220, .035), 0 14px 34px rgba(0, 0, 0, .28);
+}
+.mh-app .mh-tela-foto .mh-moldura-rosto,
+.mh-app .mh-tela-foto .mh-moldura-ombros {
+    fill: rgba(218, 151, 119, .11);
+    stroke: #d58e75;
+}
+.mh-app .mh-tela-foto .mh-moldura-fios {
+    stroke: #d7a77c;
+}
+.mh-app .mh-tela-foto .mh-moldura-fios-2 {
+    stroke: #f1c9a2;
+}
+.mh-app .mh-tela-foto .mh-brilho path {
+    fill: #f0bc9d;
+}
+.mh-app .mh-tela-foto .mh-btn-secundario {
+    color: #f3c4aa;
+    background: rgba(255, 244, 237, .035);
+    border-color: rgba(235, 183, 151, .7);
+}
+.mh-app .mh-tela-foto .mh-btn-secundario:hover {
+    background: rgba(235, 183, 151, .1);
+}
+.mh-app .mh-tela-foto .mh-btn-primario {
+    background: linear-gradient(135deg, #c17c63 0%, #8e4f3c 100%);
+    color: #fffaf6;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .22), inset 0 0 0 1px rgba(255, 220, 194, .38);
+}
+.mh-app .mh-tela-foto .mh-alerta {
+    background: rgba(164, 72, 59, .16);
+    border-color: rgba(226, 139, 120, .4);
+    color: #ffd6c9;
+}
