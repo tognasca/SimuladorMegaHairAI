@@ -1,52 +1,96 @@
 @page "/"
-<PageTitle>Mega Hair AI</PageTitle>
+<PageTitle>Tati Mega Hair | Simulador</PageTitle>
 
-<div class="studio-home">
-    <section class="studio-hero">
-        <div class="studio-hero-copy">
-            <div class="studio-kicker"><span></span> Tati Mega Hair / Visual Intelligence</div>
-            <h1>Seu cabelo.<br /><em>Uma nova presença.</em></h1>
-            <p class="studio-hero-lead">Uma experiência privada para visualizar comprimento, cor e textura antes da decisão. Tecnologia de imagem com olhar de especialista.</p>
-            <div class="studio-hero-actions">
-                <a href="/captura" class="studio-button studio-button-dark">Iniciar simulação <span>↗</span></a>
-                <a href="/catalogo" class="studio-link">Ver catálogo <span>→</span></a>
-            </div>
-            <div class="studio-hero-note"><span class="studio-note-mark">01</span><span>Foto real</span><i></i><span>Escolha guiada</span><i></i><span>Visualização personalizada</span></div>
-        </div>
+<main class="tat-dashboard">
+    <header class="tat-topbar">
+        <a class="tat-wordmark" href="/" aria-label="Tati Mega Hair início">
+            <span class="tat-logo-main">Tati<span>Mega Hair</span><b>♡</b></span>
+            <span class="tat-logo-sub">S I M U L A D O R</span>
+        </a>
+        <nav class="tat-topnav" aria-label="Navegação principal">
+            <a href="/">Início</a><a class="active" href="/captura">Simulador</a><a href="/catalogo">Galeria</a><a href="/catalogo">Dicas</a><a href="/catalogo">Planos</a>
+        </nav>
+        <a class="tat-login" href="/login"><span>♙</span> Entrar</a>
+    </header>
 
-        <div class="studio-hero-board" aria-label="Painel de visualização de transformação">
-            <div class="studio-board-top"><span>MEGA HAIR / AI STUDIO</span><span>SESSION 001</span></div>
-            <div class="studio-board-main">
-                <div class="studio-profile-card studio-profile-original">
-                    <div class="studio-card-index">A / ORIGINAL</div>
-                    <div class="studio-profile-figure original-figure"><span class="studio-figure-face"></span><span class="studio-figure-hair"></span></div>
-                    <div class="studio-card-caption"><strong>Seu ponto<br />de partida</strong><small>Presença · proporção · identidade</small></div>
+    <div class="tat-workspace">
+        <aside class="tat-rail" aria-label="Menu do simulador">
+            <a class="selected" href="/captura"><span>◎</span> Simulador</a>
+            <a href="/catalogo"><span>▦</span> Galeria de Estilos</a>
+            <a href="/catalogo"><span>♧</span> Dicas de Megahair</a>
+            <a href="/catalogo"><span>◇</span> Planos e Preços</a>
+            <a href="/catalogo"><span>♡</span> Resultados Reais</a>
+            <div class="tat-rail-note">Beleza real,<br />possibilidades<br />infinitas. <span>♡</span></div>
+        </aside>
+
+        <section class="tat-main">
+            <section class="tat-hero" aria-label="Conheça o simulador Tati Mega Hair">
+                <div class="tat-hero-photo">
+                    <img src="images/tati-cabelo-escuro.jpg" alt="Modelo com cabelo longo e brilhante, inspiração Tati Mega Hair" />
+                    <span class="tat-hero-photo-glow"></span>
                 </div>
-                <div class="studio-profile-card studio-profile-new">
-                    <div class="studio-card-index">B / PROPOSTA</div>
-                    <div class="studio-profile-figure new-figure"><span class="studio-figure-face"></span><span class="studio-figure-hair"></span><span class="studio-figure-length"></span></div>
-                    <div class="studio-card-caption"><strong>Uma nova<br />possibilidade</strong><small>55 cm · castanho · fita adesiva</small></div>
+                <div class="tat-hero-content">
+                    <div class="tat-hero-wordmark">
+                        <span class="tat-hero-tati">Tati</span><span class="tat-hero-mega">Mega Hair</span><span class="tat-hero-heart">♡</span>
+                        <small> S I M U L A D O R </small>
+                    </div>
+                    <p class="tat-hero-kicker">SUA BELEZA, DO SEU JEITO</p>
+                    <h1>Descubra sua melhor <em>versão</em></h1>
+                    <p class="tat-hero-copy">Simule diferentes estilos, cores e comprimentos de megahair com o seu próprio rosto.</p>
+                    <p class="tat-hero-handwritten">Mais que cabelo,<br />mais você! <span>♡</span></p>
+                    <div class="tat-benefit-row">
+                        <div><span>◎</span><p>Use sua própria foto</p></div>
+                        <div><span>♧</span><p>Experimente diferentes estilos</p></div>
+                        <div><span>☷</span><p>Cores reais e naturais</p></div>
+                        <div><span>⌁</span><p>Vários comprimentos</p></div>
+                        <div><span>♡</span><p>Resultado surpreendente</p></div>
+                    </div>
+                    <a class="tat-hero-cta" href="/captura">Experimente seu novo visual <span>→</span></a>
                 </div>
+            </section>
+
+            <div class="tat-panels">
+                <section class="tat-panel tat-photo-panel">
+                    <div class="tat-panel-heading"><span class="tat-step">1</span><h2>Sua foto</h2></div>
+                    <a class="tat-photo-frame" href="/captura" aria-label="Abrir simulador para enviar sua foto">
+                        <img src="images/tati-cabelo-escuro.jpg" alt="Tati com cabelo longo castanho, referência visual" />
+                        <span class="tat-frame-corner top-left"></span><span class="tat-frame-corner top-right"></span><span class="tat-frame-corner bottom-left"></span><span class="tat-frame-corner bottom-right"></span>
+                        <span class="tat-photo-overlay">Sua foto entra aqui</span>
+                    </a>
+                    <div class="tat-photo-actions">
+                        <a href="/captura"><span>▧</span>Galeria</a>
+                        <a href="/captura" class="tat-camera" aria-label="Tirar ou escolher foto"><span>◎</span></a>
+                        <a href="/captura"><span>⟳</span>Rotacionar</a>
+                    </div>
+                    <a class="tat-panel-cta" href="/captura">Enviar minha foto <span>→</span></a>
+                </section>
+
+                <section class="tat-panel tat-style-panel">
+                    <div class="tat-panel-heading"><span class="tat-step">2</span><h2>Escolha o estilo</h2></div>
+                    <div class="tat-tabs"><a class="chosen" href="/captura">Comprimento</a><a href="/captura">Cor</a><a href="/captura">Textura</a></div>
+                    <div class="tat-style-grid">
+                        <a href="/captura"><img src="images/tati-cabelo-escuro.jpg" alt="" /><span>Natural</span></a>
+                        <a href="/captura"><img src="images/tati-cabelo-loiro.jpg" alt="" /><span>Longo</span></a>
+                        <a class="style-selected" href="/captura"><img src="images/tati-cabelo-loiro.jpg" alt="" /><span>Extra Longo</span></a>
+                        <a href="/captura"><img src="images/tati-cabelo-escuro.jpg" alt="" /><span>Liso</span></a>
+                        <a href="/captura"><img src="images/tati-cabelo-loiro.jpg" alt="" /><span>Ondulado</span></a>
+                        <a href="/captura"><img src="images/tati-cabelo-escuro.jpg" alt="" /><span>Cacheado</span></a>
+                    </div>
+                    <p class="tat-panel-hint">Escolha as opções completas na próxima etapa.</p>
+                    <a class="tat-panel-cta" href="/captura">Personalizar meu estilo <span>→</span></a>
+                </section>
+
+                <section class="tat-panel tat-result-panel">
+                    <div class="tat-panel-heading"><span class="tat-step">3</span><h2>Resultado da sua simulação</h2></div>
+                    <a class="tat-result-image" href="/captura" aria-label="Gerar simulação personalizada">
+                        <img src="images/tati-cabelo-loiro.jpg" alt="Referência de cabelo longo com mechas caramelo" />
+                        <span>Seu próximo visual começa com uma foto sua</span>
+                    </a>
+                    <div class="tat-result-tools"><span>☼<small>Iluminação</small></span><span>✧<small>Realçar</small></span><span>♢<small>Maquiagem</small></span><span>♧<small>Suavizar pele</small></span></div>
+                    <a class="tat-generate" href="/captura"><span>✦</span> Gerar meu Megahair <b>→</b></a>
+                </section>
             </div>
-            <div class="studio-board-bottom"><span><b></b> SIMULAÇÃO GERADA POR IA</span><span>TI • 2026 <strong>↗</strong></span></div>
-        </div>
-    </section>
-
-    <section class="studio-proof-row" aria-label="Benefícios da experiência">
-        <div class="studio-proof-intro"><span>O processo</span><strong>Decidir também pode ser uma experiência.</strong></div>
-        <div class="studio-proof-item"><span>01</span><strong>Visualize</strong><small>Antes de escolher</small></div>
-        <div class="studio-proof-item"><span>02</span><strong>Explore</strong><small>Sem compromisso</small></div>
-        <div class="studio-proof-item"><span>03</span><strong>Encontre</strong><small>Seu melhor match</small></div>
-    </section>
-
-    <section class="studio-manifesto">
-        <div class="studio-manifesto-label">TATI MEGA HAIR / MANIFESTO</div>
-        <div class="studio-manifesto-copy"><h2>Não é sobre mudar quem você é.<br /><em>É sobre revelar possibilidades.</em></h2><a href="/captura" class="studio-round-link">Começar agora <span>↗</span></a></div>
-    </section>
-
-    <section class="studio-bottom-grid">
-        <div class="studio-detail-card studio-detail-dark"><span class="studio-detail-number">01</span><div><strong>Seu rosto continua sendo seu.</strong><p>A tecnologia transforma o cabelo e preserva a sua identidade.</p></div><span class="studio-detail-arrow">↗</span></div>
-        <div class="studio-detail-card"><span class="studio-detail-number">02</span><div><strong>Uma escolha com mais clareza.</strong><p>Compare propostas e chegue ao salão já sabendo o que deseja.</p></div><span class="studio-detail-arrow">↗</span></div>
-    </section>
-</div>
-
+            <p class="tat-footer-note">TATI MEGA HAIR <span>•</span> Sua beleza. Suas escolhas. Seu próximo visual.</p>
+        </section>
+    </div>
+</main>

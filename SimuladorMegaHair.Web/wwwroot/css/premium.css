@@ -1,0 +1,335 @@
+/* Tati Mega Hair — experiência visual premium */
+:root {
+  color-scheme: dark;
+  --lux-bg:#100b09; --lux-panel:#1c1310; --lux-line:rgba(235,177,148,.24);
+  --lux-rose:#f3b69d; --lux-rose-light:#ffd6c1; --lux-cream:#fff6f0;
+  --lux-muted:#c7aaa0; --lux-text:#fdf4ee;
+}
+html,body { min-height:100%; background:var(--lux-bg); color:var(--lux-text); }
+body { background-image:radial-gradient(ellipse at 78% 12%,rgba(111,56,35,.23),transparent 40%),linear-gradient(120deg,#100b09,#160e0b 55%,#0d0908); }
+.app-shell { min-height:100dvh; display:flex; flex-direction:column; }
+.app-main { width:100%; max-width:1680px; margin:0 auto; padding:0 0 38px; overflow:visible; }
+.sidebar { order:0; width:100%; min-height:82px; padding:12px clamp(16px,4vw,64px); display:flex; flex-direction:row; align-items:center; gap:clamp(8px,1.6vw,28px); background:rgba(13,9,8,.88); border:0; border-bottom:1px solid var(--lux-line); position:sticky; top:0; z-index:50; backdrop-filter:blur(20px); }
+.sidebar-logo { flex-direction:row; gap:11px; margin:0 auto 0 0; }
+.sidebar-logo img { width:48px; height:48px; object-fit:contain; }
+.sidebar-logo-text { font-family:"Cormorant Garamond",Georgia,serif; font-size:23px; letter-spacing:-.03em; color:var(--lux-cream); }
+.sidebar-item { padding:11px 13px; border-radius:999px; font-size:12px; letter-spacing:.025em; color:#e6d3c9; white-space:nowrap; transition:background .2s,color .2s; }
+.sidebar-item:hover,.sidebar-item:focus-visible { background:rgba(243,182,157,.12); color:var(--lux-rose-light); outline:none; }
+.sidebar-icon { color:var(--lux-rose); }
+.card,.sim-card { background:rgba(28,19,16,.94); border-color:#4b3026; color:var(--lux-text); }
+.btn-gold,.studio-button { background:linear-gradient(120deg,var(--lux-rose-light),#e8a184); color:#21120c; border:0; }
+.btn-outline { color:var(--lux-text); border-color:#684638; }
+.field-select,input,select,textarea { color:var(--lux-text); }
+.field-select option,select option { background:#1c1310; color:#fff6f0; }
+:focus-visible { outline:2px solid var(--lux-rose-light); outline-offset:3px; }
+
+/* Landing page */
+.lux-home { padding:clamp(14px,2.4vw,36px) clamp(14px,3vw,44px) 0; }
+.lux-hero { display:grid; grid-template-columns:minmax(300px,.9fr) minmax(0,1.1fr); min-height:min(720px,calc(100dvh - 120px)); border:1px solid var(--lux-line); background:linear-gradient(110deg,rgba(30,18,13,.4),rgba(15,10,8,.92)); box-shadow:0 28px 90px rgba(0,0,0,.3); overflow:hidden; }
+.lux-hero-photo { position:relative; min-height:620px; overflow:hidden; isolation:isolate; background:linear-gradient(180deg,rgba(28,15,9,.05),rgba(15,8,5,.18) 42%,rgba(13,8,6,.8)),url("../images/tati-cabelo-escuro.jpg") center 30%/cover no-repeat,radial-gradient(ellipse at 45% 25%,#8a5038,#2a1710 58%,#120b08); }
+.lux-hero-photo:after { content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg,transparent 55%,rgba(14,9,7,.25)),linear-gradient(0deg,rgba(12,7,5,.45),transparent 50%); }
+.lux-photo-shade { position:absolute; inset:0; background:linear-gradient(0deg,rgba(13,8,6,.8),transparent 30%); }
+.lux-photo-script { position:absolute; right:clamp(18px,3vw,46px); top:clamp(24px,4vw,60px); color:#ffcfb8; font:italic 500 clamp(26px,3.3vw,46px)/.98 "Cormorant Garamond",Georgia,serif; transform:rotate(-7deg); text-align:center; text-shadow:0 2px 25px #180b07; }
+.lux-photo-script span { display:block; text-align:right; font-size:35px; }
+.lux-photo-tag { position:absolute; left:clamp(20px,3vw,42px); bottom:28px; font-size:9px; letter-spacing:.22em; color:#ffe0d1; }
+.lux-photo-tag span,.lux-eyebrow span { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--lux-rose); margin-right:8px; box-shadow:0 0 15px var(--lux-rose); }
+.lux-hero-content { align-self:center; padding:clamp(28px,5vw,78px); min-width:0; }
+.lux-brand-lockup { margin-bottom:clamp(36px,5vw,72px); }
+.lux-brand-name { display:block; color:#fff2e9; font:600 clamp(34px,4.5vw,62px)/.8 "Cormorant Garamond",Georgia,serif; letter-spacing:-.06em; }
+.lux-brand-name i { color:var(--lux-rose); font-weight:500; }
+.lux-brand-sub { display:block; margin:14px 0 0 5px; color:#f3d7c8; font-size:9px; letter-spacing:.55em; }
+.lux-eyebrow { color:var(--lux-rose); font-size:9px; letter-spacing:.2em; font-weight:700; text-transform:uppercase; }
+.lux-hero h1 { margin:22px 0 20px; color:#fff7f2; font:500 clamp(45px,5.5vw,78px)/.91 "Cormorant Garamond",Georgia,serif; letter-spacing:-.055em; }
+.lux-hero h1 em,.lux-section-heading h2 em,.lux-closing h2 em { color:var(--lux-rose); font-weight:500; }
+.lux-lead { max-width:520px; color:#d4bdb2; font-size:clamp(14px,1.1vw,17px); line-height:1.8; }
+.lux-benefits { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin:32px 0 30px; }
+.lux-benefits>div { display:flex; align-items:center; gap:10px; min-width:0; }
+.lux-benefit-icon { flex:0 0 36px; height:36px; display:grid; place-items:center; border:1px solid rgba(243,182,157,.55); border-radius:50%; color:var(--lux-rose); font-size:23px; }
+.lux-benefits strong,.lux-benefits small { display:block; }
+.lux-benefits strong { font-size:11px; font-weight:600; color:#fff1e8; }
+.lux-benefits small { margin-top:4px; color:#bda398; font-size:9px; line-height:1.4; }
+.lux-actions { display:flex; align-items:center; flex-wrap:wrap; gap:20px; }
+.lux-primary { display:inline-flex; align-items:center; justify-content:center; gap:20px; min-height:52px; padding:0 25px; border-radius:999px; color:#25130d!important; background:linear-gradient(110deg,#ffd5c0,#e9a184); font-size:12px; font-weight:700; box-shadow:0 10px 34px rgba(233,161,132,.16); transition:transform .2s,box-shadow .2s; }
+.lux-primary:hover { transform:translateY(-2px); box-shadow:0 14px 36px rgba(233,161,132,.28); }
+.lux-primary span { font-size:17px; }
+.lux-secondary { color:#f5c7b1; font-size:12px; text-decoration:underline; text-underline-offset:6px; }
+.lux-reassurance { margin:28px 0 0; color:#aa8d80; font-size:10px; letter-spacing:.04em; }
+.lux-reassurance span { color:var(--lux-rose); margin-right:8px; }
+.lux-process { padding:clamp(54px,8vw,104px) 0; }
+.lux-section-heading { text-align:center; max-width:680px; margin:0 auto 35px; }
+.lux-section-heading h2 { margin:15px 0 10px; font:500 clamp(32px,4vw,54px)/1 "Cormorant Garamond",Georgia,serif; letter-spacing:-.03em; }
+.lux-section-heading>p:last-child { color:#c6aca0; font-size:13px; }
+.lux-steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.lux-step { position:relative; display:block; min-height:210px; padding:25px; border:1px solid var(--lux-line); background:linear-gradient(145deg,rgba(53,32,24,.74),rgba(24,15,12,.92)); transition:transform .2s,border-color .2s; }
+.lux-step:hover { transform:translateY(-3px); border-color:rgba(243,182,157,.55); }
+.lux-step-number { position:absolute; right:22px; top:22px; color:#c79a84; font-size:10px; letter-spacing:.1em; }
+.lux-step-symbol { display:block; margin-bottom:22px; color:var(--lux-rose); font-size:28px; }
+.lux-step strong { display:block; font:500 25px "Cormorant Garamond",Georgia,serif; }
+.lux-step p { max-width:270px; color:#c5aaa0; font-size:12px; line-height:1.7; }
+.lux-step-arrow { position:absolute; right:22px; bottom:22px; color:var(--lux-rose); }
+.lux-closing { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:clamp(28px,4.5vw,60px); border:1px solid var(--lux-line); background:radial-gradient(ellipse at 80% 20%,rgba(122,65,42,.24),transparent 48%),#1b110e; }
+.lux-closing h2 { margin:15px 0 0; font:500 clamp(29px,4vw,48px)/1.05 "Cormorant Garamond",Georgia,serif; letter-spacing:-.03em; }
+
+/* Existing app pages keep their controls; only their surfaces inherit the palette. */
+@media(max-width:1000px) {
+  .lux-hero { grid-template-columns:minmax(250px,.78fr) minmax(0,1.22fr); }
+  .lux-hero-photo { min-height:580px; }
+  .lux-hero-content { padding:30px; }
+  .lux-benefits { grid-template-columns:1fr; gap:12px; margin:25px 0; }
+  .lux-benefits>div { gap:12px; }
+  .lux-benefit-icon { width:32px; height:32px; flex-basis:32px; }
+}
+@media(max-width:760px) {
+  .sidebar { position:fixed; top:auto; bottom:0; left:0; right:0; min-height:calc(66px + env(safe-area-inset-bottom)); padding:7px 8px calc(7px + env(safe-area-inset-bottom)); justify-content:space-around; gap:2px; border-top:1px solid var(--lux-line); border-bottom:0; background:rgba(15,10,8,.97); }
+  .sidebar-logo { display:none; }
+  .sidebar-item { flex:1; min-width:0; flex-direction:column; justify-content:center; gap:4px; padding:7px 3px; font-size:10px; letter-spacing:0; }
+  .sidebar-icon { font-size:19px; line-height:1; }
+  .app-main { padding:0 0 calc(82px + env(safe-area-inset-bottom)); }
+  .lux-home { padding:10px 10px 0; }
+  .lux-hero { display:flex; flex-direction:column; min-height:0; }
+  .lux-hero-photo { order:0; min-height:0; height:clamp(290px,90vw,470px); background-position:center 25%; }
+  .lux-photo-script { top:22px; right:20px; font-size:29px; }
+  .lux-hero-content { order:1; padding:27px 21px 32px; }
+  .lux-brand-lockup { margin-bottom:34px; }
+  .lux-brand-name { font-size:48px; }
+  .lux-hero h1 { font-size:clamp(48px,12.5vw,68px); margin:18px 0; }
+  .lux-lead { font-size:14px; }
+  .lux-benefits { grid-template-columns:1fr; margin:25px 0; }
+  .lux-benefits>div { gap:12px; }
+  .lux-actions { align-items:stretch; flex-direction:column; gap:16px; }
+  .lux-primary { width:100%; padding:0 15px; }
+  .lux-secondary { align-self:flex-start; }
+  .lux-reassurance { line-height:1.6; }
+  .lux-process { padding:56px 2px; }
+  .lux-section-heading { text-align:left; margin:0 6px 25px; }
+  .lux-steps { grid-template-columns:1fr; gap:10px; }
+  .lux-step { min-height:170px; padding:21px; }
+  .lux-closing { align-items:stretch; flex-direction:column; padding:26px 21px; }
+  .sim-page { padding-left:14px; padding-right:14px; }
+}
+@media(max-width:380px) {
+  .lux-brand-name { font-size:42px; }
+  .lux-hero-content { padding:23px 16px 28px; }
+  .lux-primary { font-size:11px; gap:12px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; }
+}
+
+
+/* ── Novo dashboard Tati Mega Hair: composição baseada nas referências ── */
+.tat-dashboard{--tat-ink:#120b08;--tat-panel:#1b120e;--tat-rose:#f6b69b;--tat-cream:#fff5ee;--tat-muted:#d2b8aa;min-height:100vh;color:var(--tat-cream);background:#100a08;position:relative;isolation:isolate;font-family:Outfit,Arial,sans-serif}
+.tat-dashboard:before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:linear-gradient(90deg,rgba(13,8,6,.93),rgba(17,9,6,.78) 46%,rgba(17,9,6,.87)),url("../images/tati-cabelo-escuro.jpg") center 38%/cover no-repeat}
+.tat-dashboard:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 78% 12%,rgba(183,100,65,.19),transparent 35%),linear-gradient(0deg,rgba(12,7,5,.26),transparent 45%)}
+.tat-topbar{height:112px;display:flex;align-items:center;gap:clamp(20px,4vw,70px);padding:14px clamp(20px,3vw,54px);border-bottom:1px solid rgba(246,182,155,.2);background:rgba(17,10,7,.58);backdrop-filter:blur(18px)}
+.tat-wordmark{display:flex;flex-direction:column;flex-shrink:0;min-width:260px;color:var(--tat-cream)}
+.tat-logo-main{position:relative;display:block;font:700 clamp(36px,4vw,62px)/.78 "Cormorant Garamond",Georgia,serif;letter-spacing:-.065em}
+.tat-logo-main>span{margin-left:7px;color:var(--tat-rose);font:italic 500 clamp(25px,2.8vw,45px)/1 "Cormorant Garamond",Georgia,serif;letter-spacing:-.06em}
+.tat-logo-main>b{position:absolute;top:-8px;margin-left:4px;color:var(--tat-rose);font-size:20px}
+.tat-logo-sub{padding:12px 0 0 10px;font-size:9px;letter-spacing:.62em;color:#f3d9ca}
+.tat-topnav{display:flex;justify-content:center;align-items:center;gap:clamp(16px,3vw,48px);flex:1}
+.tat-topnav a{position:relative;padding:13px 0;color:#f1e1d9;font-size:14px;white-space:nowrap}
+.tat-topnav a.active:after{content:"";position:absolute;left:0;right:0;bottom:3px;height:2px;background:var(--tat-rose)}
+.tat-login{display:flex;align-items:center;justify-content:center;gap:10px;flex-shrink:0;padding:13px 30px;border-radius:99px;background:linear-gradient(110deg,#ffd5c0,#efa78a);color:#21120c;font-size:13px;font-weight:700}
+.tat-workspace{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:calc(100vh - 112px)}
+.tat-rail{position:relative;display:flex;flex-direction:column;gap:14px;padding:30px 12px 26px 20px;border-right:1px solid rgba(246,182,155,.17);background:rgba(14,10,8,.72);backdrop-filter:blur(10px)}
+.tat-rail>a{display:flex;align-items:center;gap:16px;padding:17px 18px;border:1px solid transparent;border-radius:12px;color:#f2e2d9;font-size:14px;transition:.2s}
+.tat-rail>a span{width:22px;text-align:center;color:#ffd0b9;font-size:23px}
+.tat-rail>a.selected,.tat-rail>a:hover{border-color:rgba(255,208,185,.28);background:linear-gradient(100deg,#f6b69b,#8e5944);color:#21120c;box-shadow:0 8px 24px #0005}
+.tat-rail>a.selected span,.tat-rail>a:hover span{color:#21120c}
+.tat-rail-note{margin:auto 12px 0;padding:22px 15px;border:1px solid rgba(246,182,155,.3);border-radius:12px;color:#ffcfb8;font:italic 25px/1.12 "Cormorant Garamond",Georgia,serif;transform:rotate(-2deg);background:rgba(35,20,14,.6)}
+.tat-rail-note span{display:block;text-align:right;font-size:30px}
+.tat-main{min-width:0;padding:clamp(22px,2.5vw,42px) clamp(18px,2vw,36px) 24px}
+.tat-intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.72fr) minmax(150px,.45fr);align-items:center;gap:clamp(20px,2vw,38px)}
+.tat-kicker{margin:0 0 12px;color:var(--tat-rose);font-size:10px;letter-spacing:.2em;font-weight:700}
+.tat-intro h1{margin:0;font:500 clamp(48px,4.4vw,76px)/.85 "Cormorant Garamond",Georgia,serif;letter-spacing:-.055em;color:#fff8f3}
+.tat-intro h1 em{color:var(--tat-rose);font-weight:500}
+.tat-intro-copy{border-left:1px solid #e7aa8e;padding:4px 0 4px 26px;color:#f2e3db;font-size:clamp(13px,1.1vw,17px);line-height:1.65}
+.tat-handwritten{justify-self:end;color:#f7bea5;font:italic 500 clamp(23px,2.3vw,36px)/.95 "Cormorant Garamond",Georgia,serif;transform:rotate(-9deg);text-align:center}
+.tat-handwritten span{display:block;text-align:right;font-size:30px}
+.tat-benefit-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin:32px 0 24px}
+.tat-benefit-row>div{display:flex;align-items:center;gap:12px;min-width:0}
+.tat-benefit-row>div>span{flex-shrink:0;color:#ffb998;font-size:36px;font-weight:300}
+.tat-benefit-row p{margin:0;color:#f4e6de;font-size:12px;line-height:1.45}
+.tat-panels{display:grid;grid-template-columns:minmax(0,.88fr) minmax(0,.92fr) minmax(0,1.12fr);gap:12px;align-items:stretch}
+.tat-panel{min-width:0;position:relative;padding:14px;border:1px solid rgba(235,184,158,.32);border-radius:19px;background:linear-gradient(145deg,rgba(42,29,23,.94),rgba(16,12,10,.96));box-shadow:0 16px 44px #0005;overflow:hidden}
+.tat-panel-heading{display:flex;align-items:center;gap:13px;min-height:35px;margin-bottom:12px}
+.tat-step{display:grid;place-items:center;flex-shrink:0;width:34px;height:34px;border-radius:50%;background:linear-gradient(130deg,#ffd4bd,#e9a184);color:#24120b;font-size:17px;font-weight:700}
+.tat-panel-heading h2{margin:0;color:#fff6f0;font-size:16px;font-weight:600;letter-spacing:-.02em}
+.tat-photo-frame{position:relative;display:block;height:clamp(310px,30vw,460px);overflow:hidden;border-radius:15px;background:radial-gradient(ellipse at 45% 20%,#94563b,#3b2118 68%,#130c09)}
+.tat-photo-frame img,.tat-style-grid img,.tat-result-image img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 28%}
+.tat-photo-frame img{transition:transform .45s}
+.tat-photo-frame:hover img{transform:scale(1.025)}
+.tat-photo-overlay{position:absolute;left:12px;right:12px;bottom:12px;padding:8px;border-radius:7px;background:rgba(12,7,5,.58);text-align:center;font-size:11px;color:#fff0e7;opacity:0;transition:opacity .2s}
+.tat-photo-frame:hover .tat-photo-overlay{opacity:1}
+.tat-frame-corner{position:absolute;width:27px;height:27px;border-color:#fff0e7;border-style:solid;opacity:.9}
+.tat-frame-corner.top-left{top:14px;left:14px;border-width:3px 0 0 3px;border-radius:9px 0 0}
+.tat-frame-corner.top-right{top:14px;right:14px;border-width:3px 3px 0 0;border-radius:0 9px 0 0}
+.tat-frame-corner.bottom-left{bottom:14px;left:14px;border-width:0 0 3px 3px;border-radius:0 0 0 9px}
+.tat-frame-corner.bottom-right{bottom:14px;right:14px;border-width:0 3px 3px 0;border-radius:0 0 9px}
+.tat-photo-actions{display:flex;align-items:center;justify-content:space-around;gap:6px;padding:15px 0 5px}
+.tat-photo-actions>a{display:flex;align-items:center;flex-direction:column;gap:4px;color:#f8eae2;font-size:11px}
+.tat-photo-actions>a>span{font-size:24px}
+.tat-photo-actions .tat-camera{display:grid;place-items:center;width:66px;height:66px;border:3px solid #f8b99b;border-radius:50%;background:#fff8f3;box-shadow:inset 0 0 0 5px #21130e;color:#24120b}
+.tat-photo-actions .tat-camera span{font-size:29px}
+.tat-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:0 0 14px;border:1px solid rgba(235,184,158,.18);border-radius:12px;overflow:hidden;background:#100b09}
+.tat-tabs a{padding:12px 3px;text-align:center;color:#ead8ce;font-size:12px;border-radius:10px}
+.tat-tabs a.chosen{background:linear-gradient(120deg,#ffd4bd,#e9a184);color:#24120b;font-weight:700}
+.tat-style-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tat-style-grid a{position:relative;display:block;height:clamp(135px,13vw,190px);overflow:hidden;border:1px solid rgba(235,184,158,.18);border-radius:12px;background:#261710}
+.tat-style-grid a.style-selected{outline:3px solid #ffb998;outline-offset:-3px}
+.tat-style-grid a span{position:absolute;left:0;right:0;bottom:0;padding:9px 2px;background:rgba(16,10,7,.88);text-align:center;color:white;font-size:11px}
+.tat-panel-hint{color:#bfa79a;font-size:10px;line-height:1.5;margin:12px 2px}
+.tat-panel-cta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:12px 14px;border:1px solid rgba(246,182,155,.4);border-radius:10px;color:#ffd0b9;font-size:12px}
+.tat-result-panel{display:flex;flex-direction:column}
+.tat-result-image{position:relative;display:block;flex:1;min-height:300px;max-height:460px;overflow:hidden;border-radius:13px;background:radial-gradient(ellipse at 45% 20%,#94563b,#3b2118 68%,#130c09)}
+.tat-result-image span{position:absolute;left:10px;right:10px;bottom:10px;padding:10px;border-radius:9px;background:rgba(15,9,6,.68);color:#fff0e7;font-size:11px;text-align:center}
+.tat-result-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:12px 0}
+.tat-result-tools>span{display:flex;flex-direction:column;align-items:center;gap:4px;color:#ffcfb8;font-size:23px}
+.tat-result-tools small{color:#f2e4dc;font-size:10px}
+.tat-generate{display:flex;align-items:center;justify-content:center;gap:12px;min-height:52px;padding:12px 14px;border-radius:999px;background:linear-gradient(110deg,#ffd4bd,#eda486);color:#21120c;font-weight:700;font-size:14px;box-shadow:0 8px 25px #d68b6a24}
+.tat-generate>span{font-size:22px}.tat-generate>b{margin-left:auto;font-size:20px}
+.tat-footer-note{margin:18px 0 0;text-align:center;color:#bda294;font-size:10px;letter-spacing:.08em}.tat-footer-note span{color:#f4b69a;margin:0 8px}
+@media(min-width:1500px){.tat-main{padding-left:42px;padding-right:42px}.tat-panels{gap:16px}.tat-panel{padding:18px}.tat-photo-frame{height:clamp(380px,29vw,520px)}.tat-style-grid a{height:clamp(165px,13vw,220px)}}
+@media(max-width:1200px){.tat-topbar{height:90px}.tat-wordmark{min-width:210px}.tat-workspace{grid-template-columns:200px minmax(0,1fr)}.tat-rail{padding-left:10px}.tat-rail>a{gap:10px;padding:14px 10px;font-size:12px}.tat-intro{grid-template-columns:1fr 1fr}.tat-handwritten{display:none}.tat-panels{grid-template-columns:repeat(2,minmax(0,1fr))}.tat-result-panel{grid-column:1/-1}.tat-result-image{height:390px;max-height:55vw}.tat-photo-frame{height:390px}.tat-style-grid a{height:180px}}
+@media(max-width:760px){.tat-topbar{height:76px;padding:10px 15px;gap:10px;justify-content:space-between}.tat-wordmark{min-width:0}.tat-logo-main{font-size:36px}.tat-logo-main>span{font-size:25px}.tat-logo-sub{padding-top:8px;font-size:7px}.tat-topnav{display:none}.tat-login{padding:10px 16px;font-size:12px}.tat-workspace{display:block;min-height:calc(100dvh - 76px)}.tat-rail{display:none}.tat-main{padding:22px 12px 28px}.tat-intro{display:block}.tat-kicker{font-size:9px}.tat-intro h1{font-size:clamp(49px,13vw,68px)}.tat-intro-copy{margin-top:20px;padding-left:16px;font-size:14px}.tat-handwritten{display:block;margin:22px 6px 0 auto;font-size:25px;width:max-content}.tat-benefit-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px 10px;margin:26px 0}.tat-benefit-row>div>span{font-size:29px}.tat-benefit-row p{font-size:11px}.tat-benefit-row>div:last-child{grid-column:1/-1}.tat-panels{grid-template-columns:minmax(0,1fr);gap:13px}.tat-panel{padding:13px;border-radius:16px}.tat-panel-heading h2{font-size:15px}.tat-photo-frame{height:clamp(330px,105vw,510px)}.tat-style-grid{gap:7px}.tat-style-grid a{height:clamp(155px,48vw,225px)}.tat-style-grid a span{font-size:10px;padding:8px 2px}.tat-result-panel{grid-column:auto}.tat-result-image{height:clamp(360px,112vw,530px);max-height:none;flex:initial}.tat-result-tools small{font-size:9px}.tat-generate{font-size:13px}.tat-footer-note{line-height:1.7;padding:0 10px}}
+@media(max-width:380px){.tat-logo-main{font-size:31px}.tat-logo-main>span{font-size:22px}.tat-login{padding:9px 12px}.tat-intro h1{font-size:47px}.tat-style-grid a{height:145px}.tat-panel{padding:10px}}
+
+/* The redesigned dashboard owns its own header and side rail; avoid duplicating MainLayout navigation on this route. */
+.app-shell:has(.tat-dashboard)>.sidebar{display:none!important}
+.app-shell:has(.tat-dashboard)>.app-main{width:100%;max-width:none;margin:0;padding:0;overflow:visible}
+
+
+/* ── Hero cinematográfico inspirado na referência Tati Mega Hair ── */
+.tat-workspace { display:block; min-height:0; }
+.tat-rail { display:none; }
+.tat-main { width:100%; max-width:1600px; margin:0 auto; padding:clamp(18px,2.3vw,34px) clamp(16px,3vw,48px) 30px; }
+.tat-hero {
+    position:relative; display:grid; grid-template-columns:minmax(300px,.94fr) minmax(0,1.06fr);
+    min-height:clamp(420px,42vw,640px); overflow:hidden; isolation:isolate;
+    border:1px solid rgba(247,190,163,.28); border-radius:8px;
+    background:linear-gradient(112deg,#1a100c 0%,#24140e 48%,#100a08 100%);
+    box-shadow:0 28px 80px rgba(0,0,0,.36);
+}
+.tat-hero-photo { position:relative; min-width:0; min-height:100%; overflow:hidden; isolation:isolate; }
+.tat-hero-photo:before { content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,transparent 65%,rgba(23,13,9,.2)),linear-gradient(0deg,rgba(13,8,6,.22),transparent 45%); }
+.tat-hero-photo img { display:block;width:100%;height:100%;min-height:inherit;position:absolute;inset:0;object-fit:cover;object-position:center 27%;filter:saturate(.96) contrast(1.02); }
+.tat-hero-photo-glow { position:absolute;z-index:2;inset:0;pointer-events:none;background:radial-gradient(ellipse at 52% 25%,rgba(255,206,171,.08),transparent 52%); }
+.tat-hero-content { position:relative;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-width:0;padding:clamp(26px,4vw,58px);background:radial-gradient(ellipse at 80% 20%,rgba(176,100,66,.17),transparent 46%),linear-gradient(115deg,rgba(31,18,12,.88),rgba(14,9,7,.98)); }
+.tat-hero-wordmark { position:relative;display:flex;align-items:baseline;flex-wrap:wrap;gap:10px;line-height:.85;margin:0 0 8px;white-space:nowrap; }
+.tat-hero-tati { color:#fff0e7;font:600 clamp(54px,6.3vw,96px)/.78 "Cormorant Garamond",Georgia,serif;letter-spacing:-.075em;text-shadow:0 5px 25px #0006; }
+.tat-hero-mega { color:#f6b69b;font:italic 500 clamp(31px,3.5vw,54px)/1 "Cormorant Garamond",Georgia,serif;letter-spacing:-.06em; }
+.tat-hero-heart { position:absolute;top:-15px;left:clamp(108px,12vw,176px);color:#f6b69b;font-size:21px; }
+.tat-hero-wordmark small { flex-basis:100%;padding-left:8px;color:#f2d9ca;font:500 9px/1 Outfit,Arial,sans-serif;letter-spacing:.62em; }
+.tat-hero-kicker { margin:clamp(15px,2vw,25px) 0 8px;color:#f3b497;font-size:10px;font-weight:700;letter-spacing:.23em; }
+.tat-hero-content h1 { max-width:650px;margin:0;color:#fff4ec;font:500 clamp(38px,4.2vw,64px)/.96 "Cormorant Garamond",Georgia,serif;letter-spacing:-.045em; }
+.tat-hero-content h1 em { color:#f6b69b;font-weight:500; }
+.tat-hero-copy { max-width:430px;margin:13px 0 0;color:#e7d2c7;font-size:clamp(12px,1vw,15px);line-height:1.55; }
+.tat-hero-handwritten { align-self:flex-end;margin:0 0 2px;color:#f5b79b;font:italic 500 clamp(18px,2vw,27px)/.95 "Cormorant Garamond",Georgia,serif;text-align:right;transform:rotate(-6deg); }
+.tat-hero-handwritten span { padding-left:8px;font-size:21px; }
+.tat-hero .tat-benefit-row { width:100%;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:clamp(18px,2.4vw,30px) 0 18px;padding-top:16px;border-top:1px solid rgba(246,182,155,.19); }
+.tat-hero .tat-benefit-row>div { display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:7px;text-align:center; }
+.tat-hero .tat-benefit-row>div>span { display:block;color:#f5b79b;font-size:27px;line-height:1; }
+.tat-hero .tat-benefit-row p { color:#f4e6de;font-size:10px;line-height:1.35; }
+.tat-hero-cta { display:flex;align-items:center;justify-content:space-between;gap:18px;width:100%;max-width:380px;min-height:48px;margin-top:auto;padding:12px 18px;border:1px solid rgba(255,211,188,.45);border-radius:999px;background:linear-gradient(110deg,#ffd5c0,#e9a184);color:#24120c;font-size:12px;font-weight:700;box-shadow:0 10px 28px rgba(0,0,0,.2);transition:transform .2s,filter .2s; }
+.tat-hero-cta:hover { transform:translateY(-2px);filter:brightness(1.05); }
+.tat-hero-cta span { font-size:20px; }
+.tat-panels { margin-top:clamp(20px,3vw,38px); }
+@media(max-width:980px) {
+ .tat-hero { grid-template-columns:minmax(240px,.82fr) minmax(0,1.18fr);min-height:480px; }
+ .tat-hero-content { padding:26px 22px; }
+ .tat-hero-tati { font-size:clamp(52px,7vw,72px); }
+ .tat-hero-mega { font-size:clamp(29px,4vw,42px); }
+ .tat-hero-content h1 { font-size:clamp(36px,5vw,52px); }
+ .tat-hero .tat-benefit-row { gap:6px; }
+ .tat-hero .tat-benefit-row p { font-size:9px; }
+}
+@media(max-width:700px) {
+ .tat-main { padding:12px 10px 24px; }
+ .tat-hero { display:flex;flex-direction:column;min-height:0;border-radius:15px; }
+ .tat-hero-photo { height:clamp(300px,92vw,440px);min-height:0;flex:0 0 auto; }
+ .tat-hero-photo img { object-position:center 24%; }
+ .tat-hero-photo:before { background:linear-gradient(0deg,rgba(18,10,7,.5),transparent 32%); }
+ .tat-hero-content { padding:24px 17px 20px; }
+ .tat-hero-wordmark { gap:8px; }
+ .tat-hero-tati { font-size:clamp(54px,15vw,76px); }
+ .tat-hero-mega { font-size:clamp(29px,8vw,40px); }
+ .tat-hero-heart { top:-13px;left:110px; }
+ .tat-hero-kicker { margin-top:19px;font-size:9px; }
+ .tat-hero-content h1 { font-size:clamp(42px,11vw,56px); }
+ .tat-hero-copy { font-size:13px; }
+ .tat-hero-handwritten { margin:18px 4px 0 auto;font-size:24px; }
+ .tat-hero .tat-benefit-row { grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:20px 0 18px;padding-top:15px; }
+ .tat-hero .tat-benefit-row>div { gap:7px; }
+ .tat-hero .tat-benefit-row>div>span { font-size:23px; }
+ .tat-hero .tat-benefit-row p { font-size:9px;overflow-wrap:anywhere; }
+ .tat-hero-cta { max-width:none; }
+}
+
+
+/* Marca Tati Mega Hair em vetor tipográfico: sem imagem branca no sidebar. */
+.sidebar .sidebar-logo {
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  width:100%;
+  min-width:0;
+  margin:0 auto 0 0;
+  padding:0;
+  color:var(--lux-cream);
+  text-decoration:none;
+  background:transparent;
+}
+.sidebar-logo-monogram {
+  position:relative;
+  display:grid;
+  place-items:center;
+  width:48px;
+  height:48px;
+  flex:0 0 48px;
+  border:1px solid rgba(243,182,157,.72);
+  border-radius:50% 50% 44% 44%;
+  background:radial-gradient(circle at 35% 25%,rgba(243,182,157,.19),rgba(28,19,16,.8) 72%);
+  color:#ffe4d5;
+  font:500 31px/.9 "Cormorant Garamond",Georgia,serif;
+  box-shadow:inset 0 0 0 3px rgba(243,182,157,.06),0 4px 18px rgba(0,0,0,.2);
+}
+.sidebar-logo-monogram>span {
+  position:absolute;
+  top:3px;
+  right:2px;
+  color:#e7bf91;
+  font:12px/1 Georgia,serif;
+}
+.sidebar-logo-wordmark {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:4px;
+  min-width:0;
+}
+.sidebar-logo .sidebar-logo-text {
+  display:block;
+  color:#fff0e7;
+  font:600 22px/.95 "Cormorant Garamond",Georgia,serif;
+  letter-spacing:-.035em;
+  white-space:nowrap;
+}
+.sidebar-logo .sidebar-logo-text em {
+  color:#f3b69d;
+  font-weight:500;
+  font-style:italic;
+}
+.sidebar-logo-wordmark small {
+  color:#d0b8aa;
+  font:500 7px/1 Outfit,Arial,sans-serif;
+  letter-spacing:.48em;
+  padding-left:2px;
+}
+@media(max-width:700px) {
+  .sidebar .sidebar-logo { gap:9px; }
+  .sidebar-logo-monogram { width:39px;height:39px;flex-basis:39px;font-size:26px; }
+  .sidebar-logo .sidebar-logo-text { font-size:19px; }
+}
