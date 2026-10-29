@@ -14,9 +14,9 @@ else
                 <span class="tat-logo-sub">S I M U L A D O R</span>
             </a>
             <nav class="tat-topnav" aria-label="Navegação principal">
-                <a class="@ClasseTopo("")" href="/">Início</a>
-                <a class="@ClasseTopo("captura")" href="/captura">Simulador</a>
-                <a class="@ClasseTopo("catalogo")" href="/catalogo">Galeria</a>
+                <a class="@ClasseTopoInicio" href="/">Início</a>
+                <a class="@ClasseTopoCaptura" href="/captura">Simulador</a>
+                <a class="@ClasseTopoCatalogo" href="/catalogo">Galeria</a>
                 <a href="/catalogo">Dicas</a>
                 <a href="/catalogo">Planos</a>
             </nav>
@@ -25,10 +25,10 @@ else
 
         <div class="tat-workspace">
             <aside class="tat-rail" aria-label="Menu principal">
-                <a class="@ClasseRail("")" href="/"><span>⌂</span> Início</a>
-                <a class="@ClasseRail("captura")" href="/captura"><span>◎</span> Simulador</a>
-                <a class="@ClasseRail("catalogo")" href="/catalogo"><span>▦</span> Galeria de Estilos</a>
-                <a class="@ClasseRail("clientes")" href="/clientes"><span>♙</span> Clientes</a>
+                <a class="@ClasseRailInicio" href="/"><span>⌂</span> Início</a>
+                <a class="@ClasseRailCaptura" href="/captura"><span>◎</span> Simulador</a>
+                <a class="@ClasseRailCatalogo" href="/catalogo"><span>▦</span> Galeria de Estilos</a>
+                <a class="@ClasseRailClientes" href="/clientes"><span>♙</span> Clientes</a>
                 <a href="/catalogo"><span>♧</span> Dicas de Megahair</a>
                 <a href="/catalogo"><span>◇</span> Planos e Preços</a>
                 <div class="tat-rail-note">Beleza real,<br />possibilidades<br />infinitas. <span>♡</span></div>
@@ -47,14 +47,13 @@ else
 
     private bool EhInicio => CaminhoAtual == "/";
 
-    private string ClasseTopo(string caminho) =>
-        caminho == "captura" && CaminhoAtual == "/captura" ? "active" :
-        caminho == "catalogo" && CaminhoAtual == "/catalogo" ? "active" :
-        caminho == "" && EhInicio ? "active" : string.Empty;
+    private string ClasseTopoInicio => EhInicio ? "active" : string.Empty;
+    private string ClasseTopoCaptura => CaminhoAtual == "/captura" ? "active" : string.Empty;
+    private string ClasseTopoCatalogo => CaminhoAtual == "/catalogo" ? "active" : string.Empty;
 
-    private string ClasseRail(string caminho) =>
-        caminho == "captura" && CaminhoAtual == "/captura" ? "selected" :
-        caminho == "catalogo" && CaminhoAtual == "/catalogo" ? "selected" :
-        caminho == "clientes" && CaminhoAtual.StartsWith("/clientes", StringComparison.OrdinalIgnoreCase) ? "selected" :
-        caminho == "" && EhInicio ? "selected" : string.Empty;
+    private string ClasseRailInicio => EhInicio ? "selected" : string.Empty;
+    private string ClasseRailCaptura => CaminhoAtual == "/captura" ? "selected" : string.Empty;
+    private string ClasseRailCatalogo => CaminhoAtual == "/catalogo" ? "selected" : string.Empty;
+    private string ClasseRailClientes =>
+        CaminhoAtual.StartsWith("/clientes", StringComparison.OrdinalIgnoreCase) ? "selected" : string.Empty;
 }
