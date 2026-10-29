@@ -77,7 +77,7 @@ public sealed class HairZoneGenerator
             w, h, faceX, faceY, faceW, faceH, cmZona, frac, modo);
 
         if (frac < 0.005)
-            throw new InvalidOperationException(
+            throw new FotoInvalidaException(
                 "Não consegui delimitar a área do cabelo nesta foto. Envie uma foto frontal, com a cabeça inteira visível.");
 
         var path = Path.Combine(masksFolder, $"zona_{Guid.NewGuid():N}.png");

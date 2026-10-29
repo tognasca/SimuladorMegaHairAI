@@ -201,6 +201,11 @@ public class SimulacoesController : ControllerBase
             _logger.LogWarning(ex, "Foto não encontrada ao gerar simulação {ClienteId}", request.ClienteId);
             return NotFound(new { erro = "Não encontramos a foto enviada. Envie novamente." });
         }
+        catch (FotoInvalidaException ex)
+        {
+            _logger.LogWarning(ex, "Foto invalida ao gerar simulacao {ClienteId}", request.ClienteId);
+            return UnprocessableEntity(new { erro = ex.Message });
+        }
         catch (InvalidOperationException ex)
         {
             _logger.LogError(ex, "Falha ao gerar simulação {ClienteId}", request.ClienteId);

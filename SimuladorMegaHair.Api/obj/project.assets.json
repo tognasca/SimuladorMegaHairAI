@@ -1307,71 +1307,15 @@
           }
         }
       },
-      "SixLabors.Fonts/3.2.0": {
+      "SixLabors.ImageSharp/3.1.11": {
         "type": "package",
         "compile": {
-          "lib/net8.0/SixLabors.Fonts.dll": {
+          "lib/net6.0/SixLabors.ImageSharp.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net8.0/SixLabors.Fonts.dll": {
-            "related": ".xml"
-          }
-        },
-        "build": {
-          "build/_._": {}
-        }
-      },
-      "SixLabors.ImageSharp/4.1.3": {
-        "type": "package",
-        "dependencies": {
-          "System.IO.Hashing": "8.0.0"
-        },
-        "compile": {
-          "lib/net8.0/SixLabors.ImageSharp.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/net8.0/SixLabors.ImageSharp.dll": {
-            "related": ".xml"
-          }
-        },
-        "build": {
-          "build/_._": {}
-        }
-      },
-      "SixLabors.ImageSharp.Drawing/3.1.3": {
-        "type": "package",
-        "dependencies": {
-          "SixLabors.Fonts": "3.2.0",
-          "SixLabors.ImageSharp": "4.1.3",
-          "SixLabors.PolygonClipper": "1.0.2"
-        },
-        "compile": {
-          "lib/net8.0/SixLabors.ImageSharp.Drawing.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/net8.0/SixLabors.ImageSharp.Drawing.dll": {
-            "related": ".xml"
-          }
-        },
-        "build": {
-          "build/_._": {}
-        }
-      },
-      "SixLabors.PolygonClipper/1.0.2": {
-        "type": "package",
-        "compile": {
-          "lib/net8.0/SixLabors.PolygonClipper.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/net8.0/SixLabors.PolygonClipper.dll": {
+          "lib/net6.0/SixLabors.ImageSharp.dll": {
             "related": ".xml"
           }
         },
@@ -1636,22 +1580,6 @@
           }
         }
       },
-      "System.IO.Hashing/8.0.0": {
-        "type": "package",
-        "compile": {
-          "lib/net8.0/System.IO.Hashing.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/net8.0/System.IO.Hashing.dll": {
-            "related": ".xml"
-          }
-        },
-        "build": {
-          "buildTransitive/net6.0/_._": {}
-        }
-      },
       "System.IO.Pipelines/10.0.3": {
         "type": "package",
         "compile": {
@@ -1877,8 +1805,7 @@
           "OpenCvSharp4": "4.13.0.20260627",
           "OpenCvSharp4.runtime.win": "4.13.0.20260627",
           "SimuladorMegaHair.Domain": "1.0.0",
-          "SixLabors.ImageSharp": "4.1.3",
-          "SixLabors.ImageSharp.Drawing": "3.1.3"
+          "SixLabors.ImageSharp": "3.1.11"
         },
         "compile": {
           "bin/placeholder/SimuladorMegaHair.Infrastructure.dll": {}
@@ -3843,84 +3770,20 @@
         "opentelemetry.persistentstorage.filesystem.nuspec"
       ]
     },
-    "SixLabors.Fonts/3.2.0": {
-      "sha512": "UHt1s2pR5v4Zk/PyTQSSKpBq9OSxbQIrhTPs7aU9vSQb85FNX9RVrnluNGTAV1S8gCOyJUrpfmDVI8a8tZ1AuQ==",
+    "SixLabors.ImageSharp/3.1.11": {
+      "sha512": "JfPLyigLthuE50yi6tMt7Amrenr/fA31t2CvJyhy/kQmfulIBAqo5T/YFUSRHtuYPXRSaUHygFeh6Qd933EoSw==",
       "type": "package",
-      "path": "sixlabors.fonts/3.2.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "FTL.TXT",
-        "LICENSE",
-        "THIRD-PARTY-NOTICES",
-        "build/SixLabors.Fonts.targets",
-        "build/net472/SixLabors.Licensing.dll",
-        "build/net6.0/SixLabors.Licensing.dll",
-        "build/net8.0/SixLabors.Licensing.dll",
-        "lib/net8.0/SixLabors.Fonts.dll",
-        "lib/net8.0/SixLabors.Fonts.xml",
-        "sixlabors.fonts.128.png",
-        "sixlabors.fonts.3.2.0.nupkg.sha512",
-        "sixlabors.fonts.nuspec"
-      ]
-    },
-    "SixLabors.ImageSharp/4.1.3": {
-      "sha512": "VzzKPgdC0ZupEg937iKpg2cEGXudnFyQRwiHfIvtCKSlFUaxVbLjW3AztDhyk06z+4NzD7IAlMf7fqU57WXyBQ==",
-      "type": "package",
-      "path": "sixlabors.imagesharp/4.1.3",
+      "path": "sixlabors.imagesharp/3.1.11",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE",
         "build/SixLabors.ImageSharp.props",
-        "build/SixLabors.ImageSharp.targets",
-        "build/net472/SixLabors.Licensing.dll",
-        "build/net6.0/SixLabors.Licensing.dll",
-        "build/net8.0/SixLabors.Licensing.dll",
-        "lib/net8.0/SixLabors.ImageSharp.dll",
-        "lib/net8.0/SixLabors.ImageSharp.xml",
+        "lib/net6.0/SixLabors.ImageSharp.dll",
+        "lib/net6.0/SixLabors.ImageSharp.xml",
         "sixlabors.imagesharp.128.png",
-        "sixlabors.imagesharp.4.1.3.nupkg.sha512",
+        "sixlabors.imagesharp.3.1.11.nupkg.sha512",
         "sixlabors.imagesharp.nuspec"
-      ]
-    },
-    "SixLabors.ImageSharp.Drawing/3.1.3": {
-      "sha512": "DbZMuTcp5m6JvtLbVAdRiVOQNjjPXx6N3LozANle5oD6UMSxy6z/ij/AvsAqH1VxGp81MfdRaM2SRLL8hpPoWQ==",
-      "type": "package",
-      "path": "sixlabors.imagesharp.drawing/3.1.3",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "LICENSE",
-        "build/SixLabors.ImageSharp.Drawing.targets",
-        "build/net472/SixLabors.Licensing.dll",
-        "build/net6.0/SixLabors.Licensing.dll",
-        "build/net8.0/SixLabors.Licensing.dll",
-        "lib/net8.0/SixLabors.ImageSharp.Drawing.dll",
-        "lib/net8.0/SixLabors.ImageSharp.Drawing.xml",
-        "sixlabors.imagesharp.drawing.128.png",
-        "sixlabors.imagesharp.drawing.3.1.3.nupkg.sha512",
-        "sixlabors.imagesharp.drawing.nuspec"
-      ]
-    },
-    "SixLabors.PolygonClipper/1.0.2": {
-      "sha512": "ORsCxzvHMtXv2VCN+Wl/XRetTRoXHIUWwzRVgcEToa75kMR9hDyTdBEal42z1RG1tXPNh3xUBWwBXlXKTXzLYQ==",
-      "type": "package",
-      "path": "sixlabors.polygonclipper/1.0.2",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "LICENSE",
-        "build/SixLabors.PolygonClipper.props",
-        "build/SixLabors.PolygonClipper.targets",
-        "build/net472/SixLabors.Licensing.dll",
-        "build/net6.0/SixLabors.Licensing.dll",
-        "build/net8.0/SixLabors.Licensing.dll",
-        "lib/net8.0/SixLabors.PolygonClipper.dll",
-        "lib/net8.0/SixLabors.PolygonClipper.xml",
-        "sixlabors.polygonclipper.1.0.2.nupkg.sha512",
-        "sixlabors.polygonclipper.128.png",
-        "sixlabors.polygonclipper.nuspec"
       ]
     },
     "Swashbuckle.AspNetCore/10.2.3": {
@@ -4253,36 +4116,6 @@
         "lib/netstandard2.0/System.IdentityModel.Tokens.Jwt.xml",
         "system.identitymodel.tokens.jwt.7.1.2.nupkg.sha512",
         "system.identitymodel.tokens.jwt.nuspec"
-      ]
-    },
-    "System.IO.Hashing/8.0.0": {
-      "sha512": "ne1843evDugl0md7Fjzy6QjJrzsjh46ZKbhf8GwBXb5f/gw97J4bxMs0NQKifDuThh/f0bZ0e62NPl1jzTuRqA==",
-      "type": "package",
-      "path": "system.io.hashing/8.0.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "Icon.png",
-        "LICENSE.TXT",
-        "PACKAGE.md",
-        "THIRD-PARTY-NOTICES.TXT",
-        "buildTransitive/net461/System.IO.Hashing.targets",
-        "buildTransitive/net462/_._",
-        "buildTransitive/net6.0/_._",
-        "buildTransitive/netcoreapp2.0/System.IO.Hashing.targets",
-        "lib/net462/System.IO.Hashing.dll",
-        "lib/net462/System.IO.Hashing.xml",
-        "lib/net6.0/System.IO.Hashing.dll",
-        "lib/net6.0/System.IO.Hashing.xml",
-        "lib/net7.0/System.IO.Hashing.dll",
-        "lib/net7.0/System.IO.Hashing.xml",
-        "lib/net8.0/System.IO.Hashing.dll",
-        "lib/net8.0/System.IO.Hashing.xml",
-        "lib/netstandard2.0/System.IO.Hashing.dll",
-        "lib/netstandard2.0/System.IO.Hashing.xml",
-        "system.io.hashing.8.0.0.nupkg.sha512",
-        "system.io.hashing.nuspec",
-        "useSharedDesignerContext.txt"
       ]
     },
     "System.IO.Pipelines/10.0.3": {
@@ -4718,7 +4551,7 @@
       "Microsoft.ApplicationInsights.AspNetCore >= 3.1.2",
       "Microsoft.AspNetCore.Authentication.JwtBearer >= 8.0.10",
       "Microsoft.EntityFrameworkCore.Design >= 8.0.26",
-      "Npgsql.EntityFrameworkCore.PostgreSQL >= 8.0.3",
+      "Npgsql.EntityFrameworkCore.PostgreSQL >= 8.0.4",
       "SimuladorMegaHair.Domain >= 1.0.0",
       "SimuladorMegaHair.Infrastructure >= 1.0.0",
       "Swashbuckle.AspNetCore >= 10.2.3"
@@ -4807,7 +4640,7 @@
           },
           "Npgsql.EntityFrameworkCore.PostgreSQL": {
             "target": "Package",
-            "version": "[8.0.3, )"
+            "version": "[8.0.4, )"
           },
           "Swashbuckle.AspNetCore": {
             "target": "Package",
@@ -4836,17 +4669,5 @@
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.424/PortableRuntimeIdentifierGraph.json"
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "SimuladorMegaHair.Api depende de Npgsql.EntityFrameworkCore.PostgreSQL (>= 8.0.3), mas Npgsql.EntityFrameworkCore.PostgreSQL 8.0.3 não foi encontrado. Npgsql.EntityFrameworkCore.PostgreSQL 8.0.4 foi resolvido em vez disso.",
-      "libraryId": "Npgsql.EntityFrameworkCore.PostgreSQL",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    }
-  ]
+  }
 }

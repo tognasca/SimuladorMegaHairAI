@@ -3,255 +3,332 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject ApiClient Api
-<PageTitle>Nova Simulação</PageTitle>
+<PageTitle>Sua transformação — Tati Mega Hair</PageTitle>
 
-<div class="beauty-sim-page">
-    <header class="beauty-page-header">
-        <div>
-            <p class="beauty-eyebrow">Experiência Tati Mega Hair</p>
-            <h1 class="beauty-page-title">Veja seu novo visual antes de decidir.</h1>
+<div class="mh-app">
+
+    @* O seletor de arquivo fica SEMPRE no DOM: o <label for> abre a galeria direto
+       (gesto nativo do toque), e o JS processa a foto assim que ela é escolhida. *@
+    <input id="mh-arquivo" class="mh-oculto-visual" type="file" accept="image/*" tabindex="-1" aria-hidden="true" />
+
+    @* ─────────────────────────────  1. SUA FOTO  ───────────────────────────── *@
+    @if (etapa == Etapa.Foto)
+    {
+        <section class="mh-tela mh-tela-foto">
+            <ol class="mh-passos" aria-label="Etapas">
+                <li class="mh-atual">Sua foto</li><li>Comprimento</li><li>Cor</li><li>Textura</li><li>Transformação</li>
+            </ol>
+
+            <h1 class="mh-titulo">✨ Sua transformação começa aqui</h1>
+            <p class="mh-subtitulo">Descubra como você ficaria com o mega hair dos seus sonhos.</p>
             @if (!string.IsNullOrWhiteSpace(ClienteNome))
             {
-                <p class="beauty-client-note">Simulação personalizada para <strong>@ClienteNome</strong></p>
+                <p class="mh-cliente">Simulação para <strong>@ClienteNome</strong></p>
             }
-        </div>
-        <div class="beauty-trust-mark"><span>✦</span> IA com acabamento natural</div>
-    </header>
 
-    <ol class="beauty-steps" aria-label="Etapas da simulação">
-        <li class="@(fotoCapturada ? "done" : "current")"><span>01</span> Sua foto</li>
-        <li class="@(fotoCapturada && resultado is null && !gerando ? "current" : fotoCapturada ? "done" : "")"><span>02</span> Seu estilo</li>
-        <li class="@(gerando ? "current" : resultado is not null ? "done" : "")"><span>03</span> Inteligência</li>
-        <li class="@(resultado is not null ? "current" : "")"><span>04</span> Resultado</li>
-    </ol>
+            <div class="mh-moldura" aria-hidden="true">
+                <svg viewBox="0 0 200 300" focusable="false">
+                    <ellipse cx="100" cy="88" rx="36" ry="46" class="mh-moldura-rosto" />
+                    <path d="M18 300 C 20 205, 62 168, 100 168 C 138 168, 180 205, 182 300" class="mh-moldura-ombros" />
+                    <path d="M66 76 C 40 112, 52 196, 28 272 M134 76 C 160 112, 148 196, 172 272" class="mh-moldura-fios" /><path d="M72 70 C 52 108, 62 190, 44 262 M128 70 C 148 108, 138 190, 156 262" class="mh-moldura-fios mh-moldura-fios-2" />
+                    <g class="mh-brilho"><path d="M164 40 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 l10 -4z" /></g>
+                </svg>
+            </div>
 
-    @if (!fotoCapturada)
+            @if (!string.IsNullOrEmpty(erro))
+            {
+                <div class="mh-alerta" role="alert">@erro</div>
+            }
+
+            <div class="mh-acoes-principais">
+                <button type="button" class="mh-btn mh-btn-primario" @onclick="AbrirEspelhoAsync">📸 TIRAR FOTO</button>
+                <label for="mh-arquivo" class="mh-btn mh-btn-secundario" role="button" tabindex="0">🖼️ ESCOLHER DA GALERIA</label>
+            </div>
+            <p class="mh-nota">Use uma foto de frente, com boa iluminação, mostrando rosto e ombros.</p>
+        </section>
+    }
+
+    @* ─────────────────────────────  REVISÃO DA FOTO  ───────────────────────────── *@
+    @if (etapa == Etapa.Revisao && foto is not null)
     {
-        <section class="beauty-upload-layout">
-            <div class="beauty-upload-copy">
-                <span class="beauty-step-kicker">Comece por aqui</span>
-                <h2>Uma foto. Novas possibilidades.</h2>
-                <p>Escolha uma foto bem iluminada e descubra comprimentos, cores e métodos que combinam com você.</p>
-                <div class="beauty-mini-benefits">
-                    <span>✓ Rosto preservado</span>
-                    <span>✓ Resultado personalizado</span>
-                    <span>✓ JPG, PNG ou WEBP · até 10 MB</span>
+        <section class="mh-tela mh-tela-revisao">
+            <h2 class="mh-titulo mh-titulo-menor">Ficou do jeito que você quer?</h2>
+            <div class="mh-revisao-foto" style="--ar:@foto.Largura / @foto.Altura">
+                <img src="@(foto.UrlFiltrada ?? foto.UrlNatural)" alt="Sua foto" />
+                @if (foto.UrlFiltrada is not null)
+                {
+                    <span class="mh-selo">Efeito: @foto.FiltroNome</span>
+                }
+            </div>
+            @if (foto.UrlFiltrada is not null)
+            {
+                <p class="mh-nota">Para um resultado fiel, a simulação usa a sua foto <strong>natural</strong>, sem efeitos. Assim a cor real do seu cabelo é preservada.</p>
+            }
+            @if (foto.Ajustada)
+            {
+                <p class="mh-nota">Ajustamos o enquadramento da foto para o formato retrato.</p>
+            }
+            <div class="mh-acoes-principais">
+                <button type="button" class="mh-btn mh-btn-primario" @onclick="UsarFoto">Usar esta foto</button>
+                <button type="button" class="mh-btn mh-btn-secundario" @onclick="RefazerFotoAsync">↺ Refazer a foto</button>
+            </div>
+        </section>
+    }
+
+    @* ─────────────────────────────  2–4. ESCOLHAS  ───────────────────────────── *@
+    @if (etapa == Etapa.Estilo && foto is not null)
+    {
+        <section class="mh-tela mh-tela-estilo">
+            <ol class="mh-passos" aria-label="Etapas">
+                <li class="mh-feito">Sua foto</li>
+                <li class="@ClassePasso(0)">Comprimento</li>
+                <li class="@ClassePasso(1)">Cor</li>
+                <li class="@ClassePasso(2)">Textura</li>
+                <li>Transformação</li>
+            </ol>
+
+            <div class="mh-resumo">
+                <img src="@foto.UrlNatural" alt="Sua foto" class="mh-resumo-foto" />
+                <div class="mh-resumo-texto">
+                    <span>@comprimento · @cor · @tipoCabelo</span>
+                    <button type="button" class="mh-link" @onclick="TrocarFotoAsync">Trocar foto</button>
                 </div>
             </div>
 
-            <div class="beauty-upload-card">
-                <div class="beauty-mode-switch" role="tablist" aria-label="Escolha como enviar a foto">
-                    <button type="button" class="@(modo == ModoFoto.Camera ? "active" : "")" @onclick="() => modo = ModoFoto.Camera">Câmera</button>
-                    <button type="button" class="@(modo == ModoFoto.Upload ? "active" : "")" @onclick="() => modo = ModoFoto.Upload">Galeria</button>
+            @if (!string.IsNullOrEmpty(erro))
+            {
+                <div class="mh-alerta" role="alert">
+                    @erro
+                    <button type="button" class="mh-link" @onclick="() => erro = null">Fechar</button>
+                </div>
+            }
+
+            @if (passoEstilo == 0)
+            {
+                <h2 class="mh-titulo mh-titulo-menor">Qual comprimento você sonha?</h2>
+                <div class="mh-comprimento-visual" aria-hidden="true">
+                    <svg viewBox="0 0 120 190" focusable="false">
+                        <circle cx="60" cy="34" r="17" class="mh-sil" />
+                        <path d="M44 56 C 20 62, 12 82, 10 190 L110 190 C 108 82, 100 62, 76 56 C 70 62, 50 62, 44 56Z" class="mh-sil" />
+                        <g class="mh-regua" style="transform:translateY(@(OffsetComprimento())px)">
+                            <line x1="6" x2="114" y1="0" y2="0" />
+                            <circle cx="60" cy="0" r="4" />
+                        </g>
+                    </svg>
+                    <div class="mh-comprimento-info">
+                        <strong>@comprimento</strong>
+                        <span>@AlturaDescricao(comprimento)</span>
+                        <small>Ilustração aproximada</small>
+                    </div>
+                </div>
+                <div class="mh-chips mh-chips-rolagem" role="radiogroup" aria-label="Comprimento">
+                    @foreach (var c in comprimentos)
+                    {
+                        <button type="button" role="radio" aria-checked="@(comprimento == c ? "true" : "false")"
+                                class="mh-chip @(comprimento == c ? "mh-sel" : "")" @onclick="() => comprimento = c">@c</button>
+                    }
+                </div>
+            }
+            else if (passoEstilo == 1)
+            {
+                <h2 class="mh-titulo mh-titulo-menor">Escolha a cor</h2>
+                <div class="mh-cores" role="radiogroup" aria-label="Cor">
+                    @foreach (var c in cores)
+                    {
+                        var t = Fios[c];
+                        <button type="button" role="radio" aria-checked="@(cor == c ? "true" : "false")"
+                                class="mh-cor @(cor == c ? "mh-sel" : "")" @onclick="() => cor = c"
+                                style="--fio-escuro:@t.Escuro; --fio-base:@t.Base; --fio-claro:@t.Claro">
+                            <span class="mh-cor-fios"></span>
+                            <span class="mh-cor-nome">@c</span>
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <h2 class="mh-titulo mh-titulo-menor">Escolha a textura</h2>
+                <div class="mh-texturas" role="radiogroup" aria-label="Textura">
+                    @foreach (var t in tipos)
+                    {
+                        <button type="button" role="radio" aria-checked="@(tipoCabelo == t ? "true" : "false")"
+                                class="mh-textura @(tipoCabelo == t ? "mh-sel" : "")" @onclick="() => tipoCabelo = t">
+                            @((MarkupString)SvgTextura(t))
+                            <span>@t</span>
+                        </button>
+                    }
                 </div>
 
-                @if (modo == ModoFoto.Camera)
-                {
-                    <div class="beauty-camera-stage">
-                        <video id="videoPreview" class="photo-media" style="display:@(cameraAtiva ? "block" : "none");"></video>
-                        @if (!cameraAtiva)
+                <div class="mh-metodo">
+                    <span class="mh-metodo-titulo">Método de aplicação</span>
+                    <div class="mh-chips" role="radiogroup" aria-label="Método de aplicação">
+                        @foreach (var m in metodos)
                         {
-                            <div class="beauty-camera-placeholder">
-                                <span class="beauty-camera-icon">◌</span>
-                                <strong>Sua câmera está pronta</strong>
-                                <small>Vamos preservar seus traços e transformar apenas o cabelo.</small>
-                            </div>
+                            <button type="button" role="radio" aria-checked="@(metodo == m ? "true" : "false")"
+                                    class="mh-chip mh-chip-pequeno @(metodo == m ? "mh-sel" : "")" @onclick="() => metodo = m">@m</button>
                         }
                     </div>
-                    @if (!cameraAtiva)
-                    {
-                        <button type="button" class="beauty-primary-action" @onclick="IniciarCameraAsync"><span>◉</span> Abrir câmera</button>
-                    }
-                    else
-                    {
-                        <div class="beauty-action-row">
-                            <button type="button" class="beauty-primary-action" @onclick="CapturarFotoAsync">Tirar minha foto</button>
-                            <button type="button" class="beauty-secondary-action" @onclick="AlternarCameraAsync">Trocar câmera</button>
-                        </div>
-                    }
+                </div>
+            }
+
+            <div class="mh-rodape-fixo">
+                @if (passoEstilo > 0)
+                {
+                    <button type="button" class="mh-btn mh-btn-secundario mh-btn-voltar" @onclick="Voltar" aria-label="Voltar">←</button>
+                }
+                @if (passoEstilo < 2)
+                {
+                    <button type="button" class="mh-btn mh-btn-primario" @onclick="Avancar">Continuar</button>
                 }
                 else
                 {
-                    <label class="beauty-dropzone">
-                        <span class="beauty-upload-icon">↑</span>
-                        <strong>Escolha uma foto sua</strong>
-                        <small>Toque para abrir a galeria</small>
-                        <span class="beauty-upload-button">Escolher uma foto</span>
-                        <InputFile OnChange="CarregarArquivoAsync" accept="image/png,image/jpeg,image/webp" capture="environment" />
-                    </label>
-                    @if (carregandoArquivo)
-                    {
-                        <p class="beauty-inline-status">Preparando sua foto...</p>
-                    }
+                    <button type="button" class="mh-btn mh-btn-primario" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">✨ Transformar meu visual</button>
                 }
             </div>
         </section>
-
-        @if (!string.IsNullOrEmpty(erro))
-        {
-            <div class="beauty-error" role="alert">
-                <strong>Não foi possível continuar</strong>
-                <span>@erro</span>
-                <button type="button" class="beauty-secondary-action" @onclick="TentarNovamenteAsync">Tentar novamente</button>
-            </div>
-        }
-    }
-    else
-    {
-        <section class="beauty-workspace">
-            <div class="beauty-photo-column">
-                <div class="beauty-photo-card">
-                    <div class="beauty-card-label"><span>01</span> Sua foto</div>
-                    <img src="data:@fotoMimeType;base64,@fotoBase64" class="photo-media" alt="Foto da cliente" />
-                </div>
-                @if (!gerando)
-                {
-                    <button type="button" class="beauty-text-action" @onclick="RefazerFoto">↺ Trocar foto</button>
-                }
-                <div class="beauty-photo-tip"><span>✦</span> Escolha uma foto de frente para um resultado ainda mais fiel.</div>
-            </div>
-
-            @if (resultado is null && !gerando)
-            {
-                <div class="beauty-style-panel">
-                    <div class="beauty-card-label"><span>02</span> Personalize seu visual</div>
-                    <h2>Qual transformação combina com você?</h2>
-                    <p class="beauty-panel-copy">Selecione as opções para a IA criar uma proposta sob medida.</p>
-
-                    <div class="beauty-field-group">
-                        <label>Comprimento</label>
-                        <div class="beauty-choice-grid length-grid">
-                            @foreach (var c in comprimentos)
-                            {
-                                <button type="button" class="beauty-choice @(comprimento == c ? "selected" : "")" @onclick="() => comprimento = c">@c</button>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="beauty-field-group">
-                        <label>Cor desejada</label>
-                        <div class="beauty-color-grid">
-                            @foreach (var c in cores)
-                            {
-                                <button type="button" class="beauty-color-choice @(cor == c ? "selected" : "")" @onclick="() => cor = c">
-                                    <span class="beauty-color-dot" style="background:@CorHex(c)"></span>
-                                    <span>@c</span>
-                                </button>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="beauty-field-group">
-                        <label>Textura</label>
-                        <div class="beauty-choice-grid texture-grid">
-                            @foreach (var t in tipos)
-                            {
-                                <button type="button" class="beauty-choice @(tipoCabelo == t ? "selected" : "")" @onclick="() => tipoCabelo = t">@t</button>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="beauty-field-group">
-                        <label>Método de aplicação</label>
-                        <div class="beauty-method-grid">
-                            @foreach (var m in metodos)
-                            {
-                                <button type="button" class="beauty-method-card @(metodo == m ? "selected" : "")" @onclick="() => metodo = m">
-                                    <span class="beauty-method-icon">@IconeMetodo(m)</span>
-                                    <span><strong>@m</strong><small>@DescricaoMetodo(m)</small></span>
-                                </button>
-                            }
-                        </div>
-                    </div>
-
-                    <button type="button" class="beauty-primary-action beauty-generate-action" disabled="@gerando" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">
-                        <span>✦</span> Gerar minha simulação
-                    </button>
-                </div>
-            }
-
-            @if (gerando)
-            {
-                <div class="beauty-loading-panel" aria-live="polite">
-                    <div class="beauty-loading-orbit"><span>✦</span></div>
-                    <div class="beauty-card-label"><span>03</span> Inteligência em ação</div>
-                    <h2>@mensagemLoading</h2>
-                    <p>Estamos criando uma versão personalizada para você. Não feche esta tela.</p>
-                    <div class="beauty-loading-track"><span></span></div>
-                    <small>O processo pode levar cerca de um minuto.</small>
-                    <button type="button" class="beauty-cancel-action" @onclick="CancelarGeracaoAsync">Cancelar geração</button>
-                </div>
-            }
-        </section>
-
-        @if (resultado is null && !gerando && !string.IsNullOrEmpty(erro))
-        {
-            <div class="beauty-error" role="alert">
-                <strong>Vamos tentar de novo?</strong>
-                <span>@erro</span>
-                <button type="button" class="beauty-primary-action" @onclick="() => GerarSimulacaoAsync(forcarNova: true)">Gerar novamente</button>
-            </div>
-        }
     }
 
-    @if (resultado is not null && !gerando)
+    @* ─────────────────────────────  GERANDO  ───────────────────────────── *@
+    @if (etapa == Etapa.Gerando)
     {
-        <section class="beauty-result-section">
-            <div class="beauty-result-heading">
-                <div>
-                    <div class="beauty-card-label"><span>04</span> Seu resultado</div>
-                    <h2>Pronta para se apaixonar?</h2>
-                </div>
-                <p>Uma proposta criada para valorizar seu estilo.</p>
-            </div>
-
-            <div class="beauty-result-card">
-                <div class="beauty-compare-toggle">
-                    <button type="button" class="@(mostrarAntes ? "active" : "")" @onclick="() => mostrarAntes = true">Antes</button>
-                    <button type="button" class="@(!mostrarAntes ? "active" : "")" @onclick="() => mostrarAntes = false">Depois</button>
-                </div>
-                <div class="beauty-result-hero">
-                    @if (mostrarAntes)
-                    {
-                        <img src="@resultado.FotoOriginalUrl" alt="Antes da transformação" />
-                        <span>Antes</span>
-                    }
-                    else
-                    {
-                        <img src="@resultado.FotoResultadoUrl" alt="Depois da transformação" />
-                        <span>Depois</span>
-                    }
-                </div>
-                <div class="beauty-compare-pair">
-                    <figure><img src="@resultado.FotoOriginalUrl" alt="Foto original" /><figcaption>Antes</figcaption></figure>
-                    <figure><img src="@resultado.FotoResultadoUrl" alt="Simulação de Mega Hair" /><figcaption>Depois</figcaption></figure>
-                </div>
-                <div class="beauty-result-meta">
-                    <span>@metodo · @comprimento · @cor</span>
-                    <strong>Estimativa R$ @resultado.ValorEstimado.ToString("N2")</strong>
-                </div>
-                <div class="beauty-result-actions">
-                    <button type="button" class="beauty-primary-action" @onclick="() => GerarSimulacaoAsync(forcarNova: true)">✦ Gerar outra versão</button>
-                    <button type="button" class="beauty-secondary-action" @onclick="EscolherOutroEstilo">Alterar estilo</button>
-                    <a class="beauty-secondary-action" href="@resultado.FotoResultadoUrl" target="_blank" rel="noopener" download>↓ Baixar resultado</a>
-                    <button type="button" class="beauty-secondary-action" @onclick="CompartilharAsync">↗ Compartilhar</button>
-                </div>
-            </div>
-            <div class="beauty-result-cta">
-                <div><span class="beauty-eyebrow">Próximo passo</span><strong>Gostou da transformação?</strong><small>Agende seu Mega Hair e leve esse visual para a vida real.</small></div>
-                <a href="/captura" class="beauty-appointment-action">Quero realizar essa transformação →</a>
+        <section class="mh-carregando" role="status" aria-live="polite">
+            @if (foto is not null)
+            {
+                <div class="mh-carregando-fundo" style="background-image:url('@foto.UrlNatural')"></div>
+            }
+            <div class="mh-carregando-miolo">
+                <div class="mh-anel" aria-hidden="true"><span>✦</span></div>
+                <h2 class="mh-titulo mh-titulo-menor">✨ Estamos preparando seu novo visual</h2>
+                <p class="mh-fase">@(faseEnvio ? "Enviando sua foto…" : "Gerando sua simulação…")</p>
+                <p class="mh-dica" aria-hidden="true">@MensagensCarregamento[indiceMensagem % MensagensCarregamento.Length]</p>
+                <div class="mh-barra-indeterminada" aria-hidden="true"><span></span></div>
+                <small>Isso costuma levar cerca de 1 minuto. Não feche esta tela.</small>
+                <button type="button" class="mh-link" @onclick="CancelarGeracao">Cancelar</button>
             </div>
         </section>
     }
 
-    <section class="beauty-benefits" aria-label="Benefícios do simulador">
-        <div><span>◌</span><strong>Visualize antes de decidir</strong><small>Escolha com segurança e confiança.</small></div>
-        <div><span>✦</span><strong>Explore possibilidades</strong><small>Compare comprimentos, cores e texturas.</small></div>
-        <div><span>♡</span><strong>Seu estilo, sua escolha</strong><small>Uma proposta pensada para você.</small></div>
-    </section>
+    @* ─────────────────────────────  RESULTADO  ───────────────────────────── *@
+    @if (etapa == Etapa.Resultado && resultado is not null)
+    {
+        <section class="mh-tela mh-tela-resultado">
+            <h2 class="mh-titulo">✨ Seu novo visual está pronto!</h2>
+
+            <div class="mh-comp-wrap" id="mh-comp-wrap" style="--ar:0.6667">
+                <div class="mh-comp" tabindex="-1">
+                    <div class="mh-comp-stage">
+                        <img class="mh-comp-img mh-comp-antes" src="@(foto?.UrlNatural ?? resultado.FotoOriginalUrl)" alt="Antes" draggable="false" />
+                        <img class="mh-comp-img mh-comp-depois" src="@resultado.FotoResultadoUrl" alt="Depois" draggable="false" />
+                    </div>
+                    <div class="mh-comp-handle" role="slider" tabindex="0" aria-label="Comparar antes e depois"
+                         aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+                        <span class="mh-comp-knob" aria-hidden="true">‹ ›</span>
+                    </div>
+                    <span class="mh-comp-tag mh-comp-tag-antes">Antes</span>
+                    <span class="mh-comp-tag mh-comp-tag-depois">Depois</span>
+                    <div class="mh-comp-tools">
+                        <button type="button" data-acao="zoom-mais" aria-label="Aproximar">+</button>
+                        <button type="button" data-acao="zoom-menos" aria-label="Afastar">−</button>
+                        <button type="button" data-acao="restaurar" aria-label="Restaurar enquadramento">⟲</button>
+                        <button type="button" data-acao="tela-cheia" aria-label="Tela cheia">⛶</button>
+                    </div>
+                </div>
+                <p class="mh-comp-legenda">Arraste para comparar · pinça ou toque duplo para ampliar</p>
+            </div>
+
+            @if (comparadorFalhou)
+            {
+                <div class="mh-alerta" role="alert">Não consegui carregar as imagens do resultado. <button type="button" class="mh-link" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">Tentar de novo</button></div>
+            }
+
+            <div class="mh-resultado-meta">
+                <span>@metodo · @comprimento · @cor · @tipoCabelo</span>
+                <strong>Estimativa R$ @resultado.ValorEstimado.ToString("N2", PtBr)</strong>
+            </div>
+
+            <div class="mh-acoes-principais">
+                <button type="button" class="mh-btn mh-btn-primario @(salvo ? "mh-ok" : "")" disabled="@salvando" @onclick="SalvarAsync">
+                    @(salvando ? "Salvando…" : salvo ? "✓ Salvo!" : "💾 Salvar minha transformação")
+                </button>
+                <button type="button" class="mh-btn mh-btn-secundario" @onclick="ExperimentarOutroVisual">✨ Experimentar outro visual</button>
+                <button type="button" class="mh-btn mh-btn-secundario" @onclick="NovaSimulacaoAsync">📸 Fazer nova simulação</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(avisoSalvar))
+            {
+                <p class="mh-nota" role="status">@avisoSalvar <a href="@resultado.FotoResultadoUrl" target="_blank" rel="noopener">Abrir imagem</a></p>
+            }
+            <button type="button" class="mh-link mh-link-centro" @onclick="() => GerarSimulacaoAsync(forcarNova: true)">↻ Gerar outra versão deste visual</button>
+        </section>
+    }
+
+    @* ─────────────────────────────  ESPELHO VIRTUAL (câmera em tela cheia)  ───────────────────────────── *@
+    @if (espelhoAberto)
+    {
+        <div class="mh-espelho" role="dialog" aria-modal="true" aria-label="Espelho Virtual">
+            <video id="mh-video" class="mh-video-oculto" playsinline muted autoplay></video>
+
+            <header class="mh-espelho-topo">
+                <button type="button" class="mh-icone" @onclick="FecharEspelhoAsync" aria-label="Fechar câmera">✕</button>
+                <span class="mh-espelho-titulo">✨ Espelho Virtual</span>
+                <button type="button" class="mh-icone @(cameraMultipla ? "" : "mh-invisivel")" @onclick="AlternarCameraAsync"
+                        aria-label="Alternar câmera" disabled="@(!cameraMultipla)">⟲</button>
+            </header>
+
+            <div class="mh-espelho-meio">
+                <div class="mh-palco" id="mh-palco">
+                    <canvas id="mh-preview" class="mh-preview"></canvas>
+                    <svg class="mh-guia" viewBox="0 0 200 300" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                        <ellipse cx="100" cy="88" rx="38" ry="48" />
+                        <path d="M14 300 C 16 205, 58 170, 100 170 C 142 170, 184 205, 186 300" />
+                    </svg>
+                    <div class="mh-palco-dicas">
+                        <span>Posicione seu rosto e ombros dentro da área indicada.</span>
+                        <small>Utilize uma boa iluminação para um resultado mais realista.</small>
+                    </div>
+
+                    @if (erroCamera is not null)
+                    {
+                        <div class="mh-camera-erro" role="alert">
+                            <strong>Não foi possível abrir a câmera</strong>
+                            <p>@MensagemErroCamera(erroCamera)</p>
+                            <div class="mh-acoes-principais">
+                                @if (erroCamera is not "sem-camera" and not "sem-suporte" and not "inseguro")
+                                {
+                                    <button type="button" class="mh-btn mh-btn-primario" @onclick="TentarCameraNovamenteAsync">Tentar novamente</button>
+                                }
+                                <label for="mh-arquivo" class="mh-btn mh-btn-secundario" role="button" tabindex="0">🖼️ Escolher da galeria</label>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <footer class="mh-espelho-base" id="mh-controles">
+                <div class="mh-filtros" role="group" aria-label="Efeitos">
+                    @foreach (var f in Filtros)
+                    {
+                        <button type="button" class="mh-filtro" data-filtro="@f.Id" aria-pressed="false">
+                            <canvas class="mh-miniatura" data-miniatura="@f.Id" width="56" height="84"></canvas>
+                            <span>@f.Nome</span>
+                        </button>
+                    }
+                </div>
+                <div class="mh-intensidade mh-sem-efeito">
+                    <label for="mh-intensidade-slider">Intensidade</label>
+                    <input id="mh-intensidade-slider" type="range" min="0" max="100" step="1" data-intensidade aria-label="Intensidade do efeito" />
+                    <button type="button" class="mh-link" data-remover-efeitos>Remover efeitos</button>
+                </div>
+                <div class="mh-obturador-linha">
+                    <button type="button" class="mh-obturador" @onclick="CapturarAsync" disabled="@(erroCamera is not null || !cameraPronta)" aria-label="Tirar foto"><span></span></button>
+                </div>
+            </footer>
+        </div>
+    }
 </div>
 
 @code {
+    // ── Parâmetros de URL (preservados do original) ──────────────────────────
     [SupplyParameterFromQuery, Parameter] public string? ClienteId { get; set; }
     [SupplyParameterFromQuery, Parameter] public string? ClienteNome { get; set; }
     [SupplyParameterFromQuery(Name = "comprimento"), Parameter] public string? ComprimentoSugerido { get; set; }
@@ -259,25 +336,39 @@
     [SupplyParameterFromQuery(Name = "tipo"), Parameter] public string? TipoSugerido { get; set; }
     [SupplyParameterFromQuery(Name = "metodo"), Parameter] public string? MetodoSugerido { get; set; }
 
-    private enum ModoFoto { Camera, Upload }
-    private ModoFoto modo = ModoFoto.Camera;
-    private bool carregandoArquivo;
-    private bool cameraAtiva;
-    private bool usarCameraFrontal = true;
-    private bool fotoCapturada;
-    private bool gerando;
-    private bool mostrarAntes;
-    private string? fotoBase64;
-    private string fotoMimeType = "image/png";
+    // ── Estado ───────────────────────────────────────────────────────────────
+    private enum Etapa { Foto, Revisao, Estilo, Gerando, Resultado }
+    private Etapa etapa = Etapa.Foto;
+    private int passoEstilo;
+
+    private ResultadoFoto? foto;
     private string? fotoServidorPath;
     private string? erro;
-    private string mensagemLoading = "Preparando sua transformação...";
     private SimulacaoResponse? resultado;
-    private CancellationTokenSource? loadCts;
 
+    private bool espelhoAberto, cameraPronta, cameraMultipla, cameraFrontal = true;
+    private string? erroCamera;
+    private bool iniciarCameraPendente, iniciarComparadorPendente, comparadorFalhou;
+
+    private bool salvando, salvo;
+    private string? avisoSalvar;
+
+    private bool faseEnvio = true;
+    private int indiceMensagem;
+    private bool cancelamentoManual;
+    private CancellationTokenSource? geracaoCts;
+    private static readonly TimeSpan TempoLimiteGeracao = TimeSpan.FromMinutes(4);
+
+    // Formato brasileiro fixo (1.890,00), sem depender da cultura/ICU do servidor.
+    private static readonly System.Globalization.NumberFormatInfo PtBr = new() { NumberDecimalSeparator = ",", NumberGroupSeparator = "." };
+
+    private DotNetObjectReference<Captura>? selfRef;
+
+    // ── Catálogo de opções (mesmos valores do original) ──────────────────────
     private readonly List<string> comprimentos = new() { "30 cm", "40 cm", "45 cm", "55 cm", "65 cm", "75 cm", "85 cm" };
     private readonly List<string> cores = new() { "Preto", "Castanho Escuro", "Castanho Claro", "Loiro Escuro", "Loiro Médio", "Loiro Claro", "Loiro Platinado", "Ruivo", "Grisalho" };
-    private readonly List<string> tipos = new() { "Liso", "Ondulado", "Cacheado", "Crespo" };
+    // O backend também aceita "Crespo"; a especificação desta tela pede três opções.
+    private readonly List<string> tipos = new() { "Liso", "Ondulado", "Cacheado" };
     private readonly List<string> metodos = new() { "Fita Adesiva", "Queratina", "Micro Link", "Costurado" };
 
     private string comprimento = "55 cm";
@@ -285,12 +376,76 @@
     private string tipoCabelo = "Liso";
     private string metodo = "Fita Adesiva";
 
-    private static readonly string[] MensagensProcessamento =
+    private record FiltroInfo(string Id, string Nome);
+    private static readonly FiltroInfo[] Filtros =
     {
-        "Preparando sua transformação...", "Analisando o cabelo...", "Aplicando o novo visual...",
-        "Preservando o rosto e o fundo...", "Finalizando os detalhes..."
+        new("natural", "Natural"), new("soft", "Soft Beauty"), new("studio", "Studio Light"),
+        new("golden", "Golden Glow"), new("clean", "Clean Beauty"), new("portrait", "Soft Portrait")
     };
 
+    // Tons de cada cor: sombra, base e brilho. Não existem fotos de fios no catálogo
+    // (o catálogo do backend são máscaras de comprimento), então as amostras são desenhadas.
+    private static readonly Dictionary<string, (string Escuro, string Base, string Claro)> Fios = new()
+    {
+        ["Preto"] = ("#0F0B0A", "#241A17", "#4A3A34"),
+        ["Castanho Escuro"] = ("#2A170F", "#4A2C20", "#7A4A35"),
+        ["Castanho Claro"] = ("#5A3622", "#81543A", "#B27A55"),
+        ["Loiro Escuro"] = ("#7A5528", "#A47745", "#D2A56B"),
+        ["Loiro Médio"] = ("#9A7433", "#C39A5A", "#E8C88C"),
+        ["Loiro Claro"] = ("#BF9A55", "#E4C98C", "#F7E6BD"),
+        ["Loiro Platinado"] = ("#C9BFA8", "#EDE6D6", "#FBF7EC"),
+        ["Ruivo"] = ("#6E2A1A", "#A74A32", "#D9805A"),
+        ["Grisalho"] = ("#7D7C77", "#AAA9A3", "#D8D7D1")
+    };
+
+    // Estas mensagens não indicam progresso: o backend não informa etapas. Descrevem os cuidados
+    // da simulação, sem afirmar que algo já foi concluído.
+    private static readonly string[] MensagensCarregamento =
+    {
+        "Preparando sua transformação…",
+        "Cuidando do caimento natural dos fios…",
+        "Cuidando para preservar seu rosto e o fundo da foto…",
+        "Aplicando a cor e o comprimento escolhidos…",
+        "Ajustando o volume e o movimento dos cabelos…",
+        "Finalizando sua simulação de mega hair…"
+    };
+
+    public sealed class ResultadoFoto
+    {
+        public bool Ok { get; set; }
+        public string? Codigo { get; set; }
+        public int Largura { get; set; } = 2;
+        public int Altura { get; set; } = 3;
+        public string? UrlNatural { get; set; }
+        public string? UrlFiltrada { get; set; }
+        public string? Filtro { get; set; }
+        public string? FiltroNome { get; set; }
+        public string? Origem { get; set; }
+        public bool Ajustada { get; set; }
+    }
+
+    private sealed class ResultadoCamera
+    {
+        public bool Ok { get; set; }
+        public string? Codigo { get; set; }
+        public bool Multiplas { get; set; }
+        public bool Frontal { get; set; }
+    }
+
+    private sealed class ResultadoSalvar
+    {
+        public bool Ok { get; set; }
+        public string? Metodo { get; set; }
+        public string? Motivo { get; set; }
+    }
+
+    private sealed class ResultadoComparador
+    {
+        public bool Ok { get; set; }
+        public bool Desalinhado { get; set; }
+    }
+
+    // ── Ciclo de vida ────────────────────────────────────────────────────────
     protected override void OnInitialized()
     {
         if (!string.IsNullOrWhiteSpace(ComprimentoSugerido) && comprimentos.Contains(ComprimentoSugerido)) comprimento = ComprimentoSugerido;
@@ -299,128 +454,393 @@
         if (!string.IsNullOrWhiteSpace(MetodoSugerido) && metodos.Contains(MetodoSugerido)) metodo = MetodoSugerido;
     }
 
-    private static string CorHex(string nome) => nome switch
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        "Preto" => "#2B211F", "Castanho Escuro" => "#4A2C20", "Castanho Claro" => "#81543A",
-        "Loiro Escuro" => "#A47745", "Loiro Médio" => "#C39A5A", "Loiro Claro" => "#E4C98C",
-        "Loiro Platinado" => "#EDE6D6", "Ruivo" => "#A74A32", "Grisalho" => "#AAA9A3", _ => "#81543A"
-    };
+        if (firstRender)
+        {
+            selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("megaHairEspelho.registrarArquivo", "mh-arquivo", selfRef);
+        }
 
-    private static string IconeMetodo(string nome) => nome switch
-    {
-        "Fita Adesiva" => "▤", "Queratina" => "✦", "Micro Link" => "◌", _ => "≋"
-    };
+        if (iniciarCameraPendente)
+        {
+            iniciarCameraPendente = false;
+            await IniciarCameraAsync();
+        }
 
-    private static string DescricaoMetodo(string nome) => nome switch
+        if (iniciarComparadorPendente)
+        {
+            iniciarComparadorPendente = false;
+            var r = await JS.InvokeAsync<ResultadoComparador>("megaHairResultado.iniciarComparador", "mh-comp-wrap");
+            if (!r.Ok) { comparadorFalhou = true; StateHasChanged(); }
+        }
+    }
+
+    // ── Espelho Virtual ──────────────────────────────────────────────────────
+    private Task AbrirEspelhoAsync()
     {
-        "Fita Adesiva" => "Leve e discreto", "Queratina" => "Acabamento preciso", "Micro Link" => "Flexível e natural", _ => "Clássico e versátil"
-    };
+        erro = null; erroCamera = null; cameraPronta = false;
+        espelhoAberto = true;
+        iniciarCameraPendente = true; // inicia depois de o <canvas> existir no DOM
+        return Task.CompletedTask;
+    }
 
     private async Task IniciarCameraAsync()
     {
-        erro = null;
-        var ok = await JS.InvokeAsync<bool>("megaHairCamera.iniciar", "videoPreview", usarCameraFrontal);
-        if (!ok) { erro = "Não foi possível acessar a câmera. Verifique a permissão e se o site está em HTTPS."; return; }
-        cameraAtiva = true;
-    }
-
-    private async Task AlternarCameraAsync() { usarCameraFrontal = !usarCameraFrontal; await JS.InvokeVoidAsync("megaHairCamera.parar"); await IniciarCameraAsync(); }
-
-    private async Task CapturarFotoAsync()
-    {
-        var base64 = await JS.InvokeAsync<string?>("megaHairCamera.capturar", "videoPreview");
-        if (base64 is null) { erro = "Não foi possível capturar a foto. Tente novamente."; return; }
-        fotoBase64 = base64; fotoMimeType = "image/png"; fotoCapturada = true; fotoServidorPath = null;
-        await JS.InvokeVoidAsync("megaHairCamera.parar"); cameraAtiva = false;
-    }
-
-    private async Task RefazerFoto()
-    {
-        fotoCapturada = false; fotoBase64 = null; fotoMimeType = "image/png"; fotoServidorPath = null; resultado = null; erro = null;
-        if (modo == ModoFoto.Camera) await IniciarCameraAsync();
-    }
-
-    private void TentarNovamenteAsync() => erro = null;
-    private void EscolherOutroEstilo() { resultado = null; erro = null; mostrarAntes = false; }
-
-    private async Task CarregarArquivoAsync(InputFileChangeEventArgs e)
-    {
-        erro = null; carregandoArquivo = true;
-        try
+        cameraPronta = false;
+        var r = await JS.InvokeAsync<ResultadoCamera>("megaHairEspelho.iniciar", "mh-preview", "mh-video", cameraFrontal);
+        if (!r.Ok)
         {
-            const long tamanhoMaximo = 10 * 1024 * 1024;
-            var arquivo = e.File;
-            if (arquivo.Size > tamanhoMaximo) { erro = "Arquivo excede 10 MB. Escolha uma foto menor."; return; }
-            using var stream = arquivo.OpenReadStream(tamanhoMaximo);
-            using var memoria = new MemoryStream();
-            await stream.CopyToAsync(memoria);
-            fotoBase64 = Convert.ToBase64String(memoria.ToArray());
-            fotoMimeType = string.IsNullOrWhiteSpace(arquivo.ContentType) ? "image/jpeg" : arquivo.ContentType;
-            fotoCapturada = true; fotoServidorPath = null; resultado = null;
+            erroCamera = string.IsNullOrWhiteSpace(r.Codigo) ? "erro" : r.Codigo;
         }
-        catch { erro = "Não foi possível carregar esse arquivo. Verifique se é uma imagem (JPG, PNG ou WEBP)."; }
-        finally { carregandoArquivo = false; }
+        else
+        {
+            erroCamera = null; cameraPronta = true; cameraMultipla = r.Multiplas;
+            await JS.InvokeVoidAsync("megaHairEspelho.ligarControles", "mh-controles");
+        }
+        StateHasChanged();
     }
 
+    private async Task TentarCameraNovamenteAsync()
+    {
+        erroCamera = null;
+        await IniciarCameraAsync();
+    }
+
+    private async Task AlternarCameraAsync()
+    {
+        cameraFrontal = !cameraFrontal;
+        await IniciarCameraAsync();
+    }
+
+    private async Task CapturarAsync()
+    {
+        if (!cameraPronta) return;
+        await JS.InvokeVoidAsync("megaHairEspelho.feedbackCaptura", "mh-palco");
+        var r = await JS.InvokeAsync<ResultadoFoto>("megaHairEspelho.capturar");
+        if (!r.Ok)
+        {
+            erro = "Não foi possível capturar a foto. Tente novamente.";
+            erroCamera = "erro";
+            return;
+        }
+        await JS.InvokeVoidAsync("megaHairEspelho.parar");
+        foto = r; fotoServidorPath = null; resultado = null;
+        espelhoAberto = false; cameraPronta = false; erro = null;
+        etapa = Etapa.Revisao;
+    }
+
+    private async Task FecharEspelhoAsync()
+    {
+        await JS.InvokeVoidAsync("megaHairEspelho.parar");
+        espelhoAberto = false; cameraPronta = false; erroCamera = null;
+    }
+
+    // Chamado pelo JavaScript quando a cliente escolhe uma foto da galeria.
+    [JSInvokable]
+    public async Task AoProcessarArquivo(ResultadoFoto r)
+    {
+        await InvokeAsync(async () =>
+        {
+            if (espelhoAberto)
+            {
+                await JS.InvokeVoidAsync("megaHairEspelho.parar");
+                espelhoAberto = false; cameraPronta = false; erroCamera = null;
+            }
+
+            if (!r.Ok)
+            {
+                erro = r.Codigo switch
+                {
+                    "formato" => "Não consegui ler essa imagem. Use uma foto em JPG, PNG ou WEBP.",
+                    "grande" => "Essa foto é muito grande. Escolha uma imagem de até 25 MB.",
+                    _ => "Não foi possível carregar essa foto. Tente outra."
+                };
+                if (etapa != Etapa.Estilo) etapa = Etapa.Foto;
+                StateHasChanged();
+                return;
+            }
+
+            foto = r; fotoServidorPath = null; resultado = null; erro = null;
+            etapa = Etapa.Revisao;
+            StateHasChanged();
+        });
+    }
+
+    private static string MensagemErroCamera(string codigo) => codigo switch
+    {
+        "permissao" => "Precisamos da sua permissão para usar a câmera. Permita o acesso à câmera nas configurações do navegador e tente novamente.",
+        "sem-camera" => "Não encontramos uma câmera neste aparelho. Você pode escolher uma foto da galeria.",
+        "em-uso" => "A câmera está sendo usada por outro aplicativo. Feche-o e tente novamente.",
+        "inseguro" => "A câmera só funciona em conexão segura (https). Você pode escolher uma foto da galeria.",
+        "sem-suporte" => "Este navegador não permite abrir a câmera. Você pode escolher uma foto da galeria.",
+        _ => "Algo deu errado ao abrir a câmera. Tente novamente ou escolha uma foto da galeria."
+    };
+
+    // ── Revisão e navegação ──────────────────────────────────────────────────
+    private void UsarFoto()
+    {
+        erro = null; passoEstilo = 0; etapa = Etapa.Estilo;
+    }
+
+    private async Task RefazerFotoAsync()
+    {
+        var eraCamera = foto?.Origem == "camera";
+        await JS.InvokeVoidAsync("megaHairEspelho.liberar");
+        foto = null; fotoServidorPath = null; resultado = null; erro = null;
+        etapa = Etapa.Foto;
+        if (eraCamera) await AbrirEspelhoAsync();
+    }
+
+    private async Task TrocarFotoAsync()
+    {
+        await JS.InvokeVoidAsync("megaHairEspelho.liberar");
+        foto = null; fotoServidorPath = null; resultado = null; erro = null;
+        etapa = Etapa.Foto;
+    }
+
+    private void Avancar() { if (passoEstilo < 2) passoEstilo++; }
+    private void Voltar() { if (passoEstilo > 0) passoEstilo--; }
+
+    private string ClassePasso(int i) => i < passoEstilo ? "mh-feito" : i == passoEstilo ? "mh-atual" : "";
+
+    // Posição (em unidades do SVG) da linha que marca o comprimento na silhueta.
+    private double OffsetComprimento()
+    {
+        var cm = int.TryParse(new string(comprimento.Where(char.IsDigit).ToArray()), out var v) ? v : 55;
+        var t = Math.Clamp((cm - 30) / 55.0, 0, 1);
+        return 78 + t * 78; // ombros → cintura
+    }
+
+    // Mesmas faixas que o backend usa para descrever o comprimento à IA.
+    private static string AlturaDescricao(string c)
+    {
+        var cm = int.TryParse(new string(c.Where(char.IsDigit).ToArray()), out var v) ? v : 55;
+        return cm switch
+        {
+            <= 30 => "Na altura dos ombros",
+            <= 42 => "Logo acima do peito",
+            <= 50 => "Na altura do peito",
+            <= 60 => "Logo abaixo do peito",
+            <= 75 => "Perto do umbigo",
+            _ => "Na altura da cintura"
+        };
+    }
+
+    private static string SvgTextura(string tipo)
+    {
+        const string cabeca = "<svg viewBox=\"0 0 60 90\" class=\"mh-textura-svg\" aria-hidden=\"true\" focusable=\"false\">";
+        var fios = tipo switch
+        {
+            "Ondulado" =>
+                "<path d=\"M10 6 C 20 18, 0 30, 10 42 S 20 66, 10 84\"/><path d=\"M22 6 C 32 18, 12 30, 22 42 S 32 66, 22 84\"/>" +
+                "<path d=\"M34 6 C 44 18, 24 30, 34 42 S 44 66, 34 84\"/><path d=\"M46 6 C 56 18, 36 30, 46 42 S 56 66, 46 84\"/>",
+            "Cacheado" =>
+                "<path d=\"M10 6 c8 0 8 8 0 8 s-8 8 0 8 s8 8 0 8 s-8 8 0 8 s8 8 0 8 s-8 8 0 8 s8 8 0 8\"/>" +
+                "<path d=\"M24 6 c8 0 8 8 0 8 s-8 8 0 8 s8 8 0 8 s-8 8 0 8 s8 8 0 8 s-8 8 0 8 s8 8 0 8\"/>" +
+                "<path d=\"M38 6 c8 0 8 8 0 8 s-8 8 0 8 s8 8 0 8 s-8 8 0 8 s8 8 0 8 s-8 8 0 8 s8 8 0 8\"/>" +
+                "<path d=\"M52 6 c8 0 8 8 0 8 s-8 8 0 8 s8 8 0 8 s-8 8 0 8 s8 8 0 8 s-8 8 0 8 s8 8 0 8\"/>",
+            _ =>
+                "<path d=\"M10 6 C 9 30, 11 60, 10 84\"/><path d=\"M22 6 C 21 30, 23 60, 22 84\"/>" +
+                "<path d=\"M34 6 C 33 30, 35 60, 34 84\"/><path d=\"M46 6 C 45 30, 47 60, 46 84\"/>"
+        };
+        return cabeca + "<g class=\"mh-fios\">" + fios + "</g></svg>";
+    }
+
+    // ── Geração ──────────────────────────────────────────────────────────────
     private async Task GerarSimulacaoAsync(bool forcarNova)
     {
-        if (fotoBase64 is null || gerando) return;
-        loadCts?.Cancel(); loadCts = new CancellationTokenSource(); var ctLoad = loadCts.Token; _ = CiclarMensagensAsync(ctLoad);
+        if (foto is null || etapa == Etapa.Gerando) return;
+
+        geracaoCts?.Cancel();
+        geracaoCts = new CancellationTokenSource();
+        var cts = geracaoCts;
+        cts.CancelAfter(TempoLimiteGeracao);
+        var ct = cts.Token;
+
+        erro = null; resultado = null; comparadorFalhou = false; salvo = false; avisoSalvar = null;
+        faseEnvio = string.IsNullOrWhiteSpace(fotoServidorPath);
+        indiceMensagem = 0;
+        cancelamentoManual = false;
+        etapa = Etapa.Gerando;
+        StateHasChanged();
+        _ = CiclarMensagensAsync(ct);
+
         try
         {
-            gerando = true; erro = null; resultado = null; mostrarAntes = false; StateHasChanged();
             if (string.IsNullOrWhiteSpace(fotoServidorPath))
             {
-                var bytes = Convert.FromBase64String(fotoBase64);
-                fotoServidorPath = await Api.UploadFotoAsync(bytes, $"captura_{Guid.NewGuid():N}.png", ctLoad);
+                // Sempre a foto NATURAL (sem efeitos): preserva a cor real do cabelo para a IA.
+                var bytes = await JS.InvokeAsync<byte[]?>("megaHairEspelho.obterBytes", ct);
+                if (bytes is null || bytes.Length == 0)
+                    throw new InvalidOperationException("Não encontrei a foto. Escolha ou tire a foto novamente.");
+                fotoServidorPath = await Api.UploadFotoAsync(bytes, $"foto_{Guid.NewGuid():N}.jpg", ct);
             }
+
+            faseEnvio = false;
+            await InvokeAsync(StateHasChanged);
+
             var request = new CriarSimulacaoRequest
             {
-                FotoOriginalPath = fotoServidorPath, Comprimento = comprimento, Cor = cor, TipoCabelo = tipoCabelo,
-                MetodoMegaHair = metodo, Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.OpenAI,
-                ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null, ForcarNovaGeracao = forcarNova
+                FotoOriginalPath = fotoServidorPath,
+                Comprimento = comprimento,
+                Cor = cor,
+                TipoCabelo = tipoCabelo,
+                MetodoMegaHair = metodo,
+                Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.OpenAI,
+                ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null,
+                ForcarNovaGeracao = forcarNova
             };
-            resultado = await Api.CriarSimulacaoAsync(request, ctLoad);
+            // O ApiClient não repassa o CancellationToken ao HttpClient; WaitAsync garante que
+            // "Cancelar" e o tempo limite realmente devolvam a tela à cliente.
+            resultado = await Api.CriarSimulacaoAsync(request, ct).WaitAsync(ct);
+
+            if (resultado is null || string.IsNullOrWhiteSpace(resultado.FotoResultadoUrl))
+                throw new InvalidOperationException("A simulação não retornou imagem.");
+
+            etapa = Etapa.Resultado;
+            iniciarComparadorPendente = true;
         }
-        catch (OperationCanceledException) when (ctLoad.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
-            erro = "A geração foi cancelada ou excedeu o tempo máximo. Confirme se a API está rodando e se OpenAI:ApiToken está configurado.";
+            // Cancelada pela cliente, ou estourou o tempo limite.
+            etapa = Etapa.Estilo; passoEstilo = 2;
+            erro = cancelamentoManual ? null : "A simulação demorou mais do que o esperado. Vamos tentar de novo?";
         }
-        catch (Exception ex) { erro = ApiClient.MensagemAmigavel(ex, "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?", Api.BaseAddress); }
-        finally { loadCts.Cancel(); gerando = false; }
+        catch (Exception ex)
+        {
+            etapa = Etapa.Estilo; passoEstilo = 2;
+            erro = MensagemDeErro(ex);
+        }
+        finally
+        {
+            cts.Cancel(); // encerra o ciclo de mensagens
+        }
     }
 
-    private Task CancelarGeracaoAsync()
+    private const string MensagemPadrao = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?";
+
+    // Traduz falhas técnicas em mensagens para a cliente: nunca mostra JSON, endereço interno ou stack.
+    private string MensagemDeErro(Exception ex)
     {
-        loadCts?.Cancel();
-        return Task.CompletedTask;
+        if (ex is HttpRequestException http)
+        {
+            var codigo = http.StatusCode is null ? 0 : (int)http.StatusCode.Value;
+            if (codigo is 401 or 403 or 405) return ApiClient.MensagemAmigavel(ex, MensagemPadrao, Api.BaseAddress);
+            if (codigo >= 400 && codigo < 500) return ExtrairMensagemDaApi(http.Message) ?? MensagemPadrao;
+            if (codigo >= 500) return "Tivemos um problema para gerar sua simulação. Tente novamente em instantes.";
+            return "Não conseguimos nos conectar ao servidor. Verifique sua internet e tente novamente.";
+        }
+        if (ex is InvalidOperationException && !string.IsNullOrWhiteSpace(ex.Message)) return ex.Message;
+        return MensagemPadrao;
+    }
+
+    // O ApiClient lança "API 422: {\"erro\":\"...\"}". Aqui devolvemos só o texto do campo de erro.
+    private static string? ExtrairMensagemDaApi(string texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return null;
+        var corpo = texto.StartsWith("API ", StringComparison.Ordinal) && texto.IndexOf(": ", StringComparison.Ordinal) is var i and > 0
+            ? texto[(i + 2)..].Trim()
+            : texto.Trim();
+        if (corpo.StartsWith('{'))
+        {
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(corpo);
+                foreach (var nome in new[] { "erro", "mensagem", "message", "detail", "title" })
+                {
+                    foreach (var prop in doc.RootElement.EnumerateObject())
+                    {
+                        if (string.Equals(prop.Name, nome, StringComparison.OrdinalIgnoreCase)
+                            && prop.Value.ValueKind == System.Text.Json.JsonValueKind.String
+                            && !string.IsNullOrWhiteSpace(prop.Value.GetString()))
+                            return prop.Value.GetString();
+                    }
+                }
+            }
+            catch (System.Text.Json.JsonException) { }
+            return null;
+        }
+        return corpo.Length is > 0 and <= 220 && !corpo.Contains('<') ? corpo : null;
+    }
+
+    private void CancelarGeracao()
+    {
+        cancelamentoManual = true;
+        geracaoCts?.Cancel();
     }
 
     private async Task CiclarMensagensAsync(CancellationToken ct)
     {
-        var i = 0;
         try
         {
             while (!ct.IsCancellationRequested)
             {
-                mensagemLoading = MensagensProcessamento[i % MensagensProcessamento.Length];
-                await InvokeAsync(StateHasChanged); await Task.Delay(3200, ct); i++;
+                await Task.Delay(4200, ct);
+                indiceMensagem++;
+                await InvokeAsync(StateHasChanged);
             }
         }
-        catch (TaskCanceledException) { }
+        catch (OperationCanceledException) { }
     }
 
-    private async Task CompartilharAsync()
+    // ── Resultado ────────────────────────────────────────────────────────────
+    private async Task SalvarAsync()
     {
-        if (resultado is null) return;
-        try { await JS.InvokeVoidAsync("megaHairShare.compartilhar", resultado.FotoResultadoUrl); }
-        catch { erro = "Não foi possível compartilhar agora. Use Baixar e envie pelo WhatsApp."; }
+        if (resultado is null || salvando) return;
+        salvando = true; salvo = false; avisoSalvar = null;
+        StateHasChanged();
+        try
+        {
+            var r = await JS.InvokeAsync<ResultadoSalvar>("megaHairResultado.salvar", UrlParaSalvar(), "minha-transformacao-tati-megahair.png");
+            if (r.Ok) { salvo = true; }
+            else if (r.Motivo == "cancelado") { /* a cliente fechou a folha de compartilhar */ }
+            else avisoSalvar = "Não consegui salvar direto. Abra a imagem e segure o dedo sobre ela (ou clique com o botão direito) para salvar.";
+        }
+        catch { avisoSalvar = "Não consegui salvar agora. Abra a imagem e segure o dedo sobre ela para salvar."; }
+        finally { salvando = false; }
+    }
+
+    // Baixa pela própria origem do site (/baixar/resultado/...), sem depender de CORS na API pública.
+    private string UrlParaSalvar()
+    {
+        var url = resultado?.FotoResultadoUrl;
+        if (string.IsNullOrWhiteSpace(url)) return string.Empty;
+        try
+        {
+            var caminho = Uri.TryCreate(url, UriKind.Absolute, out var abs) ? abs.AbsolutePath : url;
+            var nome = System.IO.Path.GetFileName(caminho);
+            if (!string.IsNullOrWhiteSpace(nome)) return "/baixar/resultado/" + Uri.EscapeDataString(nome);
+        }
+        catch { /* usa a URL original */ }
+        return url;
+    }
+
+    private async Task ExperimentarOutroVisual()
+    {
+        await JS.InvokeVoidAsync("megaHairResultado.destruirComparador");
+        resultado = null; erro = null; salvo = false; avisoSalvar = null; comparadorFalhou = false;
+        passoEstilo = 0; etapa = Etapa.Estilo;
+    }
+
+    private async Task NovaSimulacaoAsync()
+    {
+        await JS.InvokeVoidAsync("megaHairResultado.destruirComparador");
+        await JS.InvokeVoidAsync("megaHairEspelho.liberar");
+        foto = null; fotoServidorPath = null; resultado = null; erro = null; salvo = false; avisoSalvar = null; comparadorFalhou = false;
+        passoEstilo = 0; etapa = Etapa.Foto;
     }
 
     public async ValueTask DisposeAsync()
     {
-        loadCts?.Cancel(); loadCts?.Dispose();
-        try { await JS.InvokeVoidAsync("megaHairCamera.parar"); } catch { }
+        geracaoCts?.Cancel();
+        geracaoCts?.Dispose();
+        try
+        {
+            await JS.InvokeVoidAsync("megaHairResultado.destruirComparador");
+            await JS.InvokeVoidAsync("megaHairEspelho.liberar");
+        }
+        catch { /* circuito já encerrado */ }
+        selfRef?.Dispose();
     }
 }
-

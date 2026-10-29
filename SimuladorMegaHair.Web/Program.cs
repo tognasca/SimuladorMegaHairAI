@@ -36,7 +36,7 @@ builder.Services.AddSignalR(options =>
 // MESMO endereço, para compartilhar clientes/catálogo/histórico.
 builder.Services.AddHttpClient<ApiClient>(client =>
 {
-    var baseUrl = builder.Configuration["Api:BaseUrl"] ?? "http://localhost:5185/";
+    var baseUrl = builder.Configuration["Api:BaseUrl"] ?? "https://api-simulador.tatimegahair.com.br/";
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromMinutes(10); // simulações de IA demoram
 });

@@ -141,7 +141,7 @@ if (string.IsNullOrWhiteSpace(connectionString))
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlServer(connectionString);
+    options.UseNpgsql(connectionString);
 });
 
 // ==========================================================
@@ -363,10 +363,10 @@ using (var scope = app.Services.CreateScope())
         app.Logger.LogInformation(
             "Pipeline OPENAI selecionado.");
 
-        if (string.IsNullOrWhiteSpace(openAiOptions.ApiKey))
+        if (string.IsNullOrWhiteSpace(openAiOptions.ApiToken))
         {
             app.Logger.LogWarning(
-                "OpenAI:ApiKey não configurado. " +
+                "OpenAI:ApiToken não configurado. " +
                 "A geração de imagens não funcionará.");
         }
     }
@@ -432,6 +432,21 @@ if (app.Environment.IsDevelopment())
 // PIPELINE HTTP
 // ==========================================================
 
+// URLs absolutas devolvidas pela API (imagens, resultados) usam o endereco PUBLICO
+// quando PublicBaseUrl esta configurado (necessario atras do Docker/Cloudflare).
+var publicBaseUrl = builder.Configuration["PublicBaseUrl"];
+if (Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var publicUri))
+{
+    app.Use((context, next) =>
+    {
+        context.Request.Scheme = publicUri.Scheme;
+        context.Request.Host = publicUri.IsDefaultPort
+            ? new HostString(publicUri.Host)
+            : new HostString(publicUri.Host, publicUri.Port);
+        return next();
+    });
+}
+
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
@@ -471,7 +486,7 @@ using (var scope = app.Services.CreateScope())
             ex,
             "Falha ao aplicar migrations. " +
             "Verifique a compatibilidade das migrations " +
-            "com o SQL Server.");
+            "com o PostgreSQL.");
 
         throw;
     }

@@ -1,4 +1,4 @@
-@SimuladorMegaHair.Api_HostAddress = http://localhost:5185
+@SimuladorMegaHair.Api_HostAddress = https://api-simulador.tatimegahair.com.br/
 
 GET {{SimuladorMegaHair.Api_HostAddress}}/weatherforecast/
 Accept: application/json

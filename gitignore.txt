@@ -1,0 +1,10 @@
+# Segredos e configuração local
+.env
+.env.*
+!.env.example
+
+# Build / IDE
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user

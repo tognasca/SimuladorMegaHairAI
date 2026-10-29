@@ -21,7 +21,7 @@ public static class ImagePreparer
         // Faz crop central quadrado e redimensiona
         image.Mutate(ctx =>
         {
-            ctx.Resize(new ResizeOptions
+            ctx.AutoOrient().Resize(new ResizeOptions
             {
                 Size = new Size(tamanho, tamanho),
                 Mode = ResizeMode.Max,

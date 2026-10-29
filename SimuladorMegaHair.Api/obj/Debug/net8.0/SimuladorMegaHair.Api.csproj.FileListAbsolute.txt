@@ -5,10 +5,3 @@ C:\Users\adema\Downloads\SimuladorMegaHairAI-openai-pronto\SimuladorMegaHair.Api
 C:\Users\adema\Downloads\SimuladorMegaHairAI-openai-pronto\SimuladorMegaHair.Api\obj\Debug\net8.0\SimuladorMegaHair.Api.csproj.CoreCompileInputs.cache
 C:\Users\adema\Downloads\SimuladorMegaHairAI-openai-pronto\SimuladorMegaHair.Api\obj\Debug\net8.0\SimuladorMegaHair.Api.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\adema\Downloads\SimuladorMegaHairAI-openai-pronto\SimuladorMegaHair.Api\obj\Debug\net8.0\SimuladorMegaHair.Api.MvcApplicationPartsAssemblyInfo.cache
-C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Api\obj\Debug\net8.0\SimuladorMegaHair.Api.csproj.AssemblyReference.cache
-C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Api\obj\Debug\net8.0\SimuladorMegaHair.Api.GeneratedMSBuildEditorConfig.editorconfig
-C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Api\obj\Debug\net8.0\SimuladorMegaHair.Api.AssemblyInfoInputs.cache
-C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Api\obj\Debug\net8.0\SimuladorMegaHair.Api.AssemblyInfo.cs
-C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Api\obj\Debug\net8.0\SimuladorMegaHair.Api.csproj.CoreCompileInputs.cache
-C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Api\obj\Debug\net8.0\SimuladorMegaHair.Api.MvcApplicationPartsAssemblyInfo.cs
-C:\git\SimuladorMegaHairAI\SimuladorMegaHair.Api\obj\Debug\net8.0\SimuladorMegaHair.Api.MvcApplicationPartsAssemblyInfo.cache

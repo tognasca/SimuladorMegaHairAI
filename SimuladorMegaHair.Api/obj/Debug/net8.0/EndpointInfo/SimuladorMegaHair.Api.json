@@ -1229,7 +1229,7 @@
     "securitySchemes": {
       "Bearer": {
         "type": "http",
-        "description": "Informe somente o token JWT. O Swagger adicionará automaticamente o prefixo Bearer.",
+        "description": "Informe somente o token JWT. O Swagger adicionará Bearer automaticamente.",
         "scheme": "bearer",
         "bearerFormat": "JWT"
       }

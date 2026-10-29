@@ -108,7 +108,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
 
             // 2. Rosto (obrigatório)
             var rosto = DetectarRostoSeguro(imagemPrep)
-                ?? throw new InvalidOperationException(
+                ?? throw new FotoInvalidaException(
                     "Não encontrei um rosto na foto. Envie uma foto frontal e bem iluminada.");
 
             bool foraDoQuadro = false;
@@ -128,7 +128,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
                 float fracRosto = fh <= 1.5f ? fh : fh / infoPrep.Height;
                 _logger.LogInformation("[FOTO] rosto ocupa {P:P1} da altura da imagem", fracRosto);
                 if (fracRosto < 0.11f)
-                    throw new InvalidOperationException(
+                    throw new FotoInvalidaException(
                         "O rosto está muito pequeno na foto. Aproxime-se do celular e enquadre da cabeça até a linha indicada no guia de foto " +
                         "(rosto ocupando pelo menos 1/8 da altura da foto).");
 
@@ -447,7 +447,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
             }
             catch (InvalidOperationException ex) when (IsNsfw(ex))
             {
-                throw new InvalidOperationException("A foto foi bloqueada pelo filtro de segurança do provedor. Tente outra foto.", ex);
+                throw new FotoInvalidaException("A foto foi bloqueada pelo filtro de segurança do provedor. Tente outra foto.", ex);
             }
 
             geradaPath = await BaixarParaTempAsync(kontextUrl, tempFolder, ct);
@@ -587,7 +587,7 @@ public sealed class SimulacaoPipelineService : IImageSimulationService
         try
         {
             var rosto = DetectarRostoSeguro(imagemPrep)
-                ?? throw new InvalidOperationException("Não encontrei um rosto na foto.");
+                ?? throw new FotoInvalidaException("Não encontrei um rosto na foto.");
             var info = Image.Identify(imagemPrep);
             float fx = (float)rosto.X, fy = (float)rosto.Y, fw = (float)rosto.Width, fh = (float)rosto.Height;
             if (fw <= 1.5f && fh <= 1.5f) { fx *= info.Width; fw *= info.Width; fy *= info.Height; fh *= info.Height; }

@@ -260,7 +260,7 @@ public class ApiClient
     internal static string MensagemAmigavel(Exception ex, string fallback, Uri? apiBaseAddress = null)
     {
         if (ex is TaskCanceledException)
-            return $"A API não respondeu a tempo em {apiBaseAddress?.ToString().TrimEnd('/') ?? "http://localhost:5185"}. Confirme se ela está em execução e tente novamente.";
+            return $"A API não respondeu a tempo em {apiBaseAddress?.ToString().TrimEnd('/') ?? "https://api-simulador.tatimegahair.com.br/"}. Confirme se ela está em execução e tente novamente.";
 
         if (ex is HttpRequestException httpEx)
         {
@@ -270,7 +270,10 @@ public class ApiClient
             if (httpEx.StatusCode == HttpStatusCode.MethodNotAllowed)
                 return "O upload precisa ser enviado pelo simulador usando POST. Não abra o endpoint de upload diretamente no navegador.";
 
-            return $"Não foi possível conectar à API em {apiBaseAddress?.ToString().TrimEnd('/') ?? "http://localhost:5185"}. Inicie o SimuladorMegaHair.Api e tente novamente.";
+            if (httpEx.StatusCode is not null && (int)httpEx.StatusCode.Value >= 400 && (int)httpEx.StatusCode.Value < 500)
+                return httpEx.Message;
+
+            return $"Não foi possível conectar à API em {apiBaseAddress?.ToString().TrimEnd('/') ?? "https://api-simulador.tatimegahair.com.br/"}. Inicie o SimuladorMegaHair.Api e tente novamente.";
         }
 
         var mensagem = ex.Message?.Trim();

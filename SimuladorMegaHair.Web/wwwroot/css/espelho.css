@@ -1,0 +1,362 @@
+/* ═══════════════════════════════════════════════════════════════════
+   EXPERIÊNCIA PREMIUM — tela "Sua transformação" (/captura)
+   Mobile-first. Tudo com prefixo .mh- para não competir com as camadas
+   antigas de app.css. Paleta: terracota, bege, branco e dourado.
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+    --mh-terracota: #B4705A;
+    --mh-terracota-escuro: #8E4F3C;
+    --mh-bege: #F6EEE4;
+    --mh-bege-2: #EBDFD0;
+    --mh-branco: #FFFDFA;
+    --mh-ouro: #B8935A;
+    --mh-ouro-claro: #E3C48A;
+    --mh-tinta: #3A2A24;
+    --mh-suave: #7D695E;
+    --mh-linha: #E4D6C4;
+    --mh-erro: #A4483B;
+    --mh-sombra: 0 10px 30px rgba(120, 78, 52, .16);
+}
+
+html.mh-sem-rolagem, html.mh-sem-rolagem body { overflow: hidden; }
+
+.mh-app {
+    max-width: 560px;
+    margin: 0 auto;
+    color: var(--mh-tinta);
+    font-family: "Outfit", -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.mh-app button, .mh-app label { -webkit-tap-highlight-color: transparent; }
+.mh-oculto-visual { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+.mh-oculto { display: none !important; }
+.mh-invisivel { visibility: hidden; }
+
+/* ─── Telas ─────────────────────────────────────────────────────── */
+.mh-tela {
+    background: linear-gradient(180deg, var(--mh-branco) 0%, var(--mh-bege) 100%);
+    border: 1px solid var(--mh-linha);
+    border-radius: 26px;
+    padding: 22px 18px 24px;
+    box-shadow: var(--mh-sombra);
+    animation: mh-entrada .45s cubic-bezier(.2, .7, .2, 1) both;
+}
+
+@keyframes mh-entrada { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+.mh-titulo {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 600;
+    font-size: 34px;
+    line-height: 1.08;
+    margin: 14px 0 6px;
+    text-align: center;
+    color: var(--mh-tinta);
+    letter-spacing: -.01em;
+}
+.mh-titulo-menor { font-size: 27px; }
+.mh-app h1:focus, .mh-app h2:focus, .mh-titulo:focus { outline: none; } /* o Blazor foca o <h1> ao navegar */
+.mh-subtitulo { text-align: center; margin: 0 auto 4px; max-width: 30ch; color: var(--mh-suave); font-size: 16px; line-height: 1.45; }
+.mh-cliente { text-align: center; margin: 4px 0 0; font-size: 13px; color: var(--mh-suave); }
+.mh-nota { text-align: center; margin: 12px auto 0; max-width: 36ch; font-size: 13px; line-height: 1.5; color: var(--mh-suave); }
+.mh-nota a { color: var(--mh-terracota-escuro); font-weight: 600; text-decoration: underline; }
+
+/* Indicador de etapas */
+.mh-passos { display: flex; justify-content: space-between; gap: 4px; list-style: none; margin: 0 0 6px; padding: 0; }
+.mh-passos li {
+    flex: 0 1 auto; white-space: nowrap; text-align: center; font-size: 9px; letter-spacing: .05em; text-transform: uppercase;
+    color: #B9A99A; padding-bottom: 7px; border-bottom: 2px solid var(--mh-linha); transition: color .3s, border-color .3s;
+}
+.mh-passos li.mh-feito { color: var(--mh-terracota); border-color: var(--mh-terracota); }
+.mh-passos li.mh-atual { color: var(--mh-tinta); border-color: var(--mh-ouro); font-weight: 600; }
+
+/* ─── Botões ────────────────────────────────────────────────────── */
+.mh-acoes-principais { display: grid; gap: 12px; margin-top: 22px; }
+.mh-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 56px; padding: 0 22px; border-radius: 999px; border: 1.5px solid transparent;
+    font-family: inherit; font-size: 15px; font-weight: 600; letter-spacing: .05em; text-align: center;
+    cursor: pointer; user-select: none; text-decoration: none;
+    transition: transform .15s ease, box-shadow .25s ease, background .25s ease, opacity .2s;
+}
+.mh-btn:active { transform: scale(.975); }
+.mh-btn:focus-visible, .mh-chip:focus-visible, .mh-cor:focus-visible, .mh-textura:focus-visible,
+.mh-filtro:focus-visible, .mh-icone:focus-visible, .mh-obturador:focus-visible, .mh-link:focus-visible {
+    outline: 3px solid var(--mh-ouro); outline-offset: 2px;
+}
+.mh-btn[disabled] { opacity: .55; cursor: default; }
+.mh-btn-primario {
+    background: linear-gradient(135deg, var(--mh-terracota) 0%, var(--mh-terracota-escuro) 100%);
+    color: #fff; box-shadow: 0 10px 22px rgba(142, 79, 60, .32), inset 0 0 0 1px rgba(227, 196, 138, .55);
+}
+.mh-btn-primario.mh-ok { background: linear-gradient(135deg, #5F8A63, #46704B); }
+.mh-btn-secundario { background: var(--mh-branco); color: var(--mh-terracota-escuro); border-color: var(--mh-ouro); }
+.mh-btn-voltar { flex: 0 0 56px; padding: 0; font-size: 22px; }
+
+.mh-link {
+    background: none; border: 0; padding: 6px 4px; font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--mh-terracota-escuro); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.mh-link-centro { display: block; margin: 14px auto 0; }
+
+.mh-alerta {
+    margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; font-size: 14px; line-height: 1.45;
+    background: #FBEDE8; border: 1px solid #E8C2B6; color: var(--mh-erro);
+}
+
+/* ─── 1. Sua foto ───────────────────────────────────────────────── */
+.mh-moldura {
+    width: min(58%, 230px); margin: 22px auto 4px; aspect-ratio: 2 / 3; border-radius: 120px 120px 22px 22px;
+    background: radial-gradient(circle at 50% 28%, #FFFFFF 0%, var(--mh-bege-2) 100%);
+    border: 1.5px solid var(--mh-ouro-claro); box-shadow: inset 0 0 0 6px rgba(255, 253, 250, .8), var(--mh-sombra);
+    overflow: hidden; position: relative;
+}
+.mh-moldura svg { width: 100%; height: 100%; display: block; }
+.mh-moldura-rosto, .mh-moldura-ombros { fill: rgba(180, 112, 90, .12); stroke: var(--mh-terracota); stroke-width: 1.6; stroke-dasharray: 4 4; }
+.mh-moldura-fios { fill: none; stroke: var(--mh-ouro); stroke-width: 2.2; stroke-linecap: round; opacity: .75; }
+.mh-moldura-fios-2 { stroke: var(--mh-ouro-claro); stroke-width: 1.4; opacity: .9; }
+.mh-brilho path { fill: var(--mh-ouro); animation: mh-brilhar 2.8s ease-in-out infinite; transform-origin: 164px 54px; }
+@keyframes mh-brilhar { 0%, 100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.1); } }
+
+/* ─── Revisão ───────────────────────────────────────────────────── */
+.mh-revisao-foto {
+    position: relative; width: min(100%, calc(62dvh * var(--ar, .6667))); aspect-ratio: var(--ar, .6667);
+    margin: 14px auto 0; border-radius: 20px; overflow: hidden; background: var(--mh-bege-2); box-shadow: var(--mh-sombra);
+}
+.mh-revisao-foto img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.mh-selo {
+    position: absolute; left: 10px; top: 10px; padding: 5px 11px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    letter-spacing: .06em; color: #fff; background: rgba(58, 42, 36, .72); backdrop-filter: blur(6px);
+}
+
+/* ─── Escolhas ──────────────────────────────────────────────────── */
+.mh-resumo { display: flex; align-items: center; gap: 12px; margin: 10px 0 4px; }
+.mh-resumo-foto { width: 44px; height: 66px; border-radius: 10px; object-fit: cover; border: 1.5px solid var(--mh-ouro-claro); }
+.mh-resumo-texto { display: flex; flex-direction: column; align-items: flex-start; font-size: 13px; color: var(--mh-suave); }
+
+.mh-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; justify-content: center; }
+.mh-chips-rolagem { display: grid; grid-template-columns: repeat(4, 1fr); }
+.mh-chip {
+    min-height: 52px; padding: 0 10px; border-radius: 16px; border: 1.5px solid var(--mh-linha); background: var(--mh-branco);
+    font: inherit; font-size: 16px; font-weight: 600; color: var(--mh-tinta); cursor: pointer;
+    transition: transform .2s cubic-bezier(.3, 1.6, .5, 1), background .2s, color .2s, border-color .2s, box-shadow .2s;
+}
+.mh-chip-pequeno { min-height: 42px; font-size: 13px; padding: 0 14px; border-radius: 999px; }
+.mh-chip.mh-sel, .mh-cor.mh-sel, .mh-textura.mh-sel {
+    border-color: var(--mh-ouro); box-shadow: 0 0 0 3px rgba(184, 147, 90, .28), 0 8px 18px rgba(142, 79, 60, .16);
+}
+.mh-chip.mh-sel { background: linear-gradient(135deg, var(--mh-terracota), var(--mh-terracota-escuro)); color: #fff; transform: scale(1.05); }
+
+.mh-comprimento-visual { display: flex; align-items: center; gap: 18px; justify-content: center; margin: 12px 0 0; }
+.mh-comprimento-visual svg { width: 112px; height: auto; overflow: visible; }
+.mh-sil { fill: var(--mh-bege-2); stroke: var(--mh-linha); stroke-width: 1.5; }
+.mh-regua { transition: transform .45s cubic-bezier(.3, 1, .4, 1); }
+.mh-regua line { stroke: var(--mh-terracota); stroke-width: 2.4; stroke-dasharray: 5 3; }
+.mh-regua circle { fill: var(--mh-ouro); stroke: #fff; stroke-width: 2; }
+.mh-comprimento-info { display: flex; flex-direction: column; gap: 2px; }
+.mh-comprimento-info strong { font-family: "Cormorant Garamond", Georgia, serif; font-size: 40px; line-height: 1; color: var(--mh-terracota-escuro); }
+.mh-comprimento-info span { font-size: 14px; color: var(--mh-tinta); }
+.mh-comprimento-info small { font-size: 11px; color: var(--mh-suave); }
+
+.mh-cores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+.mh-cor {
+    position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 7px; padding: 8px 8px 10px;
+    background: var(--mh-branco); border: 1.5px solid var(--mh-linha); border-radius: 18px; cursor: pointer; font: inherit;
+    transition: transform .2s cubic-bezier(.3, 1.6, .5, 1), box-shadow .2s, border-color .2s;
+}
+.mh-cor.mh-sel { transform: scale(1.04); }
+.mh-cor-fios {
+    height: 84px; border-radius: 40px 40px 10px 10px;
+    background:
+        repeating-linear-gradient(97deg, rgba(255, 255, 255, .10) 0 2px, rgba(0, 0, 0, .05) 2px 5px),
+        linear-gradient(100deg, var(--fio-escuro) 0%, var(--fio-base) 34%, var(--fio-claro) 52%, var(--fio-base) 70%, var(--fio-escuro) 100%);
+    box-shadow: inset 0 -10px 14px rgba(0, 0, 0, .18);
+}
+.mh-cor-nome { font-size: 12px; font-weight: 500; text-align: center; color: var(--mh-tinta); line-height: 1.2; }
+.mh-cor.mh-sel::after {
+    content: "✓"; position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--mh-terracota);
+    animation: mh-pop .3s cubic-bezier(.3, 1.6, .5, 1);
+}
+@keyframes mh-pop { from { transform: scale(0); } to { transform: scale(1); } }
+
+.mh-texturas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+.mh-textura {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 6px 12px; background: var(--mh-branco);
+    border: 1.5px solid var(--mh-linha); border-radius: 18px; cursor: pointer; font: inherit; font-size: 14px; font-weight: 600; color: var(--mh-tinta);
+    transition: transform .2s cubic-bezier(.3, 1.6, .5, 1), box-shadow .2s, border-color .2s;
+}
+.mh-textura.mh-sel { transform: scale(1.04); color: var(--mh-terracota-escuro); }
+.mh-textura-svg { width: 62px; height: 92px; }
+.mh-fios path { fill: none; stroke: var(--mh-terracota); stroke-width: 3.2; stroke-linecap: round; }
+.mh-textura.mh-sel .mh-fios path { stroke: var(--mh-ouro); }
+
+.mh-metodo { margin-top: 20px; text-align: center; }
+.mh-metodo-titulo { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--mh-suave); }
+
+.mh-rodape-fixo {
+    position: sticky; bottom: 0; z-index: 5; display: flex; gap: 10px; margin: 22px -18px -24px; padding: 14px 18px calc(16px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(246, 238, 228, 0), var(--mh-bege) 34%); border-radius: 0 0 26px 26px;
+}
+.mh-rodape-fixo .mh-btn-primario { flex: 1; font-size: 14px; letter-spacing: .03em; white-space: nowrap; padding: 0 10px; }
+
+/* ─── Carregando ────────────────────────────────────────────────── */
+.mh-carregando {
+    position: fixed; inset: 0; z-index: 2500; display: grid; place-items: center; padding: 24px; overflow: hidden;
+    background: linear-gradient(160deg, var(--mh-branco), var(--mh-bege-2)); animation: mh-entrada .4s ease both;
+}
+.mh-carregando-fundo { position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(26px) saturate(1.1); opacity: .35; transform: scale(1.1); }
+.mh-carregando-miolo {
+    position: relative; width: min(100%, 420px); text-align: center; padding: 30px 22px 22px; border-radius: 28px;
+    background: rgba(255, 253, 250, .82); backdrop-filter: blur(10px); border: 1px solid var(--mh-linha); box-shadow: var(--mh-sombra);
+}
+.mh-anel {
+    width: 86px; height: 86px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; color: var(--mh-ouro);
+    background: conic-gradient(from 0deg, var(--mh-terracota), var(--mh-ouro-claro), var(--mh-ouro), var(--mh-terracota)); position: relative;
+    animation: mh-girar 2.6s linear infinite;
+}
+.mh-anel::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--mh-branco); }
+.mh-anel span { position: relative; animation: mh-girar-inverso 2.6s linear infinite; }
+@keyframes mh-girar { to { transform: rotate(360deg); } }
+@keyframes mh-girar-inverso { to { transform: rotate(-360deg); } }
+.mh-fase { margin: 10px 0 4px; font-weight: 600; color: var(--mh-terracota-escuro); font-size: 16px; }
+.mh-dica { min-height: 2.8em; margin: 0 0 14px; font-size: 14px; line-height: 1.4; color: var(--mh-suave); animation: mh-entrada .5s ease both; }
+.mh-barra-indeterminada { height: 6px; border-radius: 999px; background: var(--mh-linha); overflow: hidden; margin: 0 auto 12px; }
+.mh-barra-indeterminada span { display: block; height: 100%; width: 38%; border-radius: inherit; background: linear-gradient(90deg, var(--mh-terracota), var(--mh-ouro-claro)); animation: mh-correr 1.5s ease-in-out infinite; }
+@keyframes mh-correr { 0% { transform: translateX(-110%); } 100% { transform: translateX(290%); } }
+.mh-carregando small { display: block; color: var(--mh-suave); font-size: 12px; margin-bottom: 6px; }
+
+/* ─── Resultado: comparador ─────────────────────────────────────── */
+.mh-comp-wrap { margin-top: 14px; }
+.mh-comp {
+    position: relative; width: min(100%, calc(76dvh * var(--ar, .6667))); aspect-ratio: var(--ar, .6667); margin: 0 auto;
+    overflow: hidden; border-radius: 20px; background: var(--mh-bege-2); box-shadow: var(--mh-sombra);
+    touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: ew-resize;
+}
+.mh-comp.mh-zoom { cursor: grab; }
+.mh-comp-stage { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+.mh-comp-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; user-select: none; }
+.mh-comp-handle { position: absolute; top: 0; bottom: 0; left: 0; width: 0; z-index: 3; pointer-events: none; will-change: transform; }
+.mh-comp-handle::before { content: ""; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; background: #fff; box-shadow: 0 0 0 1px rgba(58, 42, 36, .18), 0 0 12px rgba(0, 0, 0, .25); }
+.mh-comp-knob {
+    position: absolute; top: 50%; left: 0; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--mh-branco); color: var(--mh-terracota-escuro); font-size: 13px; font-weight: 700; letter-spacing: -1px;
+    border: 2px solid var(--mh-ouro); box-shadow: 0 6px 16px rgba(0, 0, 0, .28);
+}
+.mh-comp-handle:focus-visible .mh-comp-knob { outline: 3px solid var(--mh-ouro); outline-offset: 3px; }
+.mh-comp-tag {
+    position: absolute; top: 10px; z-index: 4; padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: #fff; background: rgba(58, 42, 36, .62); backdrop-filter: blur(6px); pointer-events: none;
+}
+.mh-comp-tag-antes { left: 10px; }
+.mh-comp-tag-depois { right: 10px; background: rgba(142, 79, 60, .78); }
+.mh-comp-tools { position: absolute; right: 10px; bottom: 10px; z-index: 5; display: flex; gap: 6px; }
+.mh-comp-tools button {
+    width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .6); background: rgba(58, 42, 36, .62);
+    color: #fff; font-size: 18px; line-height: 1; cursor: pointer; backdrop-filter: blur(6px); display: grid; place-items: center;
+}
+.mh-comp-tools button:active { transform: scale(.92); }
+.mh-comp-legenda { margin: 10px 0 0; text-align: center; font-size: 12px; color: var(--mh-suave); }
+.mh-comp-full .mh-comp-legenda { display: none; }
+
+.mh-comp-wrap.mh-comp-full { position: fixed; inset: 0; z-index: 4000; margin: 0; display: grid; place-items: center; background: #1B1411; }
+.mh-comp-full .mh-comp { width: min(100vw, calc(100dvh * var(--ar, .6667))); max-height: 100dvh; border-radius: 0; box-shadow: none; }
+.mh-comp-full [data-acao="tela-cheia"] { font-size: 0; }
+.mh-comp-full [data-acao="tela-cheia"]::after { content: "✕"; font-size: 17px; }
+
+.mh-resultado-meta { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 16px; text-align: center; }
+.mh-resultado-meta span { font-size: 13px; color: var(--mh-suave); }
+.mh-resultado-meta strong { font-family: "Cormorant Garamond", Georgia, serif; font-size: 24px; color: var(--mh-terracota-escuro); }
+
+/* ─── Espelho Virtual (câmera) ──────────────────────────────────── */
+.mh-espelho {
+    position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; color: #fff;
+    height: 100vh; height: 100dvh; background: linear-gradient(180deg, #2B1F1A, #1E1613); animation: mh-entrada .3s ease both;
+    padding-top: env(safe-area-inset-top);
+}
+.mh-video-oculto { position: fixed; left: 0; top: 0; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
+.mh-espelho-topo { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; min-height: 56px; }
+.mh-espelho-titulo { font-family: "Cormorant Garamond", Georgia, serif; font-size: 20px; font-weight: 600; letter-spacing: .02em; color: var(--mh-ouro-claro); }
+.mh-icone {
+    width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .08);
+    color: #fff; font-size: 20px; cursor: pointer; display: grid; place-items: center;
+}
+.mh-icone[disabled] { opacity: .4; }
+
+.mh-espelho-meio { flex: 1; min-height: 0; container-type: size; display: grid; place-items: center; padding: 0 10px; }
+.mh-palco {
+    position: relative; width: min(100cqw, calc(100cqh * 0.6667)); aspect-ratio: 2 / 3; border-radius: 20px; overflow: hidden;
+    background: #3A2A24; box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+}
+.mh-preview { display: block; width: 100%; height: 100%; }
+.mh-preview.mh-espelhado { transform: scaleX(-1); }
+.mh-guia { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.mh-guia ellipse, .mh-guia path { fill: none; stroke: rgba(227, 196, 138, .92); stroke-width: 1.8; stroke-dasharray: 6 5; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px rgba(0, 0, 0, .55)); }
+.mh-palco-dicas {
+    position: absolute; left: 0; right: 0; top: 0; padding: 12px 14px 22px; text-align: center; pointer-events: none;
+    background: linear-gradient(180deg, rgba(20, 12, 9, .62), transparent);
+}
+.mh-palco-dicas span { display: block; font-size: 13px; font-weight: 500; text-shadow: 0 1px 4px rgba(0, 0, 0, .6); }
+.mh-palco-dicas small { display: block; margin-top: 2px; font-size: 11px; opacity: .85; text-shadow: 0 1px 4px rgba(0, 0, 0, .6); }
+.mh-palco.mh-flash::after { content: ""; position: absolute; inset: 0; background: #fff; animation: mh-flash .42s ease-out forwards; pointer-events: none; }
+@keyframes mh-flash { 0% { opacity: .9; } 100% { opacity: 0; } }
+
+.mh-camera-erro {
+    position: absolute; inset: 0; z-index: 6; padding: 22px; display: flex; flex-direction: column; justify-content: center; text-align: center;
+    background: rgba(30, 22, 19, .94); gap: 6px;
+}
+.mh-camera-erro strong { font-family: "Cormorant Garamond", Georgia, serif; font-size: 22px; color: var(--mh-ouro-claro); }
+.mh-camera-erro p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .92; }
+.mh-camera-erro .mh-btn { min-height: 50px; font-size: 14px; }
+.mh-camera-erro .mh-btn-secundario { background: transparent; color: #fff; border-color: rgba(227, 196, 138, .7); }
+
+.mh-espelho-base { padding: 8px 0 calc(10px + env(safe-area-inset-bottom)); }
+.mh-filtros { display: flex; gap: 10px; padding: 4px 14px 8px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.mh-filtros::-webkit-scrollbar { display: none; }
+.mh-filtro {
+    flex: 0 0 auto; scroll-snap-align: center; width: 66px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0;
+    background: none; border: 0; color: rgba(255, 255, 255, .72); font: inherit; font-size: 10px; letter-spacing: .04em; cursor: pointer;
+    transition: transform .25s cubic-bezier(.3, 1.4, .5, 1), color .25s;
+}
+.mh-miniatura { width: 56px; height: 84px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, .22); background: #3A2A24; transition: border-color .25s, box-shadow .25s; }
+.mh-filtro.mh-ativo { color: var(--mh-ouro-claro); transform: translateY(-3px); }
+.mh-filtro.mh-ativo .mh-miniatura { border-color: var(--mh-ouro-claro); box-shadow: 0 0 0 2px rgba(227, 196, 138, .35), 0 8px 18px rgba(0, 0, 0, .4); }
+.mh-intensidade { display: flex; align-items: center; gap: 10px; padding: 0 18px; font-size: 12px; transition: opacity .25s; }
+.mh-intensidade.mh-sem-efeito { opacity: .4; }
+.mh-intensidade input[type=range] { flex: 1; accent-color: var(--mh-ouro-claro); height: 28px; }
+.mh-intensidade .mh-link { color: var(--mh-ouro-claro); white-space: nowrap; }
+.mh-obturador-linha { display: flex; justify-content: center; padding-top: 8px; }
+.mh-obturador {
+    width: 78px; height: 78px; border-radius: 50%; padding: 0; background: transparent; border: 4px solid #fff; display: grid; place-items: center; cursor: pointer;
+    box-shadow: 0 0 0 3px rgba(227, 196, 138, .45); transition: transform .12s ease;
+}
+.mh-obturador span { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #fff, var(--mh-ouro-claro)); transition: transform .12s ease; }
+.mh-obturador:active:not([disabled]) span { transform: scale(.86); }
+.mh-obturador[disabled] { opacity: .4; cursor: default; }
+
+/* Telas baixas (celular na horizontal): reduz a barra de baixo */
+@media (max-height: 640px) {
+    .mh-miniatura { width: 44px; height: 66px; }
+    .mh-filtro { width: 54px; }
+    .mh-obturador { width: 64px; height: 64px; }
+    .mh-obturador span { width: 46px; height: 46px; }
+}
+
+@media (min-width: 700px) {
+    .mh-tela { padding: 30px 28px 32px; }
+    .mh-titulo { font-size: 40px; }
+    .mh-rodape-fixo { margin: 22px -28px -32px; padding: 14px 28px 18px; }
+}
+
+/* Acessibilidade: respeita "reduzir movimento" */
+@media (prefers-reduced-motion: reduce) {
+    .mh-app *, .mh-carregando *, .mh-espelho *, .mh-comp-wrap * { animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; }
+}
+
+/* ─── Correção de responsividade do shell (já existia antes deste redesenho) ───────────
+   A "camada final" de app.css fixa .sidebar em 232px e 28px de padding sem condição, o que
+   anula a barra inferior do celular (ela aparecia com 60% da largura e muito alta). */
+@media (max-width: 820px), (orientation: portrait) {
+    .sidebar { width: 100%; padding: 8px 4px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid #2A2B28; }
+}
