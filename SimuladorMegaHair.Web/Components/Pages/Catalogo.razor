@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject ApiClient Api
 @inject NavigationManager Nav
+@inject SimuladorMegaHair.Web.Services.AuthTokenStore Auth
 <PageTitle>Catálogo</PageTitle>
 
 <div style="max-width:1100px; margin:0 auto; display:flex; flex-direction:column; gap:18px;">
@@ -73,6 +74,77 @@
         </div>
     }
 
+    @if (Auth.EstaAutenticado)
+    {
+        <section style="margin-top:28px; padding-top:24px; border-top:1px solid var(--border-soft);">
+            <div style="margin-bottom:14px;">
+                <h3 style="letter-spacing:1.5px; font-size:18px; color:var(--gold); margin-bottom:4px;">MODELOS JÁ CRIADOS</h3>
+                <p style="color:var(--text-secondary); font-size:13px; margin:0;">
+                    Reabra uma simulação salva sem gerar outra imagem nem consumir créditos de IA.
+                </p>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+                <input @bind="filtroHistoricoCor" placeholder="Filtrar por cor"
+                       style="flex:1; min-width:140px; padding:10px 14px; border-radius:10px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);" />
+                <select @bind="filtroHistoricoComprimento" style="padding:10px; border-radius:10px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
+                    <option value="">Comprimento (todos)</option>
+                    @foreach (var c in comprimentos)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+                <select @bind="filtroHistoricoTipo" style="padding:10px; border-radius:10px; background:var(--input); color:var(--text-primary); border:1px solid var(--border-soft);">
+                    <option value="">Tipo (todos)</option>
+                    @foreach (var t in tipos)
+                    {
+                        <option value="@t">@t</option>
+                    }
+                </select>
+                <button class="btn-gold" @onclick="AplicarFiltrosHistorico">FILTRAR MODELOS</button>
+                <button class="btn-gold" @onclick="LimparFiltrosHistorico" style="background:transparent; color:var(--gold); border:1px solid var(--gold);">LIMPAR</button>
+            </div>
+
+            @if (carregandoHistorico)
+            {
+                <p style="text-align:center; color:var(--text-muted);">Carregando modelos salvos...</p>
+            }
+            else if (!string.IsNullOrWhiteSpace(erroHistorico))
+            {
+                <div class="card" style="color:#E06565; font-size:13px;">@erroHistorico</div>
+            }
+            else if (modelosFiltrados.Count == 0)
+            {
+                <div class="card" style="text-align:center; color:var(--text-muted);">
+                    Nenhum modelo salvo corresponde aos filtros. As novas simulações concluídas aparecerão aqui.
+                </div>
+            }
+            else
+            {
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px;">
+                    @foreach (var modelo in modelosFiltrados)
+                    {
+                        <article class="card" style="padding:0; overflow:hidden; display:flex; flex-direction:column;">
+                            <a href="@UrlImagem(modelo.FotoResultadoUrl)" target="_blank" rel="noopener noreferrer"
+                               title="Abrir imagem salva em uma nova aba">
+                                <img src="@UrlImagem(modelo.FotoResultadoUrl)" alt="Modelo de mega hair salvo"
+                                     loading="lazy" style="width:100%; aspect-ratio:1/1; object-fit:cover;" />
+                            </a>
+                            <div style="padding:12px; display:flex; flex-direction:column; gap:5px;">
+                                <div style="font-weight:700; font-size:14px;">@modelo.Cor • @modelo.Comprimento</div>
+                                <div style="font-size:12px; color:var(--text-muted);">@modelo.TipoCabelo @(string.IsNullOrWhiteSpace(modelo.MetodoMegaHair) ? "" : "• " + modelo.MetodoMegaHair)</div>
+                                <div style="font-size:11px; color:var(--text-muted);">Criado em @modelo.CriadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                <a href="@UrlImagem(modelo.FotoResultadoUrl)" target="_blank" rel="noopener noreferrer"
+                                   style="display:block; text-align:center; text-decoration:none; margin-top:6px; padding:9px; border:1px solid var(--gold); border-radius:8px; color:var(--gold); font-size:11px; font-weight:700;">
+                                    ABRIR RESULTADO SALVO
+                                </a>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    }
 </div>
 
 @code {
@@ -83,12 +155,26 @@
     private string filtroTipo = string.Empty;
     private List<CatalogoItem> itens = new();
 
+    private bool carregandoHistorico;
+    private string? erroHistorico;
+    private string filtroHistoricoCor = string.Empty;
+    private string filtroHistoricoComprimento = string.Empty;
+    private string filtroHistoricoTipo = string.Empty;
+    private List<SimuladorMegaHair.Domain.DTOs.SimulacaoResponse> modelosSalvos = new();
+    private List<SimuladorMegaHair.Domain.DTOs.SimulacaoResponse> modelosFiltrados = new();
+
     private readonly List<string> comprimentos = new() { "30 cm", "45 cm", "55 cm", "65 cm", "75 cm", "85 cm" };
     private readonly List<string> tipos = new() { "Liso", "Ondulado", "Cacheado", "Crespo" };
 
     protected override async Task OnInitializedAsync()
     {
         await CarregarAsync();
+
+        // O histórico é mostrado somente quando há sessão autenticada no salão.
+        // Não altera o catálogo público nem dispara qualquer geração de IA.
+        await Auth.RestaurarAsync();
+        if (Auth.EstaAutenticado)
+            await CarregarHistoricoAsync();
     }
 
     private async Task CarregarAsync()
@@ -111,6 +197,60 @@
         {
             carregando = false;
         }
+    }
+
+    private async Task CarregarHistoricoAsync()
+    {
+        carregandoHistorico = true;
+        erroHistorico = null;
+        try
+        {
+            modelosSalvos = await Api.GetHistoricoAsync();
+            AplicarFiltrosHistorico();
+        }
+        catch (Exception)
+        {
+            erroHistorico = "Não foi possível carregar os modelos salvos. Confirme sua sessão e tente novamente.";
+            modelosSalvos = new();
+            modelosFiltrados = new();
+        }
+        finally
+        {
+            carregandoHistorico = false;
+        }
+    }
+
+    private void AplicarFiltrosHistorico()
+    {
+        modelosFiltrados = modelosSalvos
+            .Where(m => string.IsNullOrWhiteSpace(m.FotoResultadoUrl) == false)
+            .Where(m => string.IsNullOrWhiteSpace(filtroHistoricoCor)
+                || (m.Cor?.Contains(filtroHistoricoCor, StringComparison.OrdinalIgnoreCase) ?? false))
+            .Where(m => string.IsNullOrWhiteSpace(filtroHistoricoComprimento)
+                || string.Equals(m.Comprimento, filtroHistoricoComprimento, StringComparison.OrdinalIgnoreCase))
+            .Where(m => string.IsNullOrWhiteSpace(filtroHistoricoTipo)
+                || string.Equals(m.TipoCabelo, filtroHistoricoTipo, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(m => m.CriadoEm)
+            .ToList();
+    }
+
+    private void LimparFiltrosHistorico()
+    {
+        filtroHistoricoCor = string.Empty;
+        filtroHistoricoComprimento = string.Empty;
+        filtroHistoricoTipo = string.Empty;
+        AplicarFiltrosHistorico();
+    }
+
+    private string UrlImagem(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return string.Empty;
+
+        if (Uri.TryCreate(url, UriKind.Absolute, out var absoluta))
+            return url;
+
+        return new Uri(Api.BaseAddress ?? new Uri(Nav.BaseUri), url.TrimStart('/')).ToString();
     }
 
     private void SimularEsteEstilo(CatalogoItem item)
