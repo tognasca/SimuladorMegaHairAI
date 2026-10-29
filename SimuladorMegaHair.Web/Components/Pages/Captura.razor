@@ -270,10 +270,15 @@
             <video id="mh-video" class="mh-video-oculto" playsinline muted autoplay></video>
 
             <header class="mh-espelho-topo">
-                <button type="button" class="mh-icone" @onclick="FecharEspelhoAsync" aria-label="Fechar câmera">✕</button>
-                <span class="mh-espelho-titulo">✨ Espelho Virtual</span>
-                <button type="button" class="mh-icone @(cameraMultipla ? "" : "mh-invisivel")" @onclick="AlternarCameraAsync"
-                        aria-label="Alternar câmera" disabled="@(!cameraMultipla)">⟲</button>
+                <button type="button" class="mh-icone mh-voltar-espelho" @onclick="FecharEspelhoAsync" aria-label="Voltar">‹</button>
+                <a class="mh-espelho-marca" href="/" aria-label="Tati Mega Hair início">
+                    <span>Tati <em>Mega Hair</em></span><small>SIMULADOR</small>
+                </a>
+                <div class="mh-topo-acoes">
+                    <button type="button" class="mh-icone mh-trocar-camera @(cameraMultipla ? "" : "mh-invisivel")" @onclick="AlternarCameraAsync"
+                            aria-label="Alternar câmera" disabled="@(!cameraMultipla)">⟳</button>
+                    <button type="button" class="mh-salvar-topo" @onclick="CapturarAsync" disabled="@(erroCamera is not null || !cameraPronta)">Salvar</button>
+                </div>
             </header>
 
             <div class="mh-espelho-meio">
@@ -311,8 +316,9 @@
                     @foreach (var f in Filtros)
                     {
                         <button type="button" class="mh-filtro" data-filtro="@f.Id" aria-pressed="false">
-                            <canvas class="mh-miniatura" data-miniatura="@f.Id" width="56" height="84"></canvas>
-                            <span>@f.Nome</span>
+                            <canvas class="mh-miniatura mh-miniatura-oculta" data-miniatura="@f.Id" width="56" height="84"></canvas>
+                            <span class="mh-efeito-icone" aria-hidden="true">@(f.Id switch { "natural" => "◉", "soft" => "☼", "studio" => "✧", "golden" => "♢", "clean" => "◌", "portrait" => "♡", _ => "✧" })</span>
+                            <span class="mh-efeito-nome">@f.Nome</span>
                         </button>
                     }
                 </div>
@@ -381,8 +387,8 @@
     private record FiltroInfo(string Id, string Nome);
     private static readonly FiltroInfo[] Filtros =
     {
-        new("natural", "Natural"), new("soft", "Soft Beauty"), new("studio", "Studio Light"),
-        new("golden", "Golden Glow"), new("clean", "Clean Beauty"), new("portrait", "Soft Portrait")
+        new("natural", "Natural"), new("soft", "Glow"), new("studio", "Studio"),
+        new("golden", "Golden"), new("clean", "Clean"), new("portrait", "Portrait")
     };
 
     // Tons de cada cor: sombra, base e brilho. Não existem fotos de fios no catálogo
