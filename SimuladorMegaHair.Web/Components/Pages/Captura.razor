@@ -228,6 +228,9 @@
                     <input id="mh-quantidade" class="form-control" type="number" min="1" step="1"
                            inputmode="numeric" @bind="quantidadeGramas" />
                 </div>
+                <button type="button" class="mh-link" @onclick="AbrirRecuperacaoPix">
+                    Já comprei créditos
+                </button>
                 @if (opcoesOrcamento?.Extras is { Length: > 0 } extras)
                 {
                     <div class="mh-metodo">
@@ -272,11 +275,25 @@
         </section>
     }
 
+    @if (etapa == Etapa.RecuperarPix)
+    {
+        <section class="mh-tela" aria-labelledby="recuperar-pix-titulo">
+            <h2 id="recuperar-pix-titulo" class="mh-titulo mh-titulo-menor">Recuperar créditos</h2>
+            <label for="recuperar-pix-codigo">Código privado da carteira</label>
+            <input id="recuperar-pix-codigo" class="form-control" type="password" autocomplete="off"
+                   maxlength="64" @bind="codigoRecuperacaoPix" />
+            <button type="button" class="mh-btn mh-btn-primario" disabled="@consultandoPix"
+                    @onclick="RecuperarCarteiraAsync">Recuperar carteira</button>
+            <button type="button" class="mh-link" disabled="@consultandoPix" @onclick="VoltarDoPix">Voltar às escolhas</button>
+            @if (mensagemPix is not null) { <p role="status">@mensagemPix</p> }
+        </section>
+    }
+
     @if (ofertaPix is { Ativo: true } oferta && etapa == Etapa.Creditos)
     {
         <section class="mh-tela mh-tela-estilo" aria-labelledby="mh-pix-titulo">
             <h2 id="mh-pix-titulo" class="mh-titulo mh-titulo-menor">Comprar novas simulações</h2>
-            <p>@oferta.Quantidade gerações por R$ @oferta.Preco.ToString("N2", PtBr), via Pix.</p>
+            <p>@(pix?.Quantidade ?? oferta.Quantidade) gerações por R$ @((pix?.Preco ?? oferta.Preco).ToString("N2", PtBr)), via Pix.</p>
             @if (pix?.Status == "approved")
             {
                 <p role="status">Pagamento aprovado. Seus créditos estão disponíveis neste navegador.</p>
@@ -304,6 +321,12 @@
                     <button type="button" class="mh-btn mh-btn-secundario" disabled="@consultandoPix" @onclick="VerificarPixAsync">Verificar Pix anterior</button>
                 }
             }
+            <details>
+                <summary>Código para recuperar créditos em outro aparelho</summary>
+                <p>Guarde este código em um local privado antes de pagar. Quem tiver o código pode usar o saldo.</p>
+                <label for="backup-pix">Código da carteira</label>
+                <input id="backup-pix" class="form-control" readonly value="@carteiraPix" />
+            </details>
             @if (mensagemPix is not null)
             {
                 <p role="status">@mensagemPix</p>
@@ -512,17 +535,20 @@
     [SupplyParameterFromQuery(Name = "metodo"), Parameter] public string? MetodoSugerido { get; set; }
 
     // ── Estado ───────────────────────────────────────────────────────────────
-    private enum Etapa { Foto, Revisao, Estilo, Orcamento, Creditos, Gerando, Resultado }
+    private enum Etapa { Foto, Revisao, Estilo, Orcamento, Creditos, RecuperarPix, Gerando, Resultado }
     private Etapa etapa = Etapa.Foto;
     private ApiClient.OfertaPix? ofertaPix;
     private ApiClient.EstadoPix? pix;
     private Guid pedidoPix;
     private string? carteiraPix;
+    private string codigoRecuperacaoPix = "";
     private string emailPix = "";
     private string cpfPix = "";
     private string? mensagemPix;
     private bool consultandoPix;
     private bool forcarNovaPix;
+    private bool previaPixConfirmada;
+    private decimal? precoPixConfirmado;
 
     private string codigoTv = "";
     private string? controleTv;
@@ -970,6 +996,9 @@
 
         if (!EscolhasValidas()) return;
 
+        var previaConfirmada = etapa == Etapa.Orcamento || (etapa == Etapa.Creditos && previaPixConfirmada);
+        var precoConfirmado = etapa == Etapa.Orcamento ? precoPrevia : etapa == Etapa.Creditos ? precoPixConfirmado : null;
+
         geracaoCts?.Cancel();
         geracaoCts = new CancellationTokenSource();
         var cts = geracaoCts;
@@ -1008,18 +1037,18 @@
                 QuantidadeGramas = quantidadeGramas,
                 OrigemCabelo = origemCabelo,
                 ExtrasOrcamento = new(extrasSelecionados),
+                PreviaConfirmada = previaConfirmada,
+                PrecoConfirmado = precoConfirmado,
                 Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.OpenAI,
                 ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null,
                 ForcarNovaGeracao = forcarNova
             };
-            // O ApiClient não repassa o CancellationToken ao HttpClient; WaitAsync garante que
-            // "Cancelar" e o tempo limite realmente devolvam a tela à cliente.
             if (carteiraPix is null)
             {
                 try { carteiraPix = await JS.InvokeAsync<string>("megaHairResultado.carteiraPix"); }
                 catch (JSException) { }
             }
-            resultado = await Api.CriarSimulacaoAsync(request, ct, carteiraPix).WaitAsync(ct);
+            resultado = await Api.CriarSimulacaoAsync(request, ct, carteiraPix);
 
             if (resultado is null || string.IsNullOrWhiteSpace(resultado.FotoResultadoUrl))
                 throw new InvalidOperationException("A simulação não retornou imagem.");
@@ -1027,11 +1056,20 @@
             etapa = Etapa.Resultado;
             iniciarComparadorPendente = true;
         }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone)
+        {
+            fotoServidorPath = null;
+            etapa = Etapa.Estilo;
+            passoEstilo = 2;
+            erro = "A autorização da foto expirou. Toque em Transformar meu visual para enviá-la novamente.";
+        }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.PaymentRequired)
         {
             etapa = Etapa.Estilo;
             passoEstilo = 2;
             erro = "Sua geração gratuita está indisponível. Fale com a Tati para continuar.";
+            previaPixConfirmada = previaConfirmada;
+            precoPixConfirmado = precoConfirmado;
             await AbrirCreditosAsync(forcarNova);
         }
         catch (OperationCanceledException)
@@ -1049,6 +1087,52 @@
         {
             cts.Cancel(); // encerra o ciclo de mensagens
         }
+    }
+
+    private void AbrirRecuperacaoPix()
+    {
+        mensagemPix = null;
+        codigoRecuperacaoPix = "";
+        previaPixConfirmada = false;
+        precoPixConfirmado = null;
+        etapa = Etapa.RecuperarPix;
+    }
+
+    private async Task RecuperarCarteiraAsync()
+    {
+        var codigo = codigoRecuperacaoPix.Trim().ToLowerInvariant();
+        if (consultandoPix) return;
+        if (codigo.Length != 64 || !codigo.All(char.IsAsciiHexDigit))
+        {
+            mensagemPix = "Confira o código da carteira.";
+            return;
+        }
+
+        consultandoPix = true;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var recuperada = await Api.RecuperarPixAsync(codigo, timeout.Token);
+            if (recuperada is null)
+            {
+                mensagemPix = "Carteira não encontrada.";
+                return;
+            }
+            await JS.InvokeVoidAsync("megaHairResultado.restaurarCarteiraPix", codigo, recuperada.Pedido?.ToString());
+            carteiraPix = codigo;
+            codigoRecuperacaoPix = "";
+            VoltarDoPix();
+            if (recuperada.Saldo <= 0 && recuperada.Pedido.HasValue)
+            {
+                consultandoPix = false;
+                await AbrirCreditosAsync(false);
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JSException or System.Text.Json.JsonException)
+        {
+            mensagemPix = "Não foi possível recuperar a carteira agora.";
+        }
+        finally { consultandoPix = false; }
     }
 
     private async Task AbrirCreditosAsync(bool forcarNova)
@@ -1100,7 +1184,7 @@
                 await JS.InvokeVoidAsync("megaHairResultado.pedidoPix", pedidoPix.ToString());
             }
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-            pix = await Api.ConsultarPixAsync(carteiraPix, pedidoPix, criar ? emailPix.Trim() : null, cpf, timeout.Token);
+            pix = await Api.ConsultarPixAsync(carteiraPix, pedidoPix, criar ? emailPix.Trim() : null, cpf, ofertaPix, timeout.Token);
             if (pix?.Status is "approved" or "cancelled" or "rejected" or "refunded")
             {
                 await JS.InvokeVoidAsync("megaHairResultado.pedidoPix", "");
@@ -1112,6 +1196,11 @@
             }
             else
                 mensagemPix = "Aguardando confirmação pelo Mercado Pago.";
+        }
+        catch (ApiClient.OfertaPixAlteradaException ex)
+        {
+            ofertaPix = ex.Oferta;
+            mensagemPix = "A oferta foi atualizada. Confira o preço e a quantidade antes de gerar o Pix.";
         }
         catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JSException or System.Text.Json.JsonException)
         {

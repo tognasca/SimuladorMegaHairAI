@@ -151,22 +151,46 @@ public class ApiClient
     }
 
     public sealed record OfertaPix(bool Ativo, decimal Preco, int Quantidade);
-    public sealed record EstadoPix(string? Status, string? CopiaECola, string? Qr);
+    public sealed record CarteiraPixRecuperada(int Saldo, Guid? Pedido);
+    public sealed record EstadoPix(string? Status, string? CopiaECola, string? Qr, decimal? Preco, int? Quantidade);
 
     public Task<OfertaPix?> ObterOfertaPixAsync(CancellationToken ct) =>
         _http.GetFromJsonAsync<OfertaPix>("api/creditos/oferta", ct);
 
     public async Task<EstadoPix?> ConsultarPixAsync(
-        string carteira, Guid pedido, string? email, string? cpf, CancellationToken ct)
+        string carteira, Guid pedido, string? email, string? cpf, OfertaPix? oferta, CancellationToken ct)
     {
         var criando = email is not null;
         using var req = CriarRequisicao(criando ? HttpMethod.Post : HttpMethod.Get,
             criando ? "api/creditos/pix" : $"api/creditos/pix/{pedido}");
         req.Headers.Add("X-Simulador-Carteira", carteira);
-        if (criando) req.Content = JsonContent.Create(new { pedidoId = pedido, email, cpf });
+        if (criando) req.Content = JsonContent.Create(new
+        {
+            pedidoId = pedido, email, cpf, precoConfirmado = oferta?.Preco, quantidadeConfirmada = oferta?.Quantidade
+        });
         using var resposta = await _http.SendAsync(req, ct);
+        if (resposta.StatusCode == HttpStatusCode.Conflict)
+        {
+            var nova = await resposta.Content.ReadFromJsonAsync<OfertaPix>(cancellationToken: ct);
+            if (nova is not null) throw new OfertaPixAlteradaException(nova with { Ativo = true });
+        }
         resposta.EnsureSuccessStatusCode();
         return await resposta.Content.ReadFromJsonAsync<EstadoPix>(cancellationToken: ct);
+    }
+
+    public sealed class OfertaPixAlteradaException(OfertaPix oferta) : Exception
+    {
+        public OfertaPix Oferta { get; } = oferta;
+    }
+
+    public async Task<CarteiraPixRecuperada?> RecuperarPixAsync(string carteira, CancellationToken ct)
+    {
+        using var req = CriarRequisicao(HttpMethod.Get, "api/creditos/carteira");
+        req.Headers.Add("X-Simulador-Carteira", carteira);
+        using var resposta = await _http.SendAsync(req, ct);
+        if (resposta.StatusCode == HttpStatusCode.NotFound) return null;
+        resposta.EnsureSuccessStatusCode();
+        return await resposta.Content.ReadFromJsonAsync<CarteiraPixRecuperada>(cancellationToken: ct);
     }
 
     public async Task<SimulacaoResponse?> CriarSimulacaoAsync(
@@ -176,16 +200,16 @@ public class ApiClient
         using var mensagem = CriarRequisicao(HttpMethod.Post, "api/simulacoes");
         mensagem.Content = JsonContent.Create(request);
         if (!string.IsNullOrEmpty(carteira)) mensagem.Headers.Add("X-Simulador-Carteira", carteira);
-        using var response = await _http.SendAsync(mensagem);
+        using var response = await _http.SendAsync(mensagem, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
-            var corpo = await response.Content.ReadAsStringAsync();
+            var corpo = await response.Content.ReadAsStringAsync(cancellationToken);
             throw new HttpRequestException(
                 $"API {(int)response.StatusCode}: {corpo}", null, response.StatusCode);
         }
 
-        return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();
+        return await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: cancellationToken);
     }
 
     public async Task<SimulacaoResponse?> AjustarVolumeAsync(

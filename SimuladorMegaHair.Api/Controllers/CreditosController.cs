@@ -29,8 +29,19 @@ public sealed class CreditosController(
 
     private string? Token => config["MercadoPago:AccessToken"];
 
+    [HttpGet("carteira")]
+    [EnableRateLimiting("PixConsulta")]
+    public async Task<IActionResult> Recuperar(CancellationToken ct)
+    {
+        var carteira = CreditosSimulacao.Carteira(Request.Headers["X-Simulador-Carteira"].ToString());
+        if (carteira is null) return BadRequest();
+        var estado = await creditos.RecuperarAsync(carteira, ct);
+        Response.Headers.CacheControl = "no-store";
+        return estado is null ? NotFound() : Ok(estado);
+    }
+
     public sealed record DadosPix(
-        Guid PedidoId,
+        Guid PedidoId, decimal PrecoConfirmado, int QuantidadeConfirmada,
         [EmailAddress, Required, MaxLength(254)] string Email,
         [RegularExpression("^[0-9]{11}$"), Required] string Cpf);
 
@@ -42,8 +53,16 @@ public sealed class CreditosController(
             return StatusCode(503);
         var carteira = CreditosSimulacao.Carteira(Request.Headers["X-Simulador-Carteira"].ToString());
         if (carteira is null || dados.PedidoId == Guid.Empty) return BadRequest();
-        var pedido = await creditos.PedidoAsync(dados.PedidoId, carteira, criar: true, ct);
+        var pedido = await creditos.PedidoAsync(dados.PedidoId, carteira, criar: false, ct);
+        var oferta = await painel.LerAsync(ct);
+        var preco = pedido?.Valor ?? oferta.Preco;
+        var quantidade = pedido?.Creditos ?? oferta.Quantidade;
+        if (preco != dados.PrecoConfirmado || quantidade != dados.QuantidadeConfirmada)
+            return Conflict(new { preco, quantidade });
+        pedido ??= await creditos.PedidoAsync(dados.PedidoId, carteira, criar: true, ct);
         if (pedido is null) return NotFound();
+        if (pedido.Valor != dados.PrecoConfirmado || pedido.Creditos != dados.QuantidadeConfirmada)
+            return Conflict(new { preco = pedido.Valor, quantidade = pedido.Creditos });
         if (pedido.Pagamento.HasValue) return await Consultar(pedido, ct);
 
         using var req = new HttpRequestMessage(HttpMethod.Post, "v1/payments")
@@ -63,8 +82,10 @@ public sealed class CreditosController(
         using var json = await resposta.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: ct);
         if (json is null || !json.RootElement.TryGetProperty("id", out var id) || !id.TryGetInt64(out var pagamento))
             return StatusCode(502);
+        var vinculado = pedido with { Pagamento = pagamento };
+        if (!PixReconciliacao.Confere(vinculado, json.RootElement)) return StatusCode(502);
         await creditos.RegistrarPagamentoAsync(pedido.Id, pagamento, ct);
-        return await Responder(pedido with { Pagamento = pagamento }, json.RootElement, ct);
+        return await Responder(vinculado, json.RootElement, ct);
     }
 
     [HttpGet("pix/{id:guid}")]
@@ -81,7 +102,7 @@ public sealed class CreditosController(
 
     private async Task<IActionResult> Consultar(CreditosSimulacao.PedidoPix pedido, CancellationToken ct)
     {
-        if (pedido.Liberado) return Ok(new { status = "approved" });
+        if (pedido.Liberado) return Ok(new { status = "approved", preco = pedido.Valor, quantidade = pedido.Creditos });
         using var req = new HttpRequestMessage(HttpMethod.Get, $"v1/payments/{pedido.Pagamento}");
         using var resposta = await EnviarAsync(req, ct);
         if (resposta is null || !resposta.IsSuccessStatusCode) return StatusCode(502);
@@ -91,16 +112,11 @@ public sealed class CreditosController(
 
     private async Task<IActionResult> Responder(CreditosSimulacao.PedidoPix pedido, JsonElement pagamento, CancellationToken ct)
     {
-        if (!pagamento.TryGetProperty("id", out var id) || id.GetInt64() != pedido.Pagamento
-            || Texto(pagamento, "external_reference") != pedido.Id.ToString("N")
-            || Texto(pagamento, "payment_method_id") != "pix"
-            || Texto(pagamento, "currency_id") != "BRL"
-            || !pagamento.TryGetProperty("transaction_amount", out var valor) || valor.GetDecimal() != pedido.Valor)
-            return StatusCode(502);
+        if (!PixReconciliacao.Confere(pedido, pagamento)) return StatusCode(502);
 
         var status = Texto(pagamento, "status");
         if (status == "approved")
-            await creditos.LiberarAsync(pedido.Id, id.GetInt64(), ct);
+            await creditos.LiberarAsync(pedido.Id, pedido.Pagamento!.Value, ct);
 
         string? copiaECola = null;
         string? qr = null;
@@ -112,7 +128,7 @@ public sealed class CreditosController(
             qr = Texto(transacao, "qr_code_base64");
         }
         Response.Headers.CacheControl = "no-store";
-        return Ok(new { status, copiaECola, qr });
+        return Ok(new { status, copiaECola, qr, preco = pedido.Valor, quantidade = pedido.Creditos });
     }
 
     private async Task<HttpResponseMessage?> EnviarAsync(HttpRequestMessage request, CancellationToken ct)

@@ -86,7 +86,7 @@ public class ClientesController : ControllerBase
     /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ClienteDetalheResponse>> ObterPorId(
-        Guid id, CancellationToken ct)
+        Guid id, [FromServices] SimuladorMegaHair.Api.Seguranca.MediaUrlSigner signer, CancellationToken ct)
     {
         var cliente = await _dbContext.Clientes
             .Include(c => c.Simulacoes)
@@ -106,7 +106,7 @@ public class ClientesController : ControllerBase
             CriadoEm = cliente.CriadoEm,
             Simulacoes = cliente.Simulacoes
                 .OrderByDescending(s => s.CriadoEm)
-                .Select(s => SimulacoesController.MontarResponse(s, baseUrl, veioDoCache: false))
+                .Select(s => SimulacoesController.MontarResponse(s, baseUrl, signer, veioDoCache: false))
                 .ToList()
         };
 

@@ -15,8 +15,9 @@ public sealed class CreditosSimulacao(AppDbContext db, IConfiguration config, Pa
 
     public enum Reserva { Bloqueada, Gratis, Paga }
 
-    public async Task<Reserva> ReservarAsync(string carteira, CancellationToken ct)
+    public async Task<Reserva> ReservarAsync(string carteira, Guid id, CancellationToken ct)
     {
+        await ReconciliarExpiradasAsync(ct);
         var ajustes = await painel.LerAsync(ct);
         if (!ajustes.PublicoAtivo) return Reserva.Bloqueada;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -38,6 +39,7 @@ public sealed class CreditosSimulacao(AppDbContext db, IConfiguration config, Pa
                 """, ct);
             if (limitada == 1)
             {
+                await RegistrarReservaAsync(carteira, id, true, ct);
                 await tx.CommitAsync(ct);
                 return Reserva.Gratis;
             }
@@ -48,22 +50,65 @@ public sealed class CreditosSimulacao(AppDbContext db, IConfiguration config, Pa
                 UPDATE simulador_creditos_carteira SET gratuito_usado = false WHERE chave = {carteira}
                 """, ct);
 
-        var paga = await db.Database.ExecuteSqlInterpolatedAsync($"""
+        var paga = Ativo ? await db.Database.ExecuteSqlInterpolatedAsync($"""
             UPDATE simulador_creditos_carteira SET saldo = saldo - 1
             WHERE chave = {carteira} AND saldo > 0
-            """, ct);
+            """, ct) : 0;
+        if (paga == 1) await RegistrarReservaAsync(carteira, id, false, ct);
         await tx.CommitAsync(ct);
         return paga == 1 ? Reserva.Paga : Reserva.Bloqueada;
     }
 
-    public Task EstornarAsync(string carteira, Reserva reserva) =>
-        reserva == Reserva.Gratis
-            ? db.Database.ExecuteSqlInterpolatedAsync($"""
-                UPDATE simulador_creditos_carteira SET gratuito_usado = false WHERE chave = {carteira}
-                """)
-            : db.Database.ExecuteSqlInterpolatedAsync($"""
-                UPDATE simulador_creditos_carteira SET saldo = saldo + 1 WHERE chave = {carteira}
-                """);
+    private Task RegistrarReservaAsync(string carteira, Guid id, bool gratuita, CancellationToken ct) =>
+        db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO simulador_creditos_reserva (id, carteira, gratuita)
+            VALUES ({id}, {carteira}, {gratuita})
+            """, ct);
+
+    public async Task ConfirmarAsync(Guid id, CancellationToken ct)
+    {
+        var removida = await db.Database.ExecuteSqlInterpolatedAsync($"""
+            DELETE FROM simulador_creditos_reserva WHERE id = {id} AND expira > now()
+            """, ct);
+        if (removida != 1)
+            throw new InvalidOperationException("A reserva de geração expirou.");
+    }
+
+    public Task EstornarAsync(Guid id) => ReconciliarReservasAsync(id, CancellationToken.None);
+
+    public Task ReconciliarExpiradasAsync(CancellationToken ct) => ReconciliarReservasAsync(null, ct);
+
+    private Task ReconciliarReservasAsync(Guid? id, CancellationToken ct) =>
+        db.Database.ExecuteSqlInterpolatedAsync($"""
+            WITH removidas AS (
+                DELETE FROM simulador_creditos_reserva
+                WHERE id = {id.GetValueOrDefault()} OR expira <= now()
+                RETURNING carteira, gratuita
+            ), total AS (
+                SELECT carteira, bool_or(gratuita) AS gratuita,
+                       CAST(count(*) FILTER (WHERE NOT gratuita) AS integer) AS pagas
+                FROM removidas GROUP BY carteira
+            )
+            UPDATE simulador_creditos_carteira AS c
+            SET gratuito_usado = c.gratuito_usado AND NOT t.gratuita,
+                saldo = c.saldo + t.pagas
+            FROM total AS t WHERE c.chave = t.carteira
+            """, ct);
+
+    public async Task<CarteiraRecuperada?> RecuperarAsync(string carteira, CancellationToken ct)
+    {
+        await ReconciliarExpiradasAsync(ct);
+        var rows = await db.Database.SqlQuery<CarteiraRecuperada>($"""
+            SELECT COALESCE((SELECT saldo FROM simulador_creditos_carteira WHERE chave = {carteira}), 0) AS "Saldo",
+                   (SELECT id FROM simulador_creditos_pix WHERE carteira = {carteira}
+                    ORDER BY criado DESC, id DESC LIMIT 1) AS "Pedido"
+            WHERE EXISTS (SELECT 1 FROM simulador_creditos_carteira WHERE chave = {carteira})
+               OR EXISTS (SELECT 1 FROM simulador_creditos_pix WHERE carteira = {carteira})
+            """).ToListAsync(ct);
+        return rows.SingleOrDefault();
+    }
+
+    public sealed record CarteiraRecuperada(int Saldo, Guid? Pedido);
 
     public async Task<PedidoPix?> PedidoAsync(Guid id, string carteira, bool criar, CancellationToken ct)
     {
@@ -83,6 +128,26 @@ public sealed class CreditosSimulacao(AppDbContext db, IConfiguration config, Pa
             """).ToListAsync(ct);
         return pedidos.SingleOrDefault();
     }
+
+    public Task<List<PedidoPix>> PedidosParaReconciliarAsync(CancellationToken ct) =>
+        db.Database.SqlQueryRaw<PedidoPix>("""
+            WITH lote AS (
+                SELECT id FROM simulador_creditos_pix
+                WHERE NOT liberado AND pagamento IS NOT NULL AND reconciliar_em <= now()
+                ORDER BY reconciliar_em
+                LIMIT 10 FOR UPDATE SKIP LOCKED
+            )
+            UPDATE simulador_creditos_pix AS p
+            SET reconciliar_em = now() + interval '5 minutes'
+            FROM lote WHERE p.id = lote.id
+            RETURNING p.id AS "Id", p.valor AS "Valor", p.creditos AS "Creditos",
+                      p.pagamento AS "Pagamento", p.liberado AS "Liberado"
+            """).ToListAsync(ct);
+
+    public async Task EncerrarReconciliacaoAsync(Guid pedido, CancellationToken ct) =>
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE simulador_creditos_pix SET reconciliar_em = 'infinity'::timestamptz WHERE id = {pedido}
+            """, ct);
 
     public async Task RegistrarPagamentoAsync(Guid pedido, long pagamento, CancellationToken ct) =>
         await db.Database.ExecuteSqlInterpolatedAsync($"""

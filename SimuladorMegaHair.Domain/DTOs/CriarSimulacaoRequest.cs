@@ -13,6 +13,8 @@ public class CriarSimulacaoRequest
     public string? OrigemCabelo { get; set; }
     public Dictionary<string, int>? ExtrasOrcamento { get; set; }
     public decimal? QuantidadeGramas { get; set; }
+    public bool PreviaConfirmada { get; set; }
+    public decimal? PrecoConfirmado { get; set; }
 
     public HairEditMode Modo { get; set; } = HairEditMode.Extend;
 

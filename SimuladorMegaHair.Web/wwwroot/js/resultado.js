@@ -281,6 +281,12 @@
             return token;
         },
 
+        restaurarCarteiraPix(token, pedido) {
+            if (!/^[a-f0-9]{64}$/i.test(token)) throw new Error('Código inválido');
+            localStorage.setItem('tatimegahair.carteiraPix', token.toLowerCase());
+            this.pedidoPix(pedido || '');
+        },
+
         pedidoPix(valor) {
             const chave = 'tatimegahair.pedidoPix';
             if (valor === '') localStorage.removeItem(chave);

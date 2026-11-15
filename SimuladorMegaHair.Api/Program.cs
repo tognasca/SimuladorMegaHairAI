@@ -313,6 +313,16 @@ builder.Services.AddScoped<OrcamentoLocal>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddConcurrencyLimiter("Geracao", limiter =>
+    {
+        limiter.PermitLimit = 8;
+        limiter.QueueLimit = 0;
+    });
+    options.AddFixedWindowLimiter("UploadPublico", limiter =>
+    {
+        limiter.PermitLimit = 30;
+        limiter.Window = TimeSpan.FromMinutes(1);
+    });
     options.AddFixedWindowLimiter("PixEscrita", limiter =>
     {
         limiter.PermitLimit = 30;
@@ -325,12 +335,15 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 builder.Services.AddScoped<CreditosSimulacao>();
+builder.Services.AddHostedService<PixReconciliacao>();
 builder.Services.AddScoped<PainelPiloto>();
 builder.Services.AddHttpClient("MercadoPago", client =>
 {
     client.BaseAddress = new Uri("https://api.mercadopago.com/");
     client.Timeout = TimeSpan.FromSeconds(15);
 });
+
+builder.Services.AddSingleton(new SimuladorMegaHair.Api.Seguranca.MediaUrlSigner(jwtKey, TimeSpan.FromHours(2)));
 
 var app = builder.Build();
 
@@ -474,7 +487,10 @@ if (Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var publicUri))
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
+app.UseWhen(context => !context.Request.Path.StartsWithSegments("/uploads", StringComparison.OrdinalIgnoreCase)
+                      && !context.Request.Path.StartsWithSegments("/resultados", StringComparison.OrdinalIgnoreCase),
+    branch => branch.UseStaticFiles());
+
 
 app.UseRouting();
 app.UseRateLimiter();

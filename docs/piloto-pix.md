@@ -4,8 +4,8 @@ Configure no servidor da API. O Access Token pertence à conta do Mercado Pago d
 
 | Variável da API | Padrão | Função |
 | --- | --- | --- |
-| `Creditos__Ativo` | `false` | Ativa o controle de gerações e o fluxo Pix após a homologação |
-| `Creditos__PublicoAtivo` | `true` | Permite novas gerações públicas quando o controle está ativo |
+| `Creditos__Ativo` | `false` | Ativa a cobrança Pix após a homologação |
+| `Creditos__PublicoAtivo` | `true` | Permite novas gerações públicas |
 | `Creditos__LimiteDiarioGratis` | `10` | Teto de tentativas gratuitas por dia, no horário de São Paulo |
 | `Creditos__Preco` | `10` | Valor do pacote em reais |
 | `Creditos__Quantidade` | `2` | Gerações por pacote |
@@ -14,7 +14,7 @@ Configure no servidor da API. O Access Token pertence à conta do Mercado Pago d
 
 A API aplica a migration PostgreSQL das carteiras, cotas e pedidos no fluxo existente de migrations. A cota gratuita é por navegador e o teto diário é compartilhado por instalação. O teto conta tentativas para limitar gasto com chamadas que falham. O login existente da equipe fica fora da cota pública. Configure a conta da equipe antes de abrir a instalação na internet.
 
-Na etapa de compra, o provedor recebe e-mail e CPF do pagador. O simulador guarda o pedido e a carteira, sem gravar esses dois campos no banco de créditos. Após pagar, a cliente toca em **Verificar pagamento**. A API confirma o Pix no Mercado Pago e libera o pacote uma única vez. O código da carteira fica no navegador, de modo que o saldo deve ser usado no mesmo navegador. Webhooks, recuperação de saldo em outro dispositivo e confirmação de identidade das clientes ficam fora deste piloto.
+Na etapa de compra, o provedor recebe e-mail e CPF do pagador. O simulador guarda o pedido e a carteira, sem gravar esses dois campos no banco de créditos. A API consulta periodicamente o Mercado Pago e libera o pacote uma única vez. A cliente também pode tocar em **Verificar pagamento**. Para recuperar em outro dispositivo, guarde o código privado da carteira e use **Já comprei créditos**. Webhooks e confirmação de identidade das clientes ficam fora deste piloto.
 
 Para homologar, use uma credencial de teste e um banco separado. Teste uma primeira geração gratuita, o bloqueio pelo teto, um Pix pendente, um Pix aprovado, duas verificações do mesmo pagamento, o uso dos dois créditos, uma falha na geração e o Modo Salão. Valide câmera, QR Code e Pix copia e cola no mesmo celular usado pela cliente.
 
