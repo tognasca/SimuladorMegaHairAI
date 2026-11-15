@@ -327,6 +327,7 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 builder.Services.AddScoped<CreditosSimulacao>();
+builder.Services.AddScoped<PainelPiloto>();
 builder.Services.AddHttpClient("MercadoPago", client =>
 {
     client.BaseAddress = new Uri("https://api.mercadopago.com/");

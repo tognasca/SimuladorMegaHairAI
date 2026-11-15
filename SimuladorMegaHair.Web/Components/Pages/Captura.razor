@@ -380,7 +380,7 @@
 
             <div class="mh-acoes-principais">
                 <button type="button" class="mh-btn mh-btn-primario" @onclick="CompartilharComTatiAsync">Enviar foto e orçamento para a Tati</button>
-                <a class="mh-link" href="@LinkWhatsAppTati()" target="_blank" rel="noopener">Abrir orçamento no WhatsApp</a>
+                <a class="mh-link" href="@LinkWhatsAppTati()" @onclick="RegistrarCliqueWhatsAppAsync" target="_blank" rel="noopener">Abrir orçamento no WhatsApp</a>
                 @if (!string.IsNullOrEmpty(avisoCompartilhar))
                 {
                     <p class="mh-nota" role="status">@avisoCompartilhar</p>
@@ -1159,6 +1159,10 @@
             $"Estimativa do mega hair: {preco}",
             $"Cor simulada: {cor}. Coloração, se necessária, é orçada à parte pela Tati após avaliação.");
     }
+
+    private Task RegistrarCliqueWhatsAppAsync() => resultado is { } simulacao
+        ? Api.RegistrarCliqueWhatsAppAsync(simulacao.Id)
+        : Task.CompletedTask;
 
     private string LinkWhatsAppTati()
     {

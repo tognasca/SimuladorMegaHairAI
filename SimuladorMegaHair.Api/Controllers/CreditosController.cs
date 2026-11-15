@@ -13,15 +13,19 @@ namespace SimuladorMegaHair.Api.Controllers;
 [AllowAnonymous]
 [Route("api/creditos")]
 public sealed class CreditosController(
-    CreditosSimulacao creditos, IHttpClientFactory clientes, IConfiguration config) : ControllerBase
+    CreditosSimulacao creditos, IHttpClientFactory clientes, IConfiguration config, PainelPiloto painel) : ControllerBase
 {
     [HttpGet("oferta")]
-    public IActionResult Oferta() => Ok(new
+    public async Task<IActionResult> Oferta(CancellationToken ct)
     {
-        ativo = creditos.Ativo && creditos.PublicoAtivo && !string.IsNullOrWhiteSpace(Token),
-        preco = creditos.Preco,
-        quantidade = creditos.Quantidade
-    });
+        var ajustes = await painel.LerAsync(ct);
+        return Ok(new
+        {
+            ativo = creditos.Ativo && ajustes.PublicoAtivo && !string.IsNullOrWhiteSpace(Token),
+            preco = ajustes.Preco,
+            quantidade = ajustes.Quantidade
+        });
+    }
 
     private string? Token => config["MercadoPago:AccessToken"];
 
@@ -34,7 +38,7 @@ public sealed class CreditosController(
     [EnableRateLimiting("PixEscrita")]
     public async Task<IActionResult> CriarPix(DadosPix dados, CancellationToken ct)
     {
-        if (!creditos.Ativo || !creditos.PublicoAtivo || string.IsNullOrWhiteSpace(Token))
+        if (!creditos.Ativo || !(await painel.LerAsync(ct)).PublicoAtivo || string.IsNullOrWhiteSpace(Token))
             return StatusCode(503);
         var carteira = CreditosSimulacao.Carteira(Request.Headers["X-Simulador-Carteira"].ToString());
         if (carteira is null || dados.PedidoId == Guid.Empty) return BadRequest();

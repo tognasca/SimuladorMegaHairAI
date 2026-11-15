@@ -89,6 +89,44 @@ public class ApiClient
         }
     }
 
+    public sealed class ConfiguracaoPiloto
+    {
+        public bool PublicoAtivo { get; set; }
+        public int LimiteDiario { get; set; }
+        public decimal Preco { get; set; }
+        public int Quantidade { get; set; }
+        public decimal CustoIa { get; set; }
+    }
+
+    public sealed record IndicadoresPiloto(int GratuitasHoje, long PacotesLiberados, decimal ReceitaPix,
+        long CreditosDisponiveis, long GeracoesPublicasHoje, long GeracoesEquipeHoje,
+        decimal CustoPublicoHoje, decimal CustoEquipeHoje, long CliquesHoje);
+
+    public sealed record EstadoPiloto(bool CreditosAtivos, ConfiguracaoPiloto Configuracao, IndicadoresPiloto Indicadores);
+
+    public async Task<EstadoPiloto?> ObterPainelPilotoAsync(CancellationToken ct)
+    {
+        using var resposta = await EnviarAutorizadaAsync(HttpMethod.Get, "api/piloto", cancellationToken: ct);
+        resposta.EnsureSuccessStatusCode();
+        return await resposta.Content.ReadFromJsonAsync<EstadoPiloto>(cancellationToken: ct);
+    }
+
+    public async Task SalvarPainelPilotoAsync(ConfiguracaoPiloto valores, CancellationToken ct)
+    {
+        using var resposta = await EnviarAutorizadaAsync(HttpMethod.Put, "api/piloto", JsonContent.Create(valores), ct);
+        resposta.EnsureSuccessStatusCode();
+    }
+
+    public async Task RegistrarCliqueWhatsAppAsync(Guid simulacaoId)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        try
+        {
+            using var resposta = await _http.PostAsync($"api/piloto/whatsapp/{simulacaoId}", null, timeout.Token);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException) { }
+    }
+
     public sealed record OfertaPix(bool Ativo, decimal Preco, int Quantidade);
     public sealed record EstadoPix(string? Status, string? CopiaECola, string? Qr);
 

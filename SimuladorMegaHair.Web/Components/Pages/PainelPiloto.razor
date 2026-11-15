@@ -1,0 +1,125 @@
+@page "/painel-piloto"
+@rendermode InteractiveServer
+@inject ApiClient Api
+@inject AuthTokenStore TokenStore
+<PageTitle>Painel do piloto</PageTitle>
+
+<div class="mh-app">
+    <section class="mh-tela">
+        <h1 class="mh-titulo">Painel do piloto</h1>
+        @if (acessoRestrito)
+        {
+            <p>Entre com a conta do operador para acessar o painel.</p>
+            <a class="mh-link" href="/login?retorno=/painel-piloto">Entrar como operador</a>
+        }
+        @if (mensagem is not null)
+        {
+            <p role="status">@mensagem</p>
+        }
+        @if (estado is { } atual)
+        {
+            var numeros = atual.Indicadores;
+            <div class="table-responsive">
+                <table class="table">
+                    <caption>Indicadores do simulador</caption>
+                    <tbody>
+                        <tr><th scope="row">Tentativas gratuitas hoje</th><td>@numeros.GratuitasHoje</td></tr>
+                        <tr><th scope="row">Pix confirmados · total</th><td>@numeros.PacotesLiberados</td></tr>
+                        <tr><th scope="row">Recebido via Pix · bruto</th><td>@Reais(numeros.ReceitaPix)</td></tr>
+                        <tr><th scope="row">Créditos disponíveis nas carteiras</th><td>@numeros.CreditosDisponiveis</td></tr>
+                        <tr><th scope="row">IA no site hoje</th><td>@numeros.GeracoesPublicasHoje tentativas · @Reais(numeros.CustoPublicoHoje)</td></tr>
+                        <tr><th scope="row">IA pela equipe hoje</th><td>@numeros.GeracoesEquipeHoje tentativas · @Reais(numeros.CustoEquipeHoje)</td></tr>
+                        <tr><th scope="row">Resultados abertos no WhatsApp hoje</th><td>@numeros.CliquesHoje</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            @if (!atual.CreditosAtivos)
+            {
+                <p class="mh-nota">O fluxo Pix está desativado na configuração da API.</p>
+            }
+            <h2 class="mh-titulo mh-titulo-menor">Configuração</h2>
+            <fieldset disabled="@ocupado">
+                <div class="form-check form-switch">
+                    <input id="piloto-publico" class="form-check-input" type="checkbox" @bind="atual.Configuracao.PublicoAtivo" />
+                    <label for="piloto-publico">Permitir novas gerações públicas</label>
+                </div>
+                <label for="piloto-teto">Teto diário de tentativas gratuitas</label>
+                <input id="piloto-teto" class="form-control" type="number" min="0" max="10000" @bind="atual.Configuracao.LimiteDiario" />
+                <label for="piloto-preco">Preço do pacote (R$)</label>
+                <input id="piloto-preco" class="form-control" type="number" step="0.01" min="1" max="1000" @bind="atual.Configuracao.Preco" />
+                <label for="piloto-creditos">Créditos por pacote</label>
+                <input id="piloto-creditos" class="form-control" type="number" min="1" max="20" @bind="atual.Configuracao.Quantidade" />
+                <label for="piloto-custo">Custo estimado por geração (R$)</label>
+                <input id="piloto-custo" class="form-control" type="number" step="0.0001" min="0" max="1000" @bind="atual.Configuracao.CustoIa" />
+                <div class="mh-acoes-principais">
+                    <button type="button" class="mh-btn mh-btn-primario" @onclick="SalvarAsync">Salvar configuração</button>
+                    <button type="button" class="mh-btn mh-btn-secundario" @onclick="CarregarAsync">Atualizar indicadores</button>
+                </div>
+            </fieldset>
+        }
+        else if (!acessoRestrito)
+        {
+            <button type="button" class="mh-btn mh-btn-secundario" disabled="@ocupado" @onclick="CarregarAsync">Carregar painel</button>
+        }
+    </section>
+</div>
+
+@code {
+    private ApiClient.EstadoPiloto? estado;
+    private string? mensagem;
+    private bool ocupado;
+    private bool acessoRestrito;
+
+    private static string Reais(decimal valor) => valor.ToString("C2", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await TokenStore.RestaurarAsync();
+        await CarregarAsync();
+        StateHasChanged();
+    }
+
+    private async Task CarregarAsync()
+    {
+        ocupado = true;
+        mensagem = null;
+        acessoRestrito = false;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            estado = await Api.ObterPainelPilotoAsync(timeout.Token);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+        {
+            estado = null;
+            acessoRestrito = true;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
+        {
+            mensagem = "Não foi possível carregar o painel agora.";
+        }
+        finally { ocupado = false; }
+    }
+
+    private async Task SalvarAsync()
+    {
+        if (ocupado || estado is null) return;
+        ocupado = true;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await Api.SalvarPainelPilotoAsync(estado.Configuracao, timeout.Token);
+            mensagem = "Configuração salva.";
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            mensagem = "Confira os valores informados.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
+        {
+            mensagem = "Não foi possível salvar a configuração.";
+        }
+        finally { ocupado = false; }
+    }
+}

@@ -4,14 +4,9 @@ using SimuladorMegaHair.Infrastructure.Data;
 
 namespace SimuladorMegaHair.Api.Services;
 
-public sealed class CreditosSimulacao(AppDbContext db, IConfiguration config)
+public sealed class CreditosSimulacao(AppDbContext db, IConfiguration config, PainelPiloto painel)
 {
     public bool Ativo => config.GetValue<bool>("Creditos:Ativo");
-    public bool PublicoAtivo => config.GetValue("Creditos:PublicoAtivo", true);
-    public decimal Preco => decimal.Round(Math.Clamp(config.GetValue("Creditos:Preco", 10m), 1m, 1000m), 2);
-    public int Quantidade => Math.Clamp(config.GetValue("Creditos:Quantidade", 2), 1, 20);
-    private int LimiteDiario => Math.Clamp(config.GetValue("Creditos:LimiteDiarioGratis", 10), 0, 10000);
-
     public static string? Carteira(string token)
     {
         if (token.Length != 64 || !token.All(char.IsAsciiHexDigit)) return null;
@@ -22,7 +17,8 @@ public sealed class CreditosSimulacao(AppDbContext db, IConfiguration config)
 
     public async Task<Reserva> ReservarAsync(string carteira, CancellationToken ct)
     {
-        if (!PublicoAtivo) return Reserva.Bloqueada;
+        var ajustes = await painel.LerAsync(ct);
+        if (!ajustes.PublicoAtivo) return Reserva.Bloqueada;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         await db.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO simulador_creditos_carteira (chave) VALUES ({carteira}) ON CONFLICT DO NOTHING
@@ -32,13 +28,13 @@ public sealed class CreditosSimulacao(AppDbContext db, IConfiguration config)
             UPDATE simulador_creditos_carteira SET gratuito_usado = true
             WHERE chave = {carteira} AND gratuito_usado = false
             """, ct);
-        if (gratuita == 1 && LimiteDiario > 0)
+        if (gratuita == 1 && ajustes.LimiteDiario > 0)
         {
             var limitada = await db.Database.ExecuteSqlInterpolatedAsync($"""
                 INSERT INTO simulador_creditos_dia (dia, usadas)
                 VALUES ((now() AT TIME ZONE 'America/Sao_Paulo')::date, 1)
                 ON CONFLICT (dia) DO UPDATE SET usadas = simulador_creditos_dia.usadas + 1
-                WHERE simulador_creditos_dia.usadas < {LimiteDiario}
+                WHERE simulador_creditos_dia.usadas < {ajustes.LimiteDiario}
                 """, ct);
             if (limitada == 1)
             {
@@ -72,10 +68,13 @@ public sealed class CreditosSimulacao(AppDbContext db, IConfiguration config)
     public async Task<PedidoPix?> PedidoAsync(Guid id, string carteira, bool criar, CancellationToken ct)
     {
         if (criar)
+        {
+            var ajustes = await painel.LerAsync(ct);
             await db.Database.ExecuteSqlInterpolatedAsync($"""
                 INSERT INTO simulador_creditos_pix (id, carteira, valor, creditos)
-                VALUES ({id}, {carteira}, {Preco}, {Quantidade}) ON CONFLICT DO NOTHING
+                VALUES ({id}, {carteira}, {ajustes.Preco}, {ajustes.Quantidade}) ON CONFLICT DO NOTHING
                 """, ct);
+        }
 
         var pedidos = await db.Database.SqlQuery<PedidoPix>($"""
             SELECT id AS "Id", valor AS "Valor", creditos AS "Creditos", pagamento AS "Pagamento",

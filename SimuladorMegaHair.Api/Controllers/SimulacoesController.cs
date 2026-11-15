@@ -149,6 +149,7 @@ public class SimulacoesController : ControllerBase
         [FromBody] CriarSimulacaoRequest request,
         [FromServices] MegaHairProPricingClient pricing,
         [FromServices] CreditosSimulacao creditos,
+        [FromServices] PainelPiloto painel,
         CancellationToken ct)
     {
 
@@ -196,10 +197,13 @@ public class SimulacoesController : ControllerBase
         }
         var reserva = CreditosSimulacao.Reserva.Bloqueada;
         string? carteira = null;
-        if (creditos.Ativo && User.Identity?.IsAuthenticated != true)
+        var equipe = User.Identity?.IsAuthenticated == true;
+        var ajustes = await painel.LerAsync(ct);
+        if (!equipe && !ajustes.PublicoAtivo)
+            return StatusCode(403, new { erro = "Geração pública indisponível. Fale com o salão." });
+
+        if (creditos.Ativo && !equipe)
         {
-            if (!creditos.PublicoAtivo)
-                return StatusCode(403, new { erro = "Geração pública indisponível. Fale com o salão." });
             carteira = CreditosSimulacao.Carteira(Request.Headers["X-Simulador-Carteira"].ToString());
             if (carteira is null)
                 return BadRequest(new { erro = "Abra o simulador novamente para iniciar sua sessão." });
@@ -223,6 +227,7 @@ public class SimulacoesController : ControllerBase
                 // _imageService.PipelineKontextAsync(...) (flux-kontext-pro, modelo pago
                 // no Replicate) cujo resultado nunca era usado — toda simulação pagava
                 // por uma predição descartada. Removida.
+                await painel.RegistrarAsync(equipe ? "equipe" : "publico", Guid.NewGuid(), ajustes.CustoIa, ct);
                 resultado = await _imageService.GerarSimulacaoAsync(
                     new SimulacaoRequest
                     {
