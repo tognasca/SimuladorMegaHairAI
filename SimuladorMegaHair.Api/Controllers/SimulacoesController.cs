@@ -1,3 +1,4 @@
+using SimuladorMegaHair.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -132,6 +133,7 @@ public class SimulacoesController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<SimulacaoResponse>> Criar(
         [FromBody] CriarSimulacaoRequest request,
+        [FromServices] MegaHairProPricingClient pricing,
         CancellationToken ct)
     {
 
@@ -170,7 +172,11 @@ public class SimulacoesController : ControllerBase
         
         if (existente is not null)
         {
-            return Ok(MontarResponse(existente, baseUrl, veioDoCache: true));
+            var responseCache = MontarResponse(existente, baseUrl, veioDoCache: true);
+            responseCache.ValorEstimado = await pricing.ConsultarAsync(
+                request.Comprimento, request.Cor, request.TipoCabelo, request.MetodoMegaHair, ct)
+                ?? responseCache.ValorEstimado;
+            return Ok(responseCache);
         }
         // ── Chama pipeline de IA ────────────────────────────
         SimulacaoResult resultado;
@@ -272,7 +278,9 @@ public class SimulacoesController : ControllerBase
         }
 
         // ── Calcula orçamento ───────────────────────────────
-        var valor = _orcamentoService.Calcular(
+        var valor = await pricing.ConsultarAsync(
+            request.Comprimento, request.Cor, request.TipoCabelo, request.MetodoMegaHair, ct)
+            ?? _orcamentoService.Calcular(
             request.Comprimento, request.MetodoMegaHair);
 
         // ── Prompt para auditoria ───────────────────────────

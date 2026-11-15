@@ -1,3 +1,4 @@
+using SimuladorMegaHair.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -306,6 +307,9 @@ builder.Services.AddAuthorization();
 // ==========================================================
 // BUILD
 // ==========================================================
+
+builder.Services.AddHttpClient<MegaHairProPricingClient>(client =>
+    client.Timeout = TimeSpan.FromSeconds(5));
 
 var app = builder.Build();
 
