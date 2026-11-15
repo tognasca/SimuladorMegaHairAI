@@ -270,6 +270,24 @@
             if (this._ativo) { this._ativo.destruir(); this._ativo = null; }
         },
 
+        async compartilharOrcamento(url, texto) {
+            if (!navigator.share || !navigator.canShare) return 'indisponivel';
+            try {
+                const resposta = await fetch(url, { mode: 'cors' });
+                if (!resposta.ok) return 'indisponivel';
+                const blob = await resposta.blob();
+                const formato = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[blob.type];
+                if (!formato) return 'indisponivel';
+                const foto = new File([blob], 'simulacao-tati.' + formato, { type: blob.type });
+                const dados = { files: [foto], text: texto };
+                if (!navigator.canShare(dados)) return 'indisponivel';
+                await navigator.share(dados);
+                return 'ok';
+            } catch (erro) {
+                return erro?.name === 'AbortError' ? 'cancelado' : 'indisponivel';
+            }
+        },
+
         /**
          * Salva a imagem. No celular abre a folha de compartilhar (que tem
          * "Salvar imagem"); no computador baixa o arquivo.

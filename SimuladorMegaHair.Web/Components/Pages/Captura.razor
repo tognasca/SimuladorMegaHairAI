@@ -3,6 +3,7 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject ApiClient Api
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
 <PageTitle>Sua transformação — Tati Mega Hair</PageTitle>
 
 <div class="mh-app">
@@ -288,8 +289,16 @@
                 }
             </div>
 
+            <p class="mh-nota">Orçamento somente do mega hair, considerando origem, comprimento, textura, método e gramagem informados. Coloração é um serviço cobrado à parte.</p>
+
             <div class="mh-acoes-principais">
-                <button type="button" class="mh-btn mh-btn-primario @(salvo ? "mh-ok" : "")" disabled="@salvando" @onclick="SalvarAsync">
+                <button type="button" class="mh-btn mh-btn-primario" @onclick="CompartilharComTatiAsync">Enviar foto e orçamento para a Tati</button>
+                <a class="mh-link" href="@LinkWhatsAppTati()" target="_blank" rel="noopener">Abrir orçamento no WhatsApp</a>
+                @if (!string.IsNullOrEmpty(avisoCompartilhar))
+                {
+                    <p class="mh-nota" role="status">@avisoCompartilhar</p>
+                }
+                <button type="button" class="mh-btn mh-btn-secundario @(salvo ? "mh-ok" : "")" disabled="@salvando" @onclick="SalvarAsync">
                     @(salvando ? "Salvando…" : salvo ? "✓ Salvo!" : "💾 Salvar minha transformação")
                 </button>
                 <button type="button" class="mh-btn mh-btn-secundario" @onclick="ExperimentarOutroVisual">✨ Experimentar outro visual</button>
@@ -401,6 +410,7 @@
 
     private bool salvando, salvo;
     private string? avisoSalvar;
+    private string? avisoCompartilhar;
 
     private bool faseEnvio = true;
     private int indiceMensagem;
@@ -722,7 +732,7 @@
         cts.CancelAfter(TempoLimiteGeracao);
         var ct = cts.Token;
 
-        erro = null; resultado = null; comparadorFalhou = false; salvo = false; avisoSalvar = null;
+        erro = null; resultado = null; avisoCompartilhar = null; comparadorFalhou = false; salvo = false; avisoSalvar = null;
         faseEnvio = string.IsNullOrWhiteSpace(fotoServidorPath);
         indiceMensagem = 0;
         cancelamentoManual = false;
@@ -851,6 +861,50 @@
     }
 
     // ── Resultado ────────────────────────────────────────────────────────────
+    private string MensagemParaTati()
+    {
+        var origem = origemCabelo switch
+        {
+            "brasileiro-regional" => "Brasileiro regional",
+            "brasileiro-do-sul" => "Brasileiro do Sul",
+            "indiano" => "Indiano",
+            "russo" => "Russo",
+            "vietnamita" => "Vietnamita",
+            _ => "Não informada"
+        };
+        var gramagem = quantidadeGramas is > 0 ? $"{quantidadeGramas} g" : "Não informada";
+        var preco = resultado?.PrecoMegaHairProIndisponivel == false && quantidadeGramas is > 0
+            ? $"R$ {resultado.ValorEstimado.ToString("N2", PtBr)}"
+            : "A confirmar com a Tati";
+        return string.Join("\n",
+            "Oi, Tati! Quero conversar sobre o resultado da minha simulação de mega hair.",
+            $"Origem: {origem}",
+            $"Comprimento: {comprimento} | Textura: {tipoCabelo}",
+            $"Método: {metodo} | Quantidade: {gramagem}",
+            $"Estimativa do mega hair: {preco}",
+            $"Cor simulada: {cor}. Coloração é um serviço cobrado à parte.");
+    }
+
+    private string LinkWhatsAppTati()
+    {
+        var numero = new string((Config["Tati:WhatsApp"] ?? "").Where(char.IsAsciiDigit).ToArray());
+        return $"https://wa.me/{numero}?text={Uri.EscapeDataString(MensagemParaTati())}";
+    }
+
+    private async Task CompartilharComTatiAsync()
+    {
+        if (resultado is null) return;
+        avisoCompartilhar = null;
+        try
+        {
+            var status = await JS.InvokeAsync<string>(
+                "megaHairResultado.compartilharOrcamento", resultado.FotoResultadoUrl, MensagemParaTati());
+            if (status == "ok" || status == "cancelado") return;
+        }
+        catch (JSException) { }
+        avisoCompartilhar = "Salve a foto e use Abrir orçamento no WhatsApp para anexá-la na conversa com a Tati.";
+    }
+
     private async Task SalvarAsync()
     {
         if (resultado is null || salvando) return;
