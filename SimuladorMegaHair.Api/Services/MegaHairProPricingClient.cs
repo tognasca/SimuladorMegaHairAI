@@ -1,6 +1,4 @@
-using System.Globalization;
 using System.Net.Http.Json;
-using System.Text.RegularExpressions;
 
 namespace SimuladorMegaHair.Api.Services;
 
@@ -9,64 +7,51 @@ public sealed class MegaHairProPricingClient(
     IConfiguration configuration,
     ILogger<MegaHairProPricingClient> logger)
 {
-    public async Task<decimal?> ConsultarAsync(
-        string comprimento, string cor, string textura, string metodo, CancellationToken ct)
+    public async Task<decimal?> ConsultarAsync(string metodo, decimal? quantidadeGramas, CancellationToken ct)
     {
-        var settings = configuration.GetSection("MegaHairProPricing");
-        if (!Uri.TryCreate(settings["Endpoint"], UriKind.Absolute, out var endpoint)
-            || endpoint.Scheme != Uri.UriSchemeHttps)
+        if (quantidadeGramas is not > 0)
             return null;
 
-        var regra = settings.GetSection("Mapeamentos").Get<Regra[]>()?.FirstOrDefault(r =>
-            Igual(r.Comprimento, comprimento) && Igual(r.Cor, cor)
-            && Igual(r.Textura, textura) && Igual(r.Metodo, metodo));
+        using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint("preco"))
+        {
+            Content = JsonContent.Create(new { metodo, quantidadeGramas })
+        };
+        var resposta = await ConsultarApiAsync<Preco>(request, ct);
+        return resposta?.ValorTotal is > 0 ? resposta.ValorTotal : null;
+    }
 
-        if (regra is not { ProdutoId: > 0, MetodoId: > 0, QuantidadeGramas: > 0 })
-            return null;
+    public async Task<string[]> ListarMetodosAsync(CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, Endpoint("metodos"));
+        return await ConsultarApiAsync<string[]>(request, ct) ?? Array.Empty<string>();
+    }
 
+    private Uri Endpoint(string recurso)
+    {
+        var baseUrl = configuration["MegaHairProPricing:BaseUrl"] ?? "https://megahairpro.tatimegahair.com.br";
+        return new Uri(new Uri(baseUrl, UriKind.Absolute), "/api/simulador-megahair/" + recurso);
+    }
+
+    private async Task<T?> ConsultarApiAsync<T>(HttpRequestMessage request, CancellationToken ct) where T : class
+    {
         try
         {
-            using var response = await http.PostAsJsonAsync(endpoint, new
-            {
-                regra.ProdutoId,
-                regra.MetodoId,
-                regra.QuantidadeGramas
-            }, ct);
-
+            using var response = await http.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning("MegaHairPro retornou HTTP {StatusCode} ao consultar o orçamento", response.StatusCode);
+                logger.LogWarning("MegaHairPro retornou HTTP {StatusCode}", response.StatusCode);
                 return null;
             }
 
-            var resultado = await response.Content.ReadFromJsonAsync<Resposta>(cancellationToken: ct);
-            if (resultado is not { Sucesso: true, Mensagem: not null })
-                return null;
-
-            // O endpoint atual entrega o total na mensagem formatada em pt-BR.
-            var match = Regex.Match(resultado.Mensagem,
-                @"Valor total:[ \t]*\r?\nR\$[ \t]*(?<valor>[0-9.]+,[0-9]{2})[ \t]*\r?$",
-                RegexOptions.Multiline | RegexOptions.CultureInvariant);
-
-            return match.Success && decimal.TryParse(match.Groups["valor"].Value,
-                NumberStyles.Number, CultureInfo.GetCultureInfo("pt-BR"), out var valor) && valor > 0
-                ? valor
-                : null;
+            return await response.Content.ReadFromJsonAsync<T>(cancellationToken: ct);
         }
         catch (Exception ex) when (!ct.IsCancellationRequested &&
             ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
         {
-            logger.LogWarning(ex, "Falha ao consultar orçamento no MegaHairPro");
+            logger.LogWarning(ex, "Falha ao consultar o MegaHairPro");
             return null;
         }
     }
 
-    private static bool Igual(string? configurado, string? solicitado) =>
-        string.Equals(configurado?.Trim(), solicitado?.Trim(), StringComparison.OrdinalIgnoreCase);
-
-    public sealed record Regra(
-        string Comprimento, string Cor, string Textura, string Metodo,
-        int ProdutoId, int MetodoId, decimal QuantidadeGramas);
-
-    private sealed record Resposta(bool Sucesso, string? Mensagem);
+    private sealed record Preco(decimal ValorTotal);
 }

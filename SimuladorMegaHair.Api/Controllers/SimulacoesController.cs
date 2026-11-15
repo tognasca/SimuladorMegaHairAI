@@ -129,6 +129,12 @@ public class SimulacoesController : ControllerBase
     //  CRIAR SIMULAÇÃO
     // ═══════════════════════════════════════════════════════════
 
+    [HttpGet("metodos-megahairpro")]
+    [AllowAnonymous]
+    public async Task<ActionResult<string[]>> ListarMetodosMegaHairPro(
+        [FromServices] MegaHairProPricingClient pricing, CancellationToken ct) =>
+        Ok(await pricing.ListarMetodosAsync(ct));
+
     [HttpPost]
     [AllowAnonymous]
     public async Task<ActionResult<SimulacaoResponse>> Criar(
@@ -173,9 +179,10 @@ public class SimulacoesController : ControllerBase
         if (existente is not null)
         {
             var responseCache = MontarResponse(existente, baseUrl, veioDoCache: true);
-            responseCache.ValorEstimado = await pricing.ConsultarAsync(
-                request.Comprimento, request.Cor, request.TipoCabelo, request.MetodoMegaHair, ct)
-                ?? responseCache.ValorEstimado;
+            var precoCache = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, ct);
+            responseCache.PrecoMegaHairProIndisponivel = request.QuantidadeGramas.HasValue && !precoCache.HasValue;
+            responseCache.ValorEstimado = precoCache
+                ?? _orcamentoService.Calcular(request.Comprimento, request.MetodoMegaHair);
             return Ok(responseCache);
         }
         // ── Chama pipeline de IA ────────────────────────────
@@ -278,10 +285,8 @@ public class SimulacoesController : ControllerBase
         }
 
         // ── Calcula orçamento ───────────────────────────────
-        var valor = await pricing.ConsultarAsync(
-            request.Comprimento, request.Cor, request.TipoCabelo, request.MetodoMegaHair, ct)
-            ?? _orcamentoService.Calcular(
-            request.Comprimento, request.MetodoMegaHair);
+        var precoMegaHairPro = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, ct);
+        var valor = precoMegaHairPro ?? _orcamentoService.Calcular(request.Comprimento, request.MetodoMegaHair);
 
         // ── Prompt para auditoria ───────────────────────────
         var prompt = request.Provider switch
@@ -318,6 +323,7 @@ public class SimulacoesController : ControllerBase
 
         var response = MontarResponse(simulacao, baseUrl, veioDoCache: false);
         response.Aviso = resultado.Aviso;
+        response.PrecoMegaHairProIndisponivel = request.QuantidadeGramas.HasValue && !precoMegaHairPro.HasValue;
 
         return Ok(response);
     }

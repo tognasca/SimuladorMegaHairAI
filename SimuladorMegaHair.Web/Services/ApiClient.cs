@@ -57,6 +57,20 @@ public class ApiClient
         return caminho.Trim('"');
     }
 
+    public async Task<string[]> ListarMetodosMegaHairProAsync(CancellationToken ct)
+    {
+        try
+        {
+            return await _http.GetFromJsonAsync<string[]>("api/simulacoes/metodos-megahairpro", ct)
+                ?? Array.Empty<string>();
+        }
+        catch (Exception ex) when (
+            ex is HttpRequestException or OperationCanceledException or JsonException)
+        {
+            return Array.Empty<string>();
+        }
+    }
+
     public async Task<SimulacaoResponse?> CriarSimulacaoAsync(
         CriarSimulacaoRequest request,
         CancellationToken cancellationToken = default)

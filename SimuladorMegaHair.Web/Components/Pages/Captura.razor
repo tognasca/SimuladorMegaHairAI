@@ -184,6 +184,11 @@
                         }
                     </div>
                 </div>
+                <div class="mh-metodo">
+                    <label class="mh-metodo-titulo" for="mh-quantidade">Quantidade de cabelo (g)</label>
+                    <input id="mh-quantidade" class="form-control" type="number" min="1" step="1"
+                           inputmode="numeric" @bind="quantidadeGramas" />
+                </div>
             }
 
             <div class="mh-rodape-fixo">
@@ -258,7 +263,14 @@
 
             <div class="mh-resultado-meta">
                 <span>@metodo · @comprimento · @cor · @tipoCabelo</span>
-                <strong>Estimativa R$ @resultado.ValorEstimado.ToString("N2", PtBr)</strong>
+                @if (resultado.PrecoMegaHairProIndisponivel)
+                {
+                    <strong>Preço indisponível no momento</strong>
+                }
+                else
+                {
+                    <strong>Estimativa R$ @resultado.ValorEstimado.ToString("N2", PtBr)</strong>
+                }
             </div>
 
             <div class="mh-acoes-principais">
@@ -391,12 +403,13 @@
     private readonly List<string> cores = new() { "Preto", "Castanho Escuro", "Castanho Claro", "Loiro Escuro", "Loiro Médio", "Loiro Claro", "Loiro Platinado", "Ruivo", "Grisalho" };
     // O backend também aceita "Crespo"; a especificação desta tela pede três opções.
     private readonly List<string> tipos = new() { "Liso", "Ondulado", "Cacheado" };
-    private readonly List<string> metodos = new() { "Fita Adesiva", "Queratina", "Micro Link", "Costurado" };
+    private List<string> metodos = new() { "Fita Adesiva", "Queratina", "Micro Link", "Costurado" };
 
     private string comprimento = "55 cm";
     private string cor = "Castanho Escuro";
     private string tipoCabelo = "Liso";
     private string metodo = "Fita Adesiva";
+    private int? quantidadeGramas;
 
     private record FiltroInfo(string Id, string Nome);
     private static readonly FiltroInfo[] Filtros =
@@ -468,11 +481,18 @@
     }
 
     // ── Ciclo de vida ────────────────────────────────────────────────────────
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (!string.IsNullOrWhiteSpace(ComprimentoSugerido) && comprimentos.Contains(ComprimentoSugerido)) comprimento = ComprimentoSugerido;
         if (!string.IsNullOrWhiteSpace(CorSugerida) && cores.Contains(CorSugerida)) cor = CorSugerida;
         if (!string.IsNullOrWhiteSpace(TipoSugerido) && tipos.Contains(TipoSugerido)) tipoCabelo = TipoSugerido;
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(6));
+        var metodosCadastrados = await Api.ListarMetodosMegaHairProAsync(timeout.Token);
+        if (metodosCadastrados.Length > 0)
+        {
+            metodos = metodosCadastrados.ToList();
+            if (!metodos.Contains(metodo)) metodo = metodos[0];
+        }
         if (!string.IsNullOrWhiteSpace(MetodoSugerido) && metodos.Contains(MetodoSugerido)) metodo = MetodoSugerido;
     }
 
@@ -709,6 +729,7 @@
                 Cor = cor,
                 TipoCabelo = tipoCabelo,
                 MetodoMegaHair = metodo,
+                QuantidadeGramas = quantidadeGramas,
                 Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.OpenAI,
                 ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null,
                 ForcarNovaGeracao = forcarNova
