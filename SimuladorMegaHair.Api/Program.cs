@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using SimuladorMegaHair.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
@@ -311,6 +312,27 @@ builder.Services.AddAuthorization();
 builder.Services.AddHttpClient<MegaHairProPricingClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(5));
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("PixEscrita", limiter =>
+    {
+        limiter.PermitLimit = 30;
+        limiter.Window = TimeSpan.FromMinutes(1);
+    });
+    options.AddFixedWindowLimiter("PixConsulta", limiter =>
+    {
+        limiter.PermitLimit = 120;
+        limiter.Window = TimeSpan.FromMinutes(1);
+    });
+});
+builder.Services.AddScoped<CreditosSimulacao>();
+builder.Services.AddHttpClient("MercadoPago", client =>
+{
+    client.BaseAddress = new Uri("https://api.mercadopago.com/");
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+
 var app = builder.Build();
 
 // ==========================================================
@@ -456,6 +478,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseRateLimiter();
 
 app.UseCors("Default");
 

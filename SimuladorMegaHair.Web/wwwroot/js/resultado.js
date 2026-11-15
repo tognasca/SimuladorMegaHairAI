@@ -270,6 +270,24 @@
             if (this._ativo) { this._ativo.destruir(); this._ativo = null; }
         },
 
+        carteiraPix() {
+            const chave = 'tatimegahair.carteiraPix';
+            let token = localStorage.getItem(chave);
+            if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+                token = Array.from(crypto.getRandomValues(new Uint8Array(32)),
+                    byte => byte.toString(16).padStart(2, '0')).join('');
+                localStorage.setItem(chave, token);
+            }
+            return token;
+        },
+
+        pedidoPix(valor) {
+            const chave = 'tatimegahair.pedidoPix';
+            if (valor === '') localStorage.removeItem(chave);
+            else if (valor) localStorage.setItem(chave, valor);
+            return localStorage.getItem(chave);
+        },
+
         async fotoParaTv(url) {
             const imagem = new Image();
             imagem.src = url;

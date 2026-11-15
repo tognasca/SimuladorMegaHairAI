@@ -148,6 +148,7 @@ public class SimulacoesController : ControllerBase
     public async Task<ActionResult<SimulacaoResponse>> Criar(
         [FromBody] CriarSimulacaoRequest request,
         [FromServices] MegaHairProPricingClient pricing,
+        [FromServices] CreditosSimulacao creditos,
         CancellationToken ct)
     {
 
@@ -172,7 +173,7 @@ public class SimulacoesController : ControllerBase
 
         // ── Cache: mesma foto + mesmos parâmetros + mesmo provider ──
         Simulacao? existente = null;
-        if (request.Modo == HairEditMode.Extend)
+        if (request.Modo == HairEditMode.Extend && !request.ForcarNovaGeracao)
         {
             existente = await _dbContext.Simulacoes
                 .Where(s => s.FotoOriginalPath == request.FotoOriginalPath
@@ -193,147 +194,171 @@ public class SimulacoesController : ControllerBase
                 ?? _orcamentoService.Calcular(request.Comprimento, request.MetodoMegaHair);
             return Ok(responseCache);
         }
-        // ── Chama pipeline de IA ────────────────────────────
-        SimulacaoResult resultado;
+        var reserva = CreditosSimulacao.Reserva.Bloqueada;
+        string? carteira = null;
+        if (creditos.Ativo && User.Identity?.IsAuthenticated != true)
+        {
+            if (!creditos.PublicoAtivo)
+                return StatusCode(403, new { erro = "Geração pública indisponível. Fale com o salão." });
+            carteira = CreditosSimulacao.Carteira(Request.Headers["X-Simulador-Carteira"].ToString());
+            if (carteira is null)
+                return BadRequest(new { erro = "Abra o simulador novamente para iniciar sua sessão." });
+            reserva = await creditos.ReservarAsync(carteira, ct);
+            if (reserva == CreditosSimulacao.Reserva.Bloqueada)
+                return StatusCode(402, new { erro = "Sua geração gratuita está indisponível. Compre créditos ou fale com o salão." });
+        }
 
-        using var geracaoCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        geracaoCts.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(_simOpts.TempoMaximoGeracaoSegundos, 30, 600)));
-
+        var entregue = false;
         try
         {
-            // NOTA (correção da auditoria): antes havia aqui uma chamada extra a
-            // _imageService.PipelineKontextAsync(...) (flux-kontext-pro, modelo pago
-            // no Replicate) cujo resultado nunca era usado — toda simulação pagava
-            // por uma predição descartada. Removida.
-            resultado = await _imageService.GerarSimulacaoAsync(
-                new SimulacaoRequest
+            // ── Chama pipeline de IA ────────────────────────────
+            SimulacaoResult resultado;
+
+            using var geracaoCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            geracaoCts.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(_simOpts.TempoMaximoGeracaoSegundos, 30, 600)));
+
+            try
+            {
+                // NOTA (correção da auditoria): antes havia aqui uma chamada extra a
+                // _imageService.PipelineKontextAsync(...) (flux-kontext-pro, modelo pago
+                // no Replicate) cujo resultado nunca era usado — toda simulação pagava
+                // por uma predição descartada. Removida.
+                resultado = await _imageService.GerarSimulacaoAsync(
+                    new SimulacaoRequest
+                    {
+                        ImagemOriginalPath = request.FotoOriginalPath,
+                        Comprimento = request.Comprimento,
+                        Cor = request.Cor,
+                        TipoCabelo = request.TipoCabelo,
+                        MetodoMegaHair = request.MetodoMegaHair,
+                        Provider = request.Provider,
+                        Modo = request.Modo
+                    }, ct);
+            }
+            catch (FileNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Foto não encontrada ao gerar simulação {ClienteId}", request.ClienteId);
+                return NotFound(new { erro = "Não encontramos a foto enviada. Envie novamente." });
+            }
+            catch (FotoInvalidaException ex)
+            {
+                _logger.LogWarning(ex, "Foto invalida ao gerar simulacao {ClienteId}", request.ClienteId);
+                return UnprocessableEntity(new { erro = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Falha ao gerar simulação {ClienteId}", request.ClienteId);
+                return UnprocessableEntity(new
                 {
-                    ImagemOriginalPath = request.FotoOriginalPath,
-                    Comprimento = request.Comprimento,
-                    Cor = request.Cor,
-                    TipoCabelo = request.TipoCabelo,
-                    MetodoMegaHair = request.MetodoMegaHair,
-                    Provider = request.Provider,
-                    Modo = request.Modo
-                }, ct);
-        }
-        catch (FileNotFoundException ex)
-        {
-            _logger.LogWarning(ex, "Foto não encontrada ao gerar simulação {ClienteId}", request.ClienteId);
-            return NotFound(new { erro = "Não encontramos a foto enviada. Envie novamente." });
-        }
-        catch (FotoInvalidaException ex)
-        {
-            _logger.LogWarning(ex, "Foto invalida ao gerar simulacao {ClienteId}", request.ClienteId);
-            return UnprocessableEntity(new { erro = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogError(ex, "Falha ao gerar simulação {ClienteId}", request.ClienteId);
-            return UnprocessableEntity(new
+                    erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
+                });
+            }
+            catch (HttpRequestException ex) when (
+                ex.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
             {
-                erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
-            });
-        }
-        catch (HttpRequestException ex) when (
-            ex.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
-            ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
-        {
-            // Causa mais comum aqui: Replicate:ApiToken vazio, ainda com o
-            // token antigo (revogado) ou digitado errado no user-secrets/
-            // variável de ambiente. Logamos o detalhe completo no servidor,
-            // mas devolvemos ao cliente uma mensagem que não vaza o token.
-            _logger.LogError(ex,
-                "Falha de autenticação com o provedor de IA ao gerar simulação {ClienteId}",
-                request.ClienteId);
+                // Causa mais comum aqui: Replicate:ApiToken vazio, ainda com o
+                // token antigo (revogado) ou digitado errado no user-secrets/
+                // variável de ambiente. Logamos o detalhe completo no servidor,
+                // mas devolvemos ao cliente uma mensagem que não vaza o token.
+                _logger.LogError(ex,
+                    "Falha de autenticação com o provedor de IA ao gerar simulação {ClienteId}",
+                    request.ClienteId);
 
-            return StatusCode(StatusCodes.Status502BadGateway, new
+                return StatusCode(StatusCodes.Status502BadGateway, new
+                {
+                    erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
+                });
+            }
+            catch (HttpRequestException ex)
             {
-                erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
-            });
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex,
-                "Falha ao chamar o provedor de IA ao gerar simulação {ClienteId}",
-                request.ClienteId);
+                _logger.LogError(ex,
+                    "Falha ao chamar o provedor de IA ao gerar simulação {ClienteId}",
+                    request.ClienteId);
 
-            return StatusCode(StatusCodes.Status502BadGateway, new
+                return StatusCode(StatusCodes.Status502BadGateway, new
+                {
+                    erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
+                });
+            }
+            catch (TimeoutException ex)
             {
-                erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
-            });
-        }
-        catch (TimeoutException ex)
-        {
-            _logger.LogError(ex, "Timeout ao gerar simulação {ClienteId}", request.ClienteId);
+                _logger.LogError(ex, "Timeout ao gerar simulação {ClienteId}", request.ClienteId);
 
-            return StatusCode(StatusCodes.Status504GatewayTimeout, new
+                return StatusCode(StatusCodes.Status504GatewayTimeout, new
+                {
+                    erro = "A simulação está demorando mais do que o esperado. Tente novamente."
+                });
+            }
+            catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
             {
-                erro = "A simulação está demorando mais do que o esperado. Tente novamente."
-            });
-        }
-        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
-        {
-            // Timeout do HttpClient (não foi o usuário/requisição que cancelou).
-            _logger.LogError(ex, "Timeout ao gerar simulação {ClienteId}", request.ClienteId);
+                // Timeout do HttpClient (não foi o usuário/requisição que cancelou).
+                _logger.LogError(ex, "Timeout ao gerar simulação {ClienteId}", request.ClienteId);
 
-            return StatusCode(StatusCodes.Status504GatewayTimeout, new
+                return StatusCode(StatusCodes.Status504GatewayTimeout, new
+                {
+                    erro = "A simulação está demorando mais do que o esperado. Tente novamente."
+                });
+            }
+            catch (Exception ex)
             {
-                erro = "A simulação está demorando mais do que o esperado. Tente novamente."
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro inesperado ao gerar simulação {ClienteId}", request.ClienteId);
+                _logger.LogError(ex, "Erro inesperado ao gerar simulação {ClienteId}", request.ClienteId);
 
-            return StatusCode(StatusCodes.Status500InternalServerError, new
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
+                });
+            }
+
+            // ── Calcula orçamento ───────────────────────────────
+            var precoMegaHairPro = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, request.OrigemCabelo, ct);
+            var valor = precoMegaHairPro ?? _orcamentoService.Calcular(request.Comprimento, request.MetodoMegaHair);
+
+            // ── Prompt para auditoria ───────────────────────────
+            var prompt = request.Provider switch
             {
-                erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
-            });
+                //ImageProvider.OpenAI => PromptBuilder.BuildOpenAI(
+                //    request.Comprimento, request.Cor,
+                //    request.TipoCabelo, request.MetodoMegaHair),
+
+                //ImageProvider.Local => PromptBuilder.BuildLocal(
+                //    request.Comprimento, request.Cor, request.TipoCabelo),
+
+                _ => PromptBuilder.BuildInpainting(
+                    request.Comprimento, request.Cor, request.TipoCabelo, request.MetodoMegaHair, HairEditMode.Extend)
+            };
+
+            // ── Persiste ────────────────────────────────────────
+            var simulacao = new Simulacao
+            {
+                ClienteId = request.ClienteId,
+                FotoOriginalPath = request.FotoOriginalPath,
+                FotoResultadoPath = resultado.ImagemResultadoPath,
+                Comprimento = request.Comprimento,
+                Cor = request.Cor,
+                TipoCabelo = request.TipoCabelo,
+                MetodoMegaHair = request.MetodoMegaHair,
+                PromptUsado = prompt,
+                ValorEstimado = valor,
+                ProviderUtilizado = resultado.ProviderUtilizado,
+                TempoProcessamentoMs = resultado.TempoProcessamentoMs
+            };
+
+            _dbContext.Simulacoes.Add(simulacao);
+            await _dbContext.SaveChangesAsync(ct);
+
+            var response = MontarResponse(simulacao, baseUrl, veioDoCache: false);
+            response.Aviso = resultado.Aviso;
+            response.PrecoMegaHairProIndisponivel = request.QuantidadeGramas.HasValue && !precoMegaHairPro.HasValue;
+
+            entregue = true;
+            return Ok(response);
         }
-
-        // ── Calcula orçamento ───────────────────────────────
-        var precoMegaHairPro = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, request.OrigemCabelo, ct);
-        var valor = precoMegaHairPro ?? _orcamentoService.Calcular(request.Comprimento, request.MetodoMegaHair);
-
-        // ── Prompt para auditoria ───────────────────────────
-        var prompt = request.Provider switch
+        finally
         {
-            //ImageProvider.OpenAI => PromptBuilder.BuildOpenAI(
-            //    request.Comprimento, request.Cor,
-            //    request.TipoCabelo, request.MetodoMegaHair),
-
-            //ImageProvider.Local => PromptBuilder.BuildLocal(
-            //    request.Comprimento, request.Cor, request.TipoCabelo),
-
-            _ => PromptBuilder.BuildInpainting(
-                request.Comprimento, request.Cor, request.TipoCabelo, request.MetodoMegaHair, HairEditMode.Extend)
-        };
-
-        // ── Persiste ────────────────────────────────────────
-        var simulacao = new Simulacao
-        {
-            ClienteId = request.ClienteId,
-            FotoOriginalPath = request.FotoOriginalPath,
-            FotoResultadoPath = resultado.ImagemResultadoPath,
-            Comprimento = request.Comprimento,
-            Cor = request.Cor,
-            TipoCabelo = request.TipoCabelo,
-            MetodoMegaHair = request.MetodoMegaHair,
-            PromptUsado = prompt,
-            ValorEstimado = valor,
-            ProviderUtilizado = resultado.ProviderUtilizado,
-            TempoProcessamentoMs = resultado.TempoProcessamentoMs
-        };
-
-        _dbContext.Simulacoes.Add(simulacao);
-        await _dbContext.SaveChangesAsync(ct);
-
-        var response = MontarResponse(simulacao, baseUrl, veioDoCache: false);
-        response.Aviso = resultado.Aviso;
-        response.PrecoMegaHairProIndisponivel = request.QuantidadeGramas.HasValue && !precoMegaHairPro.HasValue;
-
-        return Ok(response);
+            if (!entregue && carteira is not null)
+                await creditos.EstornarAsync(carteira, reserva);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════

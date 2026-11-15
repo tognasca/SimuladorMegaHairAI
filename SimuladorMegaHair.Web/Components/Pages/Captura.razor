@@ -250,6 +250,46 @@
         </section>
     }
 
+    @if (ofertaPix is { Ativo: true } oferta && etapa == Etapa.Creditos)
+    {
+        <section class="mh-tela mh-tela-estilo" aria-labelledby="mh-pix-titulo">
+            <h2 id="mh-pix-titulo" class="mh-titulo mh-titulo-menor">Comprar novas simulações</h2>
+            <p>@oferta.Quantidade gerações por R$ @oferta.Preco.ToString("N2", PtBr), via Pix.</p>
+            @if (pix?.Status == "approved")
+            {
+                <p role="status">Pagamento aprovado. Seus créditos estão disponíveis neste navegador.</p>
+                <button type="button" class="mh-btn mh-btn-primario" @onclick="() => GerarSimulacaoAsync(forcarNovaPix)">Gerar meu visual</button>
+            }
+            else if (pix?.CopiaECola is { Length: > 0 } copia)
+            {
+                @if (pix.Qr is { Length: > 0 } qr)
+                {
+                    <img src="@($"data:image/png;base64,{qr}")" alt="QR Code Pix" width="180" height="180" />
+                }
+                <label for="mh-pix-codigo">Pix copia e cola</label>
+                <textarea id="mh-pix-codigo" class="form-control" readonly rows="3">@copia</textarea>
+                <button type="button" class="mh-btn mh-btn-primario" disabled="@consultandoPix" @onclick="VerificarPixAsync">Verificar pagamento</button>
+            }
+            else
+            {
+                <label for="mh-pix-email">E-mail do pagador</label>
+                <input id="mh-pix-email" class="form-control" type="email" maxlength="254" @bind="emailPix" />
+                <label for="mh-pix-cpf">CPF do pagador</label>
+                <input id="mh-pix-cpf" class="form-control" inputmode="numeric" maxlength="14" @bind="cpfPix" />
+                <button type="button" class="mh-btn mh-btn-primario" disabled="@consultandoPix" @onclick="CriarPixAsync">Gerar Pix</button>
+                @if (pedidoPix != Guid.Empty)
+                {
+                    <button type="button" class="mh-btn mh-btn-secundario" disabled="@consultandoPix" @onclick="VerificarPixAsync">Verificar Pix anterior</button>
+                }
+            }
+            @if (mensagemPix is not null)
+            {
+                <p role="status">@mensagemPix</p>
+            }
+            <button type="button" class="mh-link" disabled="@consultandoPix" @onclick="VoltarDoPix">Voltar às escolhas</button>
+        </section>
+    }
+
     @if (etapa == Etapa.Orcamento)
     {
         <section class="mh-tela mh-tela-estilo" aria-labelledby="mh-titulo-orcamento">
@@ -442,8 +482,18 @@
     [SupplyParameterFromQuery(Name = "metodo"), Parameter] public string? MetodoSugerido { get; set; }
 
     // ── Estado ───────────────────────────────────────────────────────────────
-    private enum Etapa { Foto, Revisao, Estilo, Orcamento, Gerando, Resultado }
+    private enum Etapa { Foto, Revisao, Estilo, Orcamento, Creditos, Gerando, Resultado }
     private Etapa etapa = Etapa.Foto;
+    private ApiClient.OfertaPix? ofertaPix;
+    private ApiClient.EstadoPix? pix;
+    private Guid pedidoPix;
+    private string? carteiraPix;
+    private string emailPix = "";
+    private string cpfPix = "";
+    private string? mensagemPix;
+    private bool consultandoPix;
+    private bool forcarNovaPix;
+
     private string codigoTv = "";
     private string? controleTv;
     private string? mensagemTv;
@@ -911,13 +961,25 @@
             };
             // O ApiClient não repassa o CancellationToken ao HttpClient; WaitAsync garante que
             // "Cancelar" e o tempo limite realmente devolvam a tela à cliente.
-            resultado = await Api.CriarSimulacaoAsync(request, ct).WaitAsync(ct);
+            if (carteiraPix is null)
+            {
+                try { carteiraPix = await JS.InvokeAsync<string>("megaHairResultado.carteiraPix"); }
+                catch (JSException) { }
+            }
+            resultado = await Api.CriarSimulacaoAsync(request, ct, carteiraPix).WaitAsync(ct);
 
             if (resultado is null || string.IsNullOrWhiteSpace(resultado.FotoResultadoUrl))
                 throw new InvalidOperationException("A simulação não retornou imagem.");
 
             etapa = Etapa.Resultado;
             iniciarComparadorPendente = true;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.PaymentRequired)
+        {
+            etapa = Etapa.Estilo;
+            passoEstilo = 2;
+            erro = "Sua geração gratuita está indisponível. Fale com a Tati para continuar.";
+            await AbrirCreditosAsync(forcarNova);
         }
         catch (OperationCanceledException)
         {
@@ -934,6 +996,75 @@
         {
             cts.Cancel(); // encerra o ciclo de mensagens
         }
+    }
+
+    private async Task AbrirCreditosAsync(bool forcarNova)
+    {
+        if (carteiraPix is null) return;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            ofertaPix = await Api.ObterOfertaPixAsync(timeout.Token);
+            if (ofertaPix is not { Ativo: true }) return;
+            var salvo = await JS.InvokeAsync<string?>("megaHairResultado.pedidoPix");
+            Guid.TryParse(salvo, out pedidoPix);
+            pix = null;
+            mensagemPix = null;
+            forcarNovaPix = forcarNova;
+            etapa = Etapa.Creditos;
+            if (pedidoPix != Guid.Empty) await VerificarPixAsync();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JSException or System.Text.Json.JsonException) { }
+    }
+
+    private Task CriarPixAsync() => ProcessarPixAsync(criar: true);
+    private Task VerificarPixAsync() => ProcessarPixAsync(criar: false);
+
+    private void VoltarDoPix()
+    {
+        etapa = Etapa.Estilo;
+        passoEstilo = 2;
+        erro = null;
+    }
+
+    private async Task ProcessarPixAsync(bool criar)
+    {
+        if (consultandoPix || carteiraPix is null) return;
+        var cpf = new string(cpfPix.Where(char.IsAsciiDigit).ToArray());
+        if (criar && (string.IsNullOrWhiteSpace(emailPix) || cpf.Length != 11))
+        {
+            mensagemPix = "Confira o e-mail e informe os 11 dígitos do CPF.";
+            return;
+        }
+        if (!criar && pedidoPix == Guid.Empty) return;
+        consultandoPix = true;
+        mensagemPix = null;
+        try
+        {
+            if (pedidoPix == Guid.Empty)
+            {
+                pedidoPix = Guid.NewGuid();
+                await JS.InvokeVoidAsync("megaHairResultado.pedidoPix", pedidoPix.ToString());
+            }
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            pix = await Api.ConsultarPixAsync(carteiraPix, pedidoPix, criar ? emailPix.Trim() : null, cpf, timeout.Token);
+            if (pix?.Status is "approved" or "cancelled" or "rejected" or "refunded")
+            {
+                await JS.InvokeVoidAsync("megaHairResultado.pedidoPix", "");
+                pedidoPix = Guid.Empty;
+                emailPix = "";
+                cpfPix = "";
+                if (pix.Status != "approved")
+                    mensagemPix = "O pagamento não foi aprovado. Você pode gerar outro Pix.";
+            }
+            else
+                mensagemPix = "Aguardando confirmação pelo Mercado Pago.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JSException or System.Text.Json.JsonException)
+        {
+            mensagemPix = "Não foi possível verificar o Pix agora. Tente novamente antes de fazer outro pagamento.";
+        }
+        finally { consultandoPix = false; }
     }
 
     private const string MensagemPadrao = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?";
