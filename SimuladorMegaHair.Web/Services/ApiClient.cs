@@ -60,12 +60,12 @@ public class ApiClient
     public sealed record PreviaOrcamento(bool Ativo, decimal? ValorTotal);
 
     public async Task<PreviaOrcamento> ConsultarPreviaOrcamentoAsync(
-        string metodo, int? quantidadeGramas, string origem, CancellationToken ct)
+        string metodo, int? quantidadeGramas, string origem, Dictionary<string, int> extras, CancellationToken ct)
     {
         try
         {
             using var resposta = await _http.PostAsJsonAsync("api/simulacoes/previa-orcamento",
-                new { metodo, quantidadeGramas, origem }, ct);
+                new { metodo, quantidadeGramas, origem, extras }, ct);
             if (resposta.IsSuccessStatusCode)
                 return await resposta.Content.ReadFromJsonAsync<PreviaOrcamento>(cancellationToken: ct)
                     ?? new(false, null);
@@ -75,18 +75,41 @@ public class ApiClient
         return new(false, null);
     }
 
-    public async Task<string[]> ListarMetodosMegaHairProAsync(CancellationToken ct)
+    public sealed record OpcaoOrcamento(string Id, string Nome, string Calculo, decimal? Valor);
+    public sealed record OpcoesOrcamento(OpcaoOrcamento[] Origens, string[] Metodos, OpcaoOrcamento[] Extras, string[] SobConsulta);
+    public sealed class ItemOrcamento
     {
-        try
-        {
-            return await _http.GetFromJsonAsync<string[]>("api/simulacoes/metodos-megahairpro", ct)
-                ?? Array.Empty<string>();
-        }
-        catch (Exception ex) when (
-            ex is HttpRequestException or OperationCanceledException or JsonException)
-        {
-            return Array.Empty<string>();
-        }
+        public string Id { get; set; } = Guid.NewGuid().ToString("N");
+        public string Nome { get; set; } = "";
+        public string Grupo { get; set; } = "incluso";
+        public string Calculo { get; set; } = "fixo";
+        public decimal Valor { get; set; }
+        public int Quantidade { get; set; } = 1;
+    }
+    public sealed class TabelaOrcamento
+    {
+        public bool MostrarAntes { get; set; }
+        public List<ItemOrcamento> Itens { get; set; } = new();
+    }
+    public sealed record EstadoOrcamento(TabelaOrcamento Tabela, DateTimeOffset? Atualizado, bool Sincronizado);
+
+    public async Task<OpcoesOrcamento?> ObterOpcoesOrcamentoAsync(CancellationToken ct)
+    {
+        try { return await _http.GetFromJsonAsync<OpcoesOrcamento>("api/orcamento/opcoes", ct); }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JsonException) { return null; }
+    }
+
+    public async Task<EstadoOrcamento?> ObterOrcamentoAsync(CancellationToken ct)
+    {
+        using var resposta = await EnviarAutorizadaAsync(HttpMethod.Get, "api/orcamento", cancellationToken: ct);
+        resposta.EnsureSuccessStatusCode();
+        return await resposta.Content.ReadFromJsonAsync<EstadoOrcamento>(cancellationToken: ct);
+    }
+
+    public async Task SalvarOrcamentoAsync(TabelaOrcamento tabela, CancellationToken ct)
+    {
+        using var resposta = await EnviarAutorizadaAsync(HttpMethod.Put, "api/orcamento", JsonContent.Create(tabela), ct);
+        resposta.EnsureSuccessStatusCode();
     }
 
     public sealed class ConfiguracaoPiloto

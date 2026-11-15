@@ -309,9 +309,7 @@ builder.Services.AddAuthorization();
 // BUILD
 // ==========================================================
 
-builder.Services.AddHttpClient<MegaHairProPricingClient>(client =>
-    client.Timeout = TimeSpan.FromSeconds(5));
-
+builder.Services.AddScoped<OrcamentoLocal>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

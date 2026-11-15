@@ -11,6 +11,7 @@ public class CriarSimulacaoRequest
     public string MetodoMegaHair { get; set; } = string.Empty;
 
     public string? OrigemCabelo { get; set; }
+    public Dictionary<string, int>? ExtrasOrcamento { get; set; }
     public decimal? QuantidadeGramas { get; set; }
 
     public HairEditMode Modo { get; set; } = HairEditMode.Extend;

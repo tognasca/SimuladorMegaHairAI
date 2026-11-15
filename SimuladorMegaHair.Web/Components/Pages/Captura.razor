@@ -31,7 +31,7 @@
                     else
                     {
                         <p>TV conectada</p>
-                        @if (etapa == Etapa.Resultado && resultado is not null && !resultado.PrecoMegaHairProIndisponivel)
+                        @if (etapa == Etapa.Resultado && resultado is not null && !resultado.PrecoMegaHairProIndisponivel && quantidadeGramas is > 0)
                         {
                             <button type="button" class="mh-btn mh-btn-secundario" @onclick="() => exibirOrcamentoTv = !exibirOrcamentoTv">
                                 @(exibirOrcamentoTv ? "Ocultar orçamento na TV" : "Mostrar orçamento na TV")
@@ -217,11 +217,10 @@
                     <label class="mh-metodo-titulo" for="mh-origem">Origem do cabelo</label>
                     <select id="mh-origem" class="form-select" @bind="origemCabelo">
                         <option value="">Selecione</option>
-                        <option value="brasileiro-regional">Brasileiro regional</option>
-                        <option value="brasileiro-do-sul">Brasileiro do Sul</option>
-                        <option value="indiano">Indiano</option>
-                        <option value="russo">Russo</option>
-                        <option value="vietnamita">Vietnamita</option>
+                        @foreach (var origem in origensDisponiveis)
+                        {
+                            <option value="@origem.Id">@origem.Nome</option>
+                        }
                     </select>
                 </div>
                 <div class="mh-metodo">
@@ -229,6 +228,29 @@
                     <input id="mh-quantidade" class="form-control" type="number" min="1" step="1"
                            inputmode="numeric" @bind="quantidadeGramas" />
                 </div>
+                @if (opcoesOrcamento?.Extras is { Length: > 0 } extras)
+                {
+                    <div class="mh-metodo">
+                        <h3 class="mh-metodo-titulo">Itens opcionais</h3>
+                        @foreach (var item in extras)
+                        {
+                            <div @key="item.Id" class="mb-2">
+                                <label for="@($"extra-{item.Id}")">@item.Nome · @PrecoOpcional(item)</label>
+                                @if (item.Calculo == "unidade")
+                                {
+                                    <input id="@($"extra-{item.Id}")" class="form-control" type="number" min="0" max="100"
+                                           aria-label="@($"Quantidade de {item.Nome}")" @bind="extrasSelecionados[item.Id]" />
+                                }
+                                else
+                                {
+                                    <input id="@($"extra-{item.Id}")" type="checkbox"
+                                           checked="@(extrasSelecionados[item.Id] > 0)"
+                                           @onchange="e => extrasSelecionados[item.Id] = e.Value is true ? 1 : 0" />
+                                }
+                            </div>
+                        }
+                    </div>
+                }
             }
 
             <div class="mh-rodape-fixo">
@@ -299,7 +321,11 @@
                 <span>@metodo · @(quantidadeGramas is > 0 ? $"{quantidadeGramas} g" : "Gramagem não informada")</span>
                 <strong>@(precoPrevia is > 0 ? $"Estimativa R$ {precoPrevia.Value.ToString("N2", PtBr)}" : "Orçamento indisponível no momento")</strong>
             </div>
-            <p class="mh-nota">Coloração, se necessária, é orçada à parte pela Tati após avaliação.</p>
+            <p class="mh-nota">@NotaSobConsulta()</p>
+            @if (ResumoExtras() is { Length: > 0 } resumo)
+            {
+                <p class="mh-nota">Itens opcionais: @resumo</p>
+            }
             <div class="mh-acoes-principais">
                 <button type="button" class="mh-btn mh-btn-primario" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">Gerar meu visual</button>
                 <button type="button" class="mh-btn mh-btn-secundario" @onclick="() => etapa = Etapa.Estilo">Ajustar escolhas</button>
@@ -366,7 +392,7 @@
 
             <div class="mh-resultado-meta">
                 <span>@metodo · @comprimento · @cor · @tipoCabelo</span>
-                @if (resultado.PrecoMegaHairProIndisponivel)
+                @if (resultado.PrecoMegaHairProIndisponivel || quantidadeGramas is null)
                 {
                     <strong>Preço indisponível no momento</strong>
                 }
@@ -376,7 +402,11 @@
                 }
             </div>
 
-            <p class="mh-nota">Orçamento somente do mega hair, considerando origem, comprimento, textura, método e gramagem informados. Coloração, se necessária, é orçada à parte pela Tati após avaliação.</p>
+            <p class="mh-nota">O orçamento considera o mega hair, a aplicação e os itens incluídos ou selecionados. @NotaSobConsulta()</p>
+            @if (ResumoExtras() is { Length: > 0 } extrasResultado)
+            {
+                <p class="mh-nota">Itens opcionais: @extrasResultado</p>
+            }
 
             <div class="mh-acoes-principais">
                 <button type="button" class="mh-btn mh-btn-primario" @onclick="CompartilharComTatiAsync">Enviar foto e orçamento para a Tati</button>
@@ -541,6 +571,19 @@
     private string tipoCabelo = "Liso";
     private string metodo = "Fita Adesiva";
     private int? quantidadeGramas;
+    private ApiClient.OpcoesOrcamento? opcoesOrcamento;
+    private readonly Dictionary<string, int> extrasSelecionados = new();
+    private static readonly ApiClient.OpcaoOrcamento[] OrigensPadrao =
+    [
+        new("brasileiro-regional", "Brasileiro regional", "grama", null),
+        new("brasileiro-do-sul", "Brasileiro do Sul", "grama", null),
+        new("indiano", "Indiano", "grama", null),
+        new("russo", "Russo", "grama", null),
+        new("vietnamita", "Vietnamita", "grama", null)
+    ];
+    private ApiClient.OpcaoOrcamento[] origensDisponiveis =>
+        opcoesOrcamento?.Origens is { Length: > 0 } cadastradas ? cadastradas : OrigensPadrao;
+
     private string origemCabelo = "";
 
     private record FiltroInfo(string Id, string Nome);
@@ -619,8 +662,9 @@
         if (!string.IsNullOrWhiteSpace(CorSugerida) && cores.Contains(CorSugerida)) cor = CorSugerida;
         if (!string.IsNullOrWhiteSpace(TipoSugerido) && tipos.Contains(TipoSugerido)) tipoCabelo = TipoSugerido;
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(6));
-        var metodosCadastrados = await Api.ListarMetodosMegaHairProAsync(timeout.Token);
-        if (metodosCadastrados.Length > 0)
+        opcoesOrcamento = await Api.ObterOpcoesOrcamentoAsync(timeout.Token);
+        foreach (var item in opcoesOrcamento?.Extras ?? []) extrasSelecionados[item.Id] = 0;
+        if (opcoesOrcamento?.Metodos is { Length: > 0 } metodosCadastrados)
         {
             metodos = metodosCadastrados.ToList();
             if (!metodos.Contains(metodo)) metodo = metodos[0];
@@ -810,8 +854,8 @@
         var final = etapa == Etapa.Resultado ? resultado : null;
         if (final is null) exibirOrcamentoTv = false;
         var estilo = atual is null ? null : $"{comprimento} · {cor} · {tipoCabelo}";
-        var orcamento = exibirOrcamentoTv && final is not null
-            ? $"Estimativa do mega hair: R$ {final.ValorEstimado.ToString("N2", PtBr)} · Coloração sob avaliação"
+        var orcamento = exibirOrcamentoTv && final is { PrecoMegaHairProIndisponivel: false } && quantidadeGramas is > 0
+            ? $"Estimativa do mega hair: R$ {final.ValorEstimado.ToString("N2", PtBr)} · {NotaSobConsulta()}"
             : null;
         var fase = etapa == Etapa.Gerando ? "gerando" : "pronto";
         if (!Salao.Mostrar(controle, new(fase, fotoTv ?? final?.FotoOriginalUrl,
@@ -877,14 +921,16 @@
 
         var fotoAtual = foto;
         var escolhas = (metodo, quantidadeGramas, origemCabelo);
+        var extras = new Dictionary<string, int>(extrasSelecionados);
         consultandoPrevia = true;
         try
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(7));
             var previa = await Api.ConsultarPreviaOrcamentoAsync(
-                escolhas.metodo, escolhas.quantidadeGramas, escolhas.origemCabelo, timeout.Token);
+                escolhas.metodo, escolhas.quantidadeGramas, escolhas.origemCabelo, extras, timeout.Token);
             if (etapa != Etapa.Estilo || passoEstilo != 2 || foto != fotoAtual
-                || escolhas != (metodo, quantidadeGramas, origemCabelo))
+                || escolhas != (metodo, quantidadeGramas, origemCabelo)
+                || extras.Any(item => extrasSelecionados[item.Key] != item.Value))
                 return;
 
             if (previa.Ativo)
@@ -905,10 +951,16 @@
 
     private bool EscolhasValidas()
     {
-        if (!quantidadeGramas.HasValue || (quantidadeGramas > 0 && !string.IsNullOrEmpty(origemCabelo)))
+        if (extrasSelecionados.Values.Any(quantidade => quantidade is < 0 or > 100))
+        {
+            erro = "Informe entre 0 e 100 unidades para cada item opcional.";
+            return false;
+        }
+
+        if (!quantidadeGramas.HasValue || (quantidadeGramas is > 0 and <= 5000 && !string.IsNullOrEmpty(origemCabelo)))
             return true;
 
-        erro = "Selecione a origem do cabelo e informe uma quantidade maior que zero.";
+        erro = "Selecione a origem do cabelo e informe uma quantidade entre 1 e 5.000 gramas.";
         return false;
     }
 
@@ -955,6 +1007,7 @@
                 MetodoMegaHair = metodo,
                 QuantidadeGramas = quantidadeGramas,
                 OrigemCabelo = origemCabelo,
+                ExtrasOrcamento = new(extrasSelecionados),
                 Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.OpenAI,
                 ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null,
                 ForcarNovaGeracao = forcarNova
@@ -1134,15 +1187,23 @@
     }
 
     // ── Resultado ────────────────────────────────────────────────────────────
-    private static string NomeOrigem(string origem) => origem switch
-        {
-            "brasileiro-regional" => "Brasileiro regional",
-            "brasileiro-do-sul" => "Brasileiro do Sul",
-            "indiano" => "Indiano",
-            "russo" => "Russo",
-            "vietnamita" => "Vietnamita",
-            _ => "Não informada"
-        };
+    private string NomeOrigem(string origem) =>
+        origensDisponiveis.FirstOrDefault(item => item.Id == origem)?.Nome ?? "Não informada";
+
+    private static string PrecoOpcional(ApiClient.OpcaoOrcamento item)
+    {
+        var unidade = item.Calculo switch { "grama" => "/g", "unidade" => "/un.", _ => "" };
+        return $"R$ {item.Valor.GetValueOrDefault().ToString("0.00##", PtBr)}{unidade}";
+    }
+
+    private string NotaSobConsulta() =>
+        opcoesOrcamento?.SobConsulta is { Length: > 0 } itens
+            ? $"Sob consulta com o salão: {string.Join(", ", itens)}."
+            : "Coloração, se necessária, é orçada à parte após avaliação.";
+
+    private string ResumoExtras() => string.Join(", ",
+        (opcoesOrcamento?.Extras ?? []).Where(item => extrasSelecionados[item.Id] > 0)
+            .Select(item => item.Calculo == "unidade" ? $"{item.Nome} ({extrasSelecionados[item.Id]})" : item.Nome));
 
     private string MensagemParaTati()
     {
@@ -1157,7 +1218,8 @@
             $"Comprimento: {comprimento} | Textura: {tipoCabelo}",
             $"Método: {metodo} | Quantidade: {gramagem}",
             $"Estimativa do mega hair: {preco}",
-            $"Cor simulada: {cor}. Coloração, se necessária, é orçada à parte pela Tati após avaliação.");
+            $"Itens opcionais: {(ResumoExtras() is { Length: > 0 } itens ? itens : "Nenhum")}",
+            $"Cor simulada: {cor}. {NotaSobConsulta()}");
     }
 
     private Task RegistrarCliqueWhatsAppAsync() => resultado is { } simulacao

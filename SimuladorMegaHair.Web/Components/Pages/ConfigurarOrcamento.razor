@@ -1,0 +1,153 @@
+@page "/configurar-orcamento"
+@rendermode InteractiveServer
+@inject ApiClient Api
+@inject AuthTokenStore TokenStore
+<PageTitle>Configurar orçamento</PageTitle>
+
+<div class="mh-app">
+    <section class="mh-tela">
+        <h1 class="mh-titulo">Tabela de orçamento</h1>
+        @if (restrito)
+        {
+            <p>Entre com a conta que administra a tabela de preços.</p>
+            <a class="mh-link" href="/login?retorno=/configurar-orcamento">Entrar</a>
+        }
+        @if (mensagem is not null)
+        {
+            <p role="status">@mensagem</p>
+        }
+        @if (estado is { } atual)
+        {
+            <p>@(atual.Sincronizado ? "Preços sincronizados pelo MegaHairPro." : "Preços cadastrados no simulador.")</p>
+            <p>Última atualização: @(atual.Atualizado is { } data ? data.ToOffset(TimeSpan.FromHours(-3)).ToString("dd/MM/yyyy HH:mm") : "nenhuma")</p>
+            <fieldset disabled="@(ocupado || atual.Sincronizado)">
+                <div class="form-check form-switch">
+                    <input id="orc-antes" type="checkbox" class="form-check-input" @bind="atual.Tabela.MostrarAntes" />
+                    <label for="orc-antes">Mostrar orçamento antes de gerar</label>
+                </div>
+                @foreach (var item in atual.Tabela.Itens)
+                {
+                    <div @key="item" class="border rounded p-3 my-3">
+                        <label class="d-block">Nome
+                            <input class="form-control" maxlength="100" @bind="item.Nome" />
+                        </label>
+                        <label class="d-block">Categoria
+                            <select class="form-select" @bind="item.Grupo">
+                                <option value="origem">Origem do cabelo</option>
+                                <option value="metodo">Método de aplicação</option>
+                                <option value="incluso">Incluído no orçamento</option>
+                                <option value="opcional">Opcional para a cliente</option>
+                                <option value="consulta">Sob consulta</option>
+                            </select>
+                        </label>
+                        @if (item.Grupo != "consulta")
+                        {
+                            <label class="d-block">Cobrança
+                                <select class="form-select" @bind="item.Calculo">
+                                    <option value="fixo">Valor fixo</option>
+                                    <option value="grama">Por grama</option>
+                                    <option value="unidade">Por unidade</option>
+                                </select>
+                            </label>
+                            <label class="d-block">Valor (R$)
+                                <input class="form-control" type="number" min="0" step="0.0001" @bind="item.Valor" />
+                            </label>
+                            @if (item.Calculo == "unidade" && item.Grupo != "opcional")
+                            {
+                                <label class="d-block">Quantidade incluída
+                                    <input class="form-control" type="number" min="1" max="100" @bind="item.Quantidade" />
+                                </label>
+                            }
+                        }
+                        @if (!atual.Sincronizado)
+                        {
+                            <button type="button" class="mh-link" @onclick="() => atual.Tabela.Itens.Remove(item)">Remover item</button>
+                        }
+                    </div>
+                }
+                @if (!atual.Sincronizado)
+                {
+                    <div class="mh-acoes-principais">
+                        <button type="button" class="mh-btn mh-btn-secundario"
+                                disabled="@(atual.Tabela.Itens.Count >= 120)"
+                                @onclick="() => atual.Tabela.Itens.Add(new ApiClient.ItemOrcamento())">Adicionar item</button>
+                        <button type="button" class="mh-btn mh-btn-primario" @onclick="SalvarAsync">Salvar tabela</button>
+                    </div>
+                }
+            </fieldset>
+            <button type="button" class="mh-link" disabled="@ocupado" @onclick="CarregarAsync">Atualizar tabela</button>
+        }
+        else if (!restrito)
+        {
+            <button type="button" class="mh-btn mh-btn-secundario" disabled="@ocupado" @onclick="CarregarAsync">Carregar tabela</button>
+        }
+    </section>
+</div>
+
+@code {
+    private ApiClient.EstadoOrcamento? estado;
+    private string? mensagem;
+    private bool ocupado, restrito;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await TokenStore.RestaurarAsync();
+        await CarregarAsync();
+        StateHasChanged();
+    }
+
+    private async Task CarregarAsync()
+    {
+        if (ocupado) return;
+        ocupado = true;
+        mensagem = null;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            estado = await Api.ObterOrcamentoAsync(timeout.Token);
+            restrito = false;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+        {
+            estado = null;
+            restrito = true;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
+        {
+            mensagem = "Não foi possível carregar a tabela.";
+        }
+        finally { ocupado = false; }
+    }
+
+    private async Task SalvarAsync()
+    {
+        if (ocupado || estado is not { Sincronizado: false } atual) return;
+        ocupado = true;
+        try
+        {
+            var itens = atual.Tabela.Itens.Select(item => new ApiClient.ItemOrcamento
+            {
+                Id = item.Grupo == "metodo" ? item.Nome.Trim() : item.Id,
+                Nome = item.Nome.Trim(),
+                Grupo = item.Grupo,
+                Calculo = item.Grupo == "consulta" ? "fixo" : item.Calculo,
+                Valor = item.Grupo == "consulta" ? 0 : item.Valor,
+                Quantidade = item.Quantidade
+            }).ToList();
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await Api.SalvarOrcamentoAsync(new() { MostrarAntes = atual.Tabela.MostrarAntes, Itens = itens }, timeout.Token);
+            estado = await Api.ObterOrcamentoAsync(timeout.Token);
+            mensagem = "Tabela salva.";
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            mensagem = "Confira os nomes, valores e quantidades. Os nomes dos métodos devem ser diferentes.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
+        {
+            mensagem = "Não foi possível salvar a tabela agora.";
+        }
+        finally { ocupado = false; }
+    }
+}

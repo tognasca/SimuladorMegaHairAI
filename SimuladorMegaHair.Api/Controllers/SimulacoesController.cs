@@ -129,25 +129,25 @@ public class SimulacoesController : ControllerBase
     //  CRIAR SIMULAÇÃO
     // ═══════════════════════════════════════════════════════════
 
-    public sealed record PedidoPrevia(string Metodo, decimal? QuantidadeGramas, string? Origem);
+    public sealed record PedidoPrevia(string Metodo, decimal? QuantidadeGramas, string? Origem, Dictionary<string, int>? Extras);
 
     [HttpPost("previa-orcamento")]
     [AllowAnonymous]
     public async Task<IActionResult> ConsultarPreviaOrcamento(
-        [FromBody] PedidoPrevia pedido, [FromServices] MegaHairProPricingClient pricing, CancellationToken ct) =>
-        Ok(await pricing.ConsultarPreviaAsync(pedido.Metodo, pedido.QuantidadeGramas, pedido.Origem, ct));
+        [FromBody] PedidoPrevia pedido, [FromServices] OrcamentoLocal pricing, CancellationToken ct) =>
+        Ok(await pricing.ConsultarPreviaAsync(pedido.Metodo, pedido.QuantidadeGramas, pedido.Origem, pedido.Extras, ct));
 
     [HttpGet("metodos-megahairpro")]
     [AllowAnonymous]
     public async Task<ActionResult<string[]>> ListarMetodosMegaHairPro(
-        [FromServices] MegaHairProPricingClient pricing, CancellationToken ct) =>
-        Ok(await pricing.ListarMetodosAsync(ct));
+        [FromServices] OrcamentoLocal pricing, CancellationToken ct) =>
+        Ok((await pricing.LerAsync(ct)).Tabela.Itens.Where(i => i.Grupo == "metodo").Select(i => i.Id).ToArray());
 
     [HttpPost]
     [AllowAnonymous]
     public async Task<ActionResult<SimulacaoResponse>> Criar(
         [FromBody] CriarSimulacaoRequest request,
-        [FromServices] MegaHairProPricingClient pricing,
+        [FromServices] OrcamentoLocal pricing,
         [FromServices] CreditosSimulacao creditos,
         [FromServices] PainelPiloto painel,
         CancellationToken ct)
@@ -189,7 +189,7 @@ public class SimulacoesController : ControllerBase
         if (existente is not null)
         {
             var responseCache = MontarResponse(existente, baseUrl, veioDoCache: true);
-            var precoCache = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, request.OrigemCabelo, ct);
+            var precoCache = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, request.OrigemCabelo, request.ExtrasOrcamento, ct);
             responseCache.PrecoMegaHairProIndisponivel = request.QuantidadeGramas.HasValue && !precoCache.HasValue;
             responseCache.ValorEstimado = precoCache
                 ?? _orcamentoService.Calcular(request.Comprimento, request.MetodoMegaHair);
@@ -316,7 +316,7 @@ public class SimulacoesController : ControllerBase
             }
 
             // ── Calcula orçamento ───────────────────────────────
-            var precoMegaHairPro = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, request.OrigemCabelo, ct);
+            var precoMegaHairPro = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, request.OrigemCabelo, request.ExtrasOrcamento, ct);
             var valor = precoMegaHairPro ?? _orcamentoService.Calcular(request.Comprimento, request.MetodoMegaHair);
 
             // ── Prompt para auditoria ───────────────────────────
