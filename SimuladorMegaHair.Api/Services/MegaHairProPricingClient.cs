@@ -7,14 +7,14 @@ public sealed class MegaHairProPricingClient(
     IConfiguration configuration,
     ILogger<MegaHairProPricingClient> logger)
 {
-    public async Task<decimal?> ConsultarAsync(string metodo, decimal? quantidadeGramas, CancellationToken ct)
+    public async Task<decimal?> ConsultarAsync(string metodo, decimal? quantidadeGramas, string? origem, CancellationToken ct)
     {
         if (quantidadeGramas is not > 0)
             return null;
 
         using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint("preco"))
         {
-            Content = JsonContent.Create(new { metodo, quantidadeGramas })
+            Content = JsonContent.Create(new { metodo, quantidadeGramas, origem })
         };
         var resposta = await ConsultarApiAsync<Preco>(request, ct);
         return resposta?.ValorTotal is > 0 ? resposta.ValorTotal : null;

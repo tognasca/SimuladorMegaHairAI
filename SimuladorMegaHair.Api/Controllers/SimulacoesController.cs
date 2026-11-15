@@ -179,7 +179,7 @@ public class SimulacoesController : ControllerBase
         if (existente is not null)
         {
             var responseCache = MontarResponse(existente, baseUrl, veioDoCache: true);
-            var precoCache = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, ct);
+            var precoCache = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, request.OrigemCabelo, ct);
             responseCache.PrecoMegaHairProIndisponivel = request.QuantidadeGramas.HasValue && !precoCache.HasValue;
             responseCache.ValorEstimado = precoCache
                 ?? _orcamentoService.Calcular(request.Comprimento, request.MetodoMegaHair);
@@ -285,7 +285,7 @@ public class SimulacoesController : ControllerBase
         }
 
         // ── Calcula orçamento ───────────────────────────────
-        var precoMegaHairPro = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, ct);
+        var precoMegaHairPro = await pricing.ConsultarAsync(request.MetodoMegaHair, request.QuantidadeGramas, request.OrigemCabelo, ct);
         var valor = precoMegaHairPro ?? _orcamentoService.Calcular(request.Comprimento, request.MetodoMegaHair);
 
         // ── Prompt para auditoria ───────────────────────────

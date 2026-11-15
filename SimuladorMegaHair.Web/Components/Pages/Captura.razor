@@ -185,6 +185,17 @@
                     </div>
                 </div>
                 <div class="mh-metodo">
+                    <label class="mh-metodo-titulo" for="mh-origem">Origem do cabelo</label>
+                    <select id="mh-origem" class="form-select" @bind="origemCabelo">
+                        <option value="">Selecione</option>
+                        <option value="brasileiro-regional">Brasileiro regional</option>
+                        <option value="brasileiro-do-sul">Brasileiro do Sul</option>
+                        <option value="indiano">Indiano</option>
+                        <option value="russo">Russo</option>
+                        <option value="vietnamita">Vietnamita</option>
+                    </select>
+                </div>
+                <div class="mh-metodo">
                     <label class="mh-metodo-titulo" for="mh-quantidade">Quantidade de cabelo (g)</label>
                     <input id="mh-quantidade" class="form-control" type="number" min="1" step="1"
                            inputmode="numeric" @bind="quantidadeGramas" />
@@ -410,6 +421,7 @@
     private string tipoCabelo = "Liso";
     private string metodo = "Fita Adesiva";
     private int? quantidadeGramas;
+    private string origemCabelo = "";
 
     private record FiltroInfo(string Id, string Nome);
     private static readonly FiltroInfo[] Filtros =
@@ -694,6 +706,12 @@
     {
         if (foto is null || etapa == Etapa.Gerando) return;
 
+        if (quantidadeGramas.HasValue && (quantidadeGramas <= 0 || string.IsNullOrEmpty(origemCabelo)))
+        {
+            erro = "Selecione a origem do cabelo e informe uma quantidade maior que zero.";
+            return;
+        }
+
         geracaoCts?.Cancel();
         geracaoCts = new CancellationTokenSource();
         var cts = geracaoCts;
@@ -730,6 +748,7 @@
                 TipoCabelo = tipoCabelo,
                 MetodoMegaHair = metodo,
                 QuantidadeGramas = quantidadeGramas,
+                OrigemCabelo = origemCabelo,
                 Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.OpenAI,
                 ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null,
                 ForcarNovaGeracao = forcarNova
