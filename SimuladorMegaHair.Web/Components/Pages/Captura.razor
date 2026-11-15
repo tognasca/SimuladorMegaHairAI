@@ -380,12 +380,14 @@
     @if (etapa == Etapa.Resultado && resultado is not null)
     {
         <section class="mh-tela mh-tela-resultado">
-            <h2 class="mh-titulo">✨ Seu novo visual está pronto!</h2>
+            <h2 class="mh-titulo">@(comparadorPronto ? "✨ Seu novo visual está pronto!" : comparadorFalhou ? "Resultado da simulação" : "Carregando seu novo visual…")</h2>
 
-            <div class="mh-comp-wrap" id="mh-comp-wrap" style="--ar:0.6667">
+            <div @key="tentativaComparador" class="mh-comp-wrap" id="mh-comp-wrap"
+                 aria-hidden="@(!comparadorPronto ? "true" : "false")"
+                 hidden="@comparadorFalhou">
                 <div class="mh-comp" tabindex="-1">
                     <div class="mh-comp-stage">
-                        <img class="mh-comp-img mh-comp-antes" src="@(string.IsNullOrWhiteSpace(resultado.FotoOriginalUrl) ? foto?.UrlNatural : resultado.FotoOriginalUrl)" alt="Antes" draggable="false" />
+                        <img class="mh-comp-img mh-comp-antes" src="@(foto?.UrlNatural ?? resultado.FotoOriginalUrl)" alt="Antes" draggable="false" />
                         <img class="mh-comp-img mh-comp-depois" src="@resultado.FotoResultadoUrl" alt="Depois" draggable="false" />
                     </div>
                     <div class="mh-comp-handle" role="slider" tabindex="0" aria-label="Comparar antes e depois"
@@ -410,7 +412,7 @@
 
             @if (comparadorFalhou)
             {
-                <div class="mh-alerta" role="alert">Não consegui carregar as imagens do resultado. <button type="button" class="mh-link" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">Tentar de novo</button></div>
+                <div class="mh-alerta" role="alert">Não consegui abrir a imagem gerada. <button type="button" class="mh-link" @onclick="RecarregarComparador">Recarregar imagem</button></div>
             }
 
             <div class="mh-resultado-meta">
@@ -432,13 +434,13 @@
             }
 
             <div class="mh-acoes-principais">
-                <button type="button" class="mh-btn mh-btn-primario" @onclick="CompartilharComTatiAsync">Enviar foto e orçamento para a Tati</button>
+                <button type="button" class="mh-btn mh-btn-primario" disabled="@(!comparadorPronto)" @onclick="CompartilharComTatiAsync">Enviar foto e orçamento para a Tati</button>
                 <a class="mh-link" href="@LinkWhatsAppTati()" @onclick="RegistrarCliqueWhatsAppAsync" target="_blank" rel="noopener">Abrir orçamento no WhatsApp</a>
                 @if (!string.IsNullOrEmpty(avisoCompartilhar))
                 {
                     <p class="mh-nota" role="status">@avisoCompartilhar</p>
                 }
-                <button type="button" class="mh-btn mh-btn-secundario @(salvo ? "mh-ok" : "")" disabled="@salvando" @onclick="SalvarAsync">
+                <button type="button" class="mh-btn mh-btn-secundario @(salvo ? "mh-ok" : "")" disabled="@(salvando || !comparadorPronto)" @onclick="SalvarAsync">
                     @(salvando ? "Salvando…" : salvo ? "✓ Salvo!" : "💾 Salvar minha transformação")
                 </button>
                 <button type="button" class="mh-btn mh-btn-secundario" @onclick="ExperimentarOutroVisual">✨ Experimentar outro visual</button>
@@ -568,7 +570,8 @@
 
     private bool espelhoAberto, cameraPronta, cameraMultipla, cameraFrontal = true;
     private string? erroCamera;
-    private bool iniciarCameraPendente, iniciarComparadorPendente, comparadorFalhou;
+    private bool iniciarCameraPendente, iniciarComparadorPendente, comparadorFalhou, comparadorPronto;
+    private int tentativaComparador;
 
     private bool salvando, salvo;
     private string? avisoSalvar;
@@ -717,8 +720,22 @@
         if (iniciarComparadorPendente)
         {
             iniciarComparadorPendente = false;
-            var r = await JS.InvokeAsync<ResultadoComparador>("megaHairResultado.iniciarComparador", "mh-comp-wrap");
-            if (!r.Ok) { comparadorFalhou = true; StateHasChanged(); }
+            var atual = resultado;
+            var tentativa = tentativaComparador;
+            var carregou = false;
+            try
+            {
+                var r = await JS.InvokeAsync<ResultadoComparador>("megaHairResultado.iniciarComparador", "mh-comp-wrap");
+                carregou = r.Ok;
+            }
+            catch (JSException) { }
+
+            if (etapa == Etapa.Resultado && resultado == atual && tentativaComparador == tentativa)
+            {
+                comparadorPronto = carregou;
+                comparadorFalhou = !carregou;
+                StateHasChanged();
+            }
         }
     }
 
@@ -877,7 +894,7 @@
             }
         }
 
-        var final = etapa == Etapa.Resultado ? resultado : null;
+        var final = etapa == Etapa.Resultado && comparadorPronto ? resultado : null;
         if (final is null) exibirOrcamentoTv = false;
         var estilo = atual is null ? null : $"{comprimento} · {cor} · {tipoCabelo}";
         var orcamento = exibirOrcamentoTv && final is { PrecoMegaHairProIndisponivel: false } && quantidadeGramas is > 0
@@ -1054,7 +1071,7 @@
                 throw new InvalidOperationException("A simulação não retornou imagem.");
 
             etapa = Etapa.Resultado;
-            iniciarComparadorPendente = true;
+            RecarregarComparador();
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone)
         {
@@ -1364,6 +1381,14 @@
         }
         catch { /* usa a URL original */ }
         return url;
+    }
+
+    private void RecarregarComparador()
+    {
+        tentativaComparador++;
+        comparadorPronto = false;
+        comparadorFalhou = false;
+        iniciarComparadorPendente = true;
     }
 
     private async Task ExperimentarOutroVisual()

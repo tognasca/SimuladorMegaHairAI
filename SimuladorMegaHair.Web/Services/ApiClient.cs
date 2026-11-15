@@ -209,7 +209,8 @@ public class ApiClient
                 $"API {(int)response.StatusCode}: {corpo}", null, response.StatusCode);
         }
 
-        return await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: cancellationToken);
+        var resultado = await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: cancellationToken);
+        return PrepararMidia(resultado);
     }
 
     public async Task<SimulacaoResponse?> AjustarVolumeAsync(
@@ -221,7 +222,18 @@ public class ApiClient
         httpRequest.Content = JsonContent.Create(request);
         using var response = await _http.SendAsync(httpRequest, cancellationToken);
         await GarantirSucessoAsync(response, "Não foi possível ajustar o volume da simulação.");
-        return await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: cancellationToken);
+        var resultado = await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: cancellationToken);
+        return PrepararMidia(resultado);
+    }
+
+    private static SimulacaoResponse? PrepararMidia(SimulacaoResponse? resultado)
+    {
+        if (resultado is not null)
+        {
+            resultado.FotoOriginalUrl = MidiaSimulacao.ParaNavegador(resultado.FotoOriginalUrl) ?? string.Empty;
+            resultado.FotoResultadoUrl = MidiaSimulacao.ParaNavegador(resultado.FotoResultadoUrl) ?? string.Empty;
+        }
+        return resultado;
     }
 
     public async Task<List<SimulacaoResponse>> GetHistoricoAsync(

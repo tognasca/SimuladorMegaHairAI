@@ -219,10 +219,11 @@ public class SimulacoesController : ControllerBase
                          && s.TipoCabelo == request.TipoCabelo
                          && s.MetodoMegaHair == request.MetodoMegaHair
                          && s.ProviderUtilizado == request.Provider.ToString())
+                .OrderByDescending(s => s.CriadoEm)
                 .FirstOrDefaultAsync(ct);
         }
         
-        if (existente is not null)
+        if (existente is not null && ExisteImagemResultado(existente.FotoResultadoPath))
         {
             var responseCache = MontarResponse(existente, baseUrl, signer, veioDoCache: true);
             responseCache.PrecoMegaHairProIndisponivel = request.QuantidadeGramas.HasValue && !precoAtual.HasValue;
@@ -357,6 +358,9 @@ public class SimulacoesController : ControllerBase
                     erro = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?"
                 });
             }
+
+            if (!ExisteImagemResultado(resultado.ImagemResultadoPath))
+                return StatusCode(502, new { erro = "A foto gerada ficou indisponível. Tente gerar o visual novamente." });
 
             // ── Calcula orçamento ───────────────────────────────
             var valor = precoAtual ?? _orcamentoService.Calcular(request.Comprimento, request.MetodoMegaHair);
@@ -530,6 +534,11 @@ public class SimulacoesController : ControllerBase
             TempoProcessamentoMs = simulacao.TempoProcessamentoMs,
             VeioDoCache = veioDoCache
         };
+
+    private bool ExisteImagemResultado(string? caminho) =>
+        CaminhosSeguros.TryNormalizar(caminho, out var pasta, out var arquivo)
+        && pasta == CaminhosSeguros.PastaResultados
+        && new FileInfo(Path.Combine(_env.ContentRootPath, "wwwroot", pasta, arquivo)) is { Exists: true, Length: > 0 };
 
     private static string UrlMidia(string baseUrl, string path, MediaUrlSigner signer) =>
         CaminhosSeguros.TryNormalizar(path, out var pasta, out var arquivo)

@@ -34,11 +34,21 @@ builder.Services.AddSignalR(options =>
 // "http://192.168.1.100:5185/". Igual ao app MAUI, TODOS os
 // dispositivos (TV, tablets, iPad, celulares) devem apontar para o
 // MESMO endereço, para compartilhar clientes/catálogo/histórico.
+var apiBaseUrl = new Uri(builder.Configuration["Api:BaseUrl"] ?? "https://api-simulador.tatimegahair.com.br/");
 builder.Services.AddHttpClient<ApiClient>(client =>
 {
-    var baseUrl = builder.Configuration["Api:BaseUrl"] ?? "https://api-simulador.tatimegahair.com.br/";
-    client.BaseAddress = new Uri(baseUrl);
-    client.Timeout = TimeSpan.FromMinutes(10); // simulações de IA demoram
+    client.BaseAddress = apiBaseUrl;
+    client.Timeout = TimeSpan.FromMinutes(10);
+});
+
+builder.Services.AddHttpClient(MidiaSimulacao.Cliente, client =>
+{
+    client.BaseAddress = apiBaseUrl;
+    client.Timeout = TimeSpan.FromSeconds(15);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    AllowAutoRedirect = false,
+    UseCookies = false
 });
 
 builder.Services.AddSingleton<SalaoTv>();
@@ -60,6 +70,8 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+app.MapGet("/midia-simulacao/{pasta}/{arquivo}", MidiaSimulacao.EntregarAsync);
 
 app.MapGet("/tv", () => Results.Redirect("/salao-tv.html"));
 app.MapPost("/salao-tv/sessao", (SalaoTv tv, HttpContext context) =>

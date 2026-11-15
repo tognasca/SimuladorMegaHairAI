@@ -18,8 +18,19 @@
     function esperarImagem(img) {
         return new Promise(resolve => {
             if (img.complete) return resolve(img.naturalWidth > 0);
-            img.addEventListener('load', () => resolve(true), { once: true });
-            img.addEventListener('error', () => resolve(false), { once: true });
+            const carregou = () => concluir(img.naturalWidth > 0);
+            const falhou = () => concluir(false);
+            const prazo = setTimeout(falhou, 20000);
+
+            function concluir(ok) {
+                clearTimeout(prazo);
+                img.removeEventListener('load', carregou);
+                img.removeEventListener('error', falhou);
+                resolve(ok);
+            }
+
+            img.addEventListener('load', carregou);
+            img.addEventListener('error', falhou);
         });
     }
 
@@ -42,7 +53,7 @@
             if (!raiz || !palco || !antes || !depois || !alca) return { ok: false };
 
             const [okA, okD] = await Promise.all([esperarImagem(antes), esperarImagem(depois)]);
-            if (!okA || !okD) return { ok: false };
+            if (!okA || !okD || document.getElementById(wrapId) !== wrap) return { ok: false };
 
             // O quadro tem a proporção do "antes". Se o "depois" tiver outra proporção
             // (não deveria, a foto é enviada em 2:3), as duas imagens usam object-fit:contain

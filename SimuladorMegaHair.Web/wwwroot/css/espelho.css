@@ -875,3 +875,6 @@ html.mh-sem-rolagem, html.mh-sem-rolagem body { overflow: hidden; }
 @media (min-width: 768px) {
     .mh-guia-foto img { width: min(100%, 52dvh); }
 }
+
+.mh-comp-wrap[aria-hidden="true"] { visibility: hidden; pointer-events: none; }
+.mh-comp-wrap[hidden] { display: none; }
