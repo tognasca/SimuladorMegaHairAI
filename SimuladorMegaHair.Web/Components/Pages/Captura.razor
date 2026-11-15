@@ -3,6 +3,9 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject ApiClient Api
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider Auth
+@inject SimuladorMegaHair.Web.Services.SalaoTv Salao
 @inject Microsoft.Extensions.Configuration.IConfiguration Config
 <PageTitle>Sua transformação — Tati Mega Hair</PageTitle>
 
@@ -12,6 +15,38 @@
         <h1>Seu próximo visual começa <em>aqui</em></h1>
         <p>Escolha sua foto, personalize o cabelo e visualize novas possibilidades com a sua própria imagem.</p>
     </section>
+
+    <AuthorizeView>
+        <Authorized>
+            <section class="mh-tela" aria-label="Modo Salão">
+                <details open="@(controleTv is not null)">
+                    <summary>Modo Salão · TV</summary>
+                    @if (controleTv is null)
+                    {
+                        <p>Abra <a href="/tv" target="_blank" rel="noopener">/tv</a> no navegador da Smart TV e digite o código abaixo.</p>
+                        <label for="salao-codigo">Código da TV</label>
+                        <input id="salao-codigo" class="form-control" inputmode="numeric" maxlength="6" @bind="codigoTv" />
+                        <button type="button" class="mh-btn mh-btn-secundario" @onclick="ParearTvAsync">Parear TV</button>
+                    }
+                    else
+                    {
+                        <p>TV conectada</p>
+                        @if (etapa == Etapa.Resultado && resultado is not null && !resultado.PrecoMegaHairProIndisponivel)
+                        {
+                            <button type="button" class="mh-btn mh-btn-secundario" @onclick="() => exibirOrcamentoTv = !exibirOrcamentoTv">
+                                @(exibirOrcamentoTv ? "Ocultar orçamento na TV" : "Mostrar orçamento na TV")
+                            </button>
+                        }
+                        <button type="button" class="mh-btn mh-btn-secundario" @onclick="EncerrarTvAsync">Encerrar atendimento na TV</button>
+                    }
+                    @if (mensagemTv is not null)
+                    {
+                        <p role="status">@mensagemTv</p>
+                    }
+                </details>
+            </section>
+        </Authorized>
+    </AuthorizeView>
 
     @* O seletor de arquivo fica SEMPRE no DOM: o <label for> abre a galeria direto
        (gesto nativo do toque), e o JS processa a foto assim que ela é escolhida. *@
@@ -409,6 +444,13 @@
     // ── Estado ───────────────────────────────────────────────────────────────
     private enum Etapa { Foto, Revisao, Estilo, Orcamento, Gerando, Resultado }
     private Etapa etapa = Etapa.Foto;
+    private string codigoTv = "";
+    private string? controleTv;
+    private string? mensagemTv;
+    private bool exibirOrcamentoTv;
+    private ResultadoFoto? fotoSincronizada;
+    private string? fotoTv;
+
     private int passoEstilo;
     private bool consultandoPrevia;
     private decimal? precoPrevia;
@@ -544,6 +586,8 @@
             await JS.InvokeVoidAsync("megaHairEspelho.registrarArquivo", "mh-arquivo", selfRef);
         }
 
+        await AtualizarTvAsync();
+
         if (iniciarCameraPendente)
         {
             iniciarCameraPendente = false;
@@ -660,6 +704,75 @@
     };
 
     // ── Revisão e navegação ──────────────────────────────────────────────────
+    private async Task ParearTvAsync()
+    {
+        if ((await Auth.GetAuthenticationStateAsync()).User.Identity?.IsAuthenticated != true)
+            return;
+
+        controleTv = Salao.Parear(codigoTv.Trim());
+        mensagemTv = controleTv is null ? "Código inválido, usado ou expirado. Confira o código na TV." : null;
+        codigoTv = "";
+    }
+
+    private void DesconectarTv()
+    {
+        if (controleTv is not null) Salao.Encerrar(controleTv);
+        controleTv = null;
+        fotoSincronizada = null;
+        fotoTv = null;
+        exibirOrcamentoTv = false;
+    }
+
+    private async Task EncerrarTvAsync()
+    {
+        DesconectarTv();
+        geracaoCts?.Cancel();
+        await NovaSimulacaoAsync();
+    }
+
+    private async Task AtualizarTvAsync()
+    {
+        if (controleTv is not { } controle) return;
+        if ((await Auth.GetAuthenticationStateAsync()).User.Identity?.IsAuthenticated != true)
+        {
+            DesconectarTv();
+            return;
+        }
+
+        var atual = etapa is Etapa.Foto or Etapa.Revisao ? null : foto;
+        if (atual != fotoSincronizada)
+        {
+            fotoSincronizada = atual;
+            fotoTv = null;
+            exibirOrcamentoTv = false;
+            if (atual?.UrlNatural is { } url)
+            {
+                try
+                {
+                    var previa = await JS.InvokeAsync<string?>("megaHairResultado.fotoParaTv", url);
+                    if (controle != controleTv || atual != fotoSincronizada || atual != foto) return;
+                    fotoTv = previa is { Length: <= 650000 } ? previa : null;
+                }
+                catch (JSException) { }
+            }
+        }
+
+        var final = etapa == Etapa.Resultado ? resultado : null;
+        if (final is null) exibirOrcamentoTv = false;
+        var estilo = atual is null ? null : $"{comprimento} · {cor} · {tipoCabelo}";
+        var orcamento = exibirOrcamentoTv && final is not null
+            ? $"Estimativa do mega hair: R$ {final.ValorEstimado.ToString("N2", PtBr)} · Coloração sob avaliação"
+            : null;
+        var fase = etapa == Etapa.Gerando ? "gerando" : "pronto";
+        if (!Salao.Mostrar(controle, new(fase, fotoTv ?? final?.FotoOriginalUrl,
+                final?.FotoResultadoUrl, estilo, orcamento)))
+        {
+            DesconectarTv();
+            mensagemTv = "A sessão da TV expirou. Use o novo código que aparece na TV.";
+            StateHasChanged();
+        }
+    }
+
     private void UsarFoto()
     {
         erro = null; passoEstilo = 0; etapa = Etapa.Estilo;
@@ -984,6 +1097,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        DesconectarTv();
         geracaoCts?.Cancel();
         geracaoCts?.Dispose();
         try

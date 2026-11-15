@@ -41,6 +41,8 @@ builder.Services.AddHttpClient<ApiClient>(client =>
     client.Timeout = TimeSpan.FromMinutes(10); // simulações de IA demoram
 });
 
+builder.Services.AddSingleton<SalaoTv>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -58,6 +60,25 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+app.MapGet("/tv", () => Results.Redirect("/salao-tv.html"));
+app.MapPost("/salao-tv/sessao", (SalaoTv tv, HttpContext context) =>
+{
+    context.Response.Headers.CacheControl = "no-store";
+    var sessao = tv.Criar();
+    return sessao is null ? Results.StatusCode(429) : Results.Ok(sessao);
+});
+app.MapGet("/salao-tv/tela", (SalaoTv tv, HttpContext context) =>
+{
+    context.Response.Headers.CacheControl = "no-store";
+    var tela = tv.Ler(context.Request.Headers["X-Salao-TV"].ToString());
+    if (tela is null) return Results.NotFound();
+    var etag = '"' + tela.Revisao + '"';
+    context.Response.Headers.ETag = etag;
+    return context.Request.Headers.IfNoneMatch.ToString() == etag
+        ? Results.StatusCode(304)
+        : Results.Ok(tela.Tela);
+});
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

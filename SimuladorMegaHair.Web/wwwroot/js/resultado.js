@@ -270,6 +270,18 @@
             if (this._ativo) { this._ativo.destruir(); this._ativo = null; }
         },
 
+        async fotoParaTv(url) {
+            const imagem = new Image();
+            imagem.src = url;
+            if (!await esperarImagem(imagem)) return null;
+            const escala = Math.min(1, 1080 / Math.max(imagem.naturalWidth, imagem.naturalHeight));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(imagem.naturalWidth * escala));
+            canvas.height = Math.max(1, Math.round(imagem.naturalHeight * escala));
+            canvas.getContext('2d').drawImage(imagem, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/jpeg', 0.82);
+        },
+
         async compartilharOrcamento(url, texto) {
             if (!navigator.share || !navigator.canShare) return 'indisponivel';
             try {
