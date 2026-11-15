@@ -248,7 +248,7 @@
             <div class="mh-comp-wrap" id="mh-comp-wrap" style="--ar:0.6667">
                 <div class="mh-comp" tabindex="-1">
                     <div class="mh-comp-stage">
-                        <img class="mh-comp-img mh-comp-antes" src="@(foto?.UrlNatural ?? resultado.FotoOriginalUrl)" alt="Antes" draggable="false" />
+                        <img class="mh-comp-img mh-comp-antes" src="@(string.IsNullOrWhiteSpace(resultado.FotoOriginalUrl) ? foto?.UrlNatural : resultado.FotoOriginalUrl)" alt="Antes" draggable="false" />
                         <img class="mh-comp-img mh-comp-depois" src="@resultado.FotoResultadoUrl" alt="Depois" draggable="false" />
                     </div>
                     <div class="mh-comp-handle" role="slider" tabindex="0" aria-label="Comparar antes e depois"
@@ -264,7 +264,11 @@
                         <button type="button" data-acao="tela-cheia" aria-label="Tela cheia">⛶</button>
                     </div>
                 </div>
-                <p class="mh-comp-legenda">Arraste para comparar · pinça ou toque duplo para ampliar</p>
+                <div class="mh-comp-modos" role="group" aria-label="Visualização das fotos">
+                    <button type="button" data-modo="antes" aria-pressed="false">Antes</button>
+                    <button type="button" data-modo="comparar" aria-pressed="true">Comparar</button>
+                    <button type="button" data-modo="depois" aria-pressed="false">Depois</button>
+                </div>
             </div>
 
             @if (comparadorFalhou)
