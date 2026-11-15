@@ -117,32 +117,25 @@
 
             @if (passoEstilo == 0)
             {
-                <h2 class="mh-titulo mh-titulo-menor">Qual comprimento você sonha?</h2>
-                <div class="mh-comprimento-visual" aria-hidden="true">
-                    <svg viewBox="0 0 120 190" focusable="false" class="mh-cabelo-comprimento">
-                        <path d="M38 18 C22 34 28 65 24 93 C21 124 16 153 21 177" class="mh-mecha mh-mecha-a" />
-                        <path d="M49 17 C35 40 41 70 37 102 C34 130 31 155 34 178" class="mh-mecha mh-mecha-b" />
-                        <path d="M60 16 C48 43 55 78 52 108 C50 137 49 159 51 179" class="mh-mecha mh-mecha-c" />
-                        <path d="M72 17 C84 43 76 78 80 108 C83 137 85 159 82 179" class="mh-mecha mh-mecha-b" />
-                        <path d="M83 18 C99 34 92 65 96 93 C99 124 104 153 99 177" class="mh-mecha mh-mecha-a" />
-                        <path d="M30 23 Q60 7 90 23" class="mh-mecha-topo" />
-                        <g class="mh-regua" style="transform:translateY(@(OffsetComprimento())px)">
-                            <line x1="8" x2="112" y1="0" y2="0" />
-                            <circle cx="60" cy="0" r="4" />
-                        </g>
-                    </svg>
-                    <div class="mh-comprimento-info">
-                        <strong>@comprimento</strong>
-                        <span>@AlturaDescricao(comprimento)</span>
-                        <small>Ilustração aproximada</small>
+                <div class="mh-guia-comprimento">
+                    <h2 class="mh-titulo mh-titulo-menor">Escolha o comprimento</h2>
+                    <div class="mh-guia-tamanhos" role="group" aria-label="Comprimento">
+                        @foreach (var c in comprimentos)
+                        {
+                            <button type="button" class="mh-guia-tamanho"
+                                    aria-pressed="@(comprimento == c ? "true" : "false")"
+                                    @onclick="() => comprimento = c">@c</button>
+                        }
                     </div>
-                </div>
-                <div class="mh-chips mh-chips-rolagem" role="radiogroup" aria-label="Comprimento">
-                    @foreach (var c in comprimentos)
-                    {
-                        <button type="button" role="radio" aria-checked="@(comprimento == c ? "true" : "false")"
-                                class="mh-chip @(comprimento == c ? "mh-sel" : "")" @onclick="() => comprimento = c">@c</button>
-                    }
+                    <figure class="mh-guia-foto">
+                        <img src="images/comprimentos/@(comprimento.Replace(" cm", "")).webp"
+                             alt="Referência de cabelo ondulado visto de costas com @comprimento"
+                             width="420" height="420" />
+                        <figcaption aria-live="polite">
+                            <strong>Referência visual · @comprimento</strong>
+                            <span>A altura varia de pessoa para pessoa.</span>
+                        </figcaption>
+                    </figure>
                 </div>
             }
             else if (passoEstilo == 1)
@@ -671,29 +664,6 @@
     private void Voltar() { if (passoEstilo > 0) passoEstilo--; }
 
     private string ClassePasso(int i) => i < passoEstilo ? "mh-feito" : i == passoEstilo ? "mh-atual" : "";
-
-    // Posição (em unidades do SVG) da linha que marca o comprimento na silhueta.
-    private double OffsetComprimento()
-    {
-        var cm = int.TryParse(new string(comprimento.Where(char.IsDigit).ToArray()), out var v) ? v : 55;
-        var t = Math.Clamp((cm - 30) / 55.0, 0, 1);
-        return 78 + t * 78; // ombros → cintura
-    }
-
-    // Mesmas faixas que o backend usa para descrever o comprimento à IA.
-    private static string AlturaDescricao(string c)
-    {
-        var cm = int.TryParse(new string(c.Where(char.IsDigit).ToArray()), out var v) ? v : 55;
-        return cm switch
-        {
-            <= 30 => "Na altura dos ombros",
-            <= 42 => "Logo acima do peito",
-            <= 50 => "Na altura do peito",
-            <= 60 => "Logo abaixo do peito",
-            <= 75 => "Perto do umbigo",
-            _ => "Na altura da cintura"
-        };
-    }
 
     private static string SvgTextura(string tipo)
     {

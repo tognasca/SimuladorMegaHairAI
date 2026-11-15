@@ -850,3 +850,28 @@ html.mh-sem-rolagem, html.mh-sem-rolagem body { overflow: hidden; }
     .mh-app .mh-moldura-camera { width:min(62%,220px); }
     .mh-app .mh-rodape-fixo { margin:22px -14px -20px;padding-inline:14px; }
 }
+
+/* Referências de comprimento */
+.mh-guia-comprimento { width: min(100%, 480px); margin-inline: auto; }
+.mh-guia-tamanhos {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+    margin: 16px auto; max-width: 400px;
+}
+.mh-guia-tamanho {
+    flex: 0 0 calc((100% - 24px) / 4); min-height: 44px; padding: 4px;
+    border: 1px solid #b98760; border-radius: 10px;
+    background: #fff7ed; color: #542b20; font: inherit; font-weight: 650;
+    white-space: nowrap; cursor: pointer;
+}
+.mh-guia-tamanho[aria-pressed="true"] { background: #a04630; border-color: #a04630; color: #fff; }
+.mh-guia-tamanho:focus-visible { outline: 2px solid #d6a470; outline-offset: 2px; }
+.mh-guia-foto { margin: 0; text-align: center; }
+.mh-guia-foto img {
+    display: block; width: min(100%, 48dvh); height: auto; margin-inline: auto;
+    object-fit: contain; border-radius: 16px; background: #342620;
+}
+.mh-guia-foto figcaption { display: grid; gap: 4px; margin-block: 10px 16px; }
+.mh-guia-foto span { font-size: .875rem; }
+@media (min-width: 768px) {
+    .mh-guia-foto img { width: min(100%, 52dvh); }
+}
