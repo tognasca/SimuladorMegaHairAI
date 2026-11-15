@@ -207,8 +207,27 @@
                 }
                 else
                 {
-                    <button type="button" class="mh-btn mh-btn-primario" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">✨ Transformar meu visual</button>
+                    <button type="button" class="mh-btn mh-btn-primario" disabled="@consultandoPrevia" @onclick="ConfirmarEscolhasAsync">
+                        @(consultandoPrevia ? "Consultando orçamento…" : "✨ Transformar meu visual")
+                    </button>
                 }
+            </div>
+        </section>
+    }
+
+    @if (etapa == Etapa.Orcamento)
+    {
+        <section class="mh-tela mh-tela-estilo" aria-labelledby="mh-titulo-orcamento">
+            <h2 id="mh-titulo-orcamento" class="mh-titulo mh-titulo-menor">Seu orçamento de mega hair</h2>
+            <div class="mh-resultado-meta">
+                <span>@NomeOrigem(origemCabelo) · @comprimento · @tipoCabelo</span>
+                <span>@metodo · @(quantidadeGramas is > 0 ? $"{quantidadeGramas} g" : "Gramagem não informada")</span>
+                <strong>@(precoPrevia is > 0 ? $"Estimativa R$ {precoPrevia.Value.ToString("N2", PtBr)}" : "Orçamento indisponível no momento")</strong>
+            </div>
+            <p class="mh-nota">Coloração, se necessária, é orçada à parte pela Tati após avaliação.</p>
+            <div class="mh-acoes-principais">
+                <button type="button" class="mh-btn mh-btn-primario" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">Gerar meu visual</button>
+                <button type="button" class="mh-btn mh-btn-secundario" @onclick="() => etapa = Etapa.Estilo">Ajustar escolhas</button>
             </div>
         </section>
     }
@@ -388,9 +407,11 @@
     [SupplyParameterFromQuery(Name = "metodo"), Parameter] public string? MetodoSugerido { get; set; }
 
     // ── Estado ───────────────────────────────────────────────────────────────
-    private enum Etapa { Foto, Revisao, Estilo, Gerando, Resultado }
+    private enum Etapa { Foto, Revisao, Estilo, Orcamento, Gerando, Resultado }
     private Etapa etapa = Etapa.Foto;
     private int passoEstilo;
+    private bool consultandoPrevia;
+    private decimal? precoPrevia;
 
     private ResultadoFoto? foto;
     private string? fotoServidorPath;
@@ -686,15 +707,53 @@
     }
 
     // ── Geração ──────────────────────────────────────────────────────────────
+    private async Task ConfirmarEscolhasAsync()
+    {
+        if (consultandoPrevia || etapa != Etapa.Estilo || foto is null) return;
+        if (!EscolhasValidas()) return;
+
+        var fotoAtual = foto;
+        var escolhas = (metodo, quantidadeGramas, origemCabelo);
+        consultandoPrevia = true;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(7));
+            var previa = await Api.ConsultarPreviaOrcamentoAsync(
+                escolhas.metodo, escolhas.quantidadeGramas, escolhas.origemCabelo, timeout.Token);
+            if (etapa != Etapa.Estilo || passoEstilo != 2 || foto != fotoAtual
+                || escolhas != (metodo, quantidadeGramas, origemCabelo))
+                return;
+
+            if (previa.Ativo)
+            {
+                precoPrevia = previa.ValorTotal;
+                etapa = Etapa.Orcamento;
+            }
+            else
+            {
+                await GerarSimulacaoAsync(forcarNova: false);
+            }
+        }
+        finally
+        {
+            consultandoPrevia = false;
+        }
+    }
+
+    private bool EscolhasValidas()
+    {
+        if (!quantidadeGramas.HasValue || (quantidadeGramas > 0 && !string.IsNullOrEmpty(origemCabelo)))
+            return true;
+
+        erro = "Selecione a origem do cabelo e informe uma quantidade maior que zero.";
+        return false;
+    }
+
     private async Task GerarSimulacaoAsync(bool forcarNova)
     {
         if (foto is null || etapa == Etapa.Gerando) return;
 
-        if (quantidadeGramas.HasValue && (quantidadeGramas <= 0 || string.IsNullOrEmpty(origemCabelo)))
-        {
-            erro = "Selecione a origem do cabelo e informe uma quantidade maior que zero.";
-            return;
-        }
+        if (!EscolhasValidas()) return;
 
         geracaoCts?.Cancel();
         geracaoCts = new CancellationTokenSource();
@@ -831,9 +890,7 @@
     }
 
     // ── Resultado ────────────────────────────────────────────────────────────
-    private string MensagemParaTati()
-    {
-        var origem = origemCabelo switch
+    private static string NomeOrigem(string origem) => origem switch
         {
             "brasileiro-regional" => "Brasileiro regional",
             "brasileiro-do-sul" => "Brasileiro do Sul",
@@ -842,6 +899,10 @@
             "vietnamita" => "Vietnamita",
             _ => "Não informada"
         };
+
+    private string MensagemParaTati()
+    {
+        var origem = NomeOrigem(origemCabelo);
         var gramagem = quantidadeGramas is > 0 ? $"{quantidadeGramas} g" : "Não informada";
         var preco = resultado?.PrecoMegaHairProIndisponivel == false && quantidadeGramas is > 0
             ? $"R$ {resultado.ValorEstimado.ToString("N2", PtBr)}"

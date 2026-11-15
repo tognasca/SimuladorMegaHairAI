@@ -129,6 +129,14 @@ public class SimulacoesController : ControllerBase
     //  CRIAR SIMULAÇÃO
     // ═══════════════════════════════════════════════════════════
 
+    public sealed record PedidoPrevia(string Metodo, decimal? QuantidadeGramas, string? Origem);
+
+    [HttpPost("previa-orcamento")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ConsultarPreviaOrcamento(
+        [FromBody] PedidoPrevia pedido, [FromServices] MegaHairProPricingClient pricing, CancellationToken ct) =>
+        Ok(await pricing.ConsultarPreviaAsync(pedido.Metodo, pedido.QuantidadeGramas, pedido.Origem, ct));
+
     [HttpGet("metodos-megahairpro")]
     [AllowAnonymous]
     public async Task<ActionResult<string[]>> ListarMetodosMegaHairPro(

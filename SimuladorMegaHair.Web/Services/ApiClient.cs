@@ -57,6 +57,24 @@ public class ApiClient
         return caminho.Trim('"');
     }
 
+    public sealed record PreviaOrcamento(bool Ativo, decimal? ValorTotal);
+
+    public async Task<PreviaOrcamento> ConsultarPreviaOrcamentoAsync(
+        string metodo, int? quantidadeGramas, string origem, CancellationToken ct)
+    {
+        try
+        {
+            using var resposta = await _http.PostAsJsonAsync("api/simulacoes/previa-orcamento",
+                new { metodo, quantidadeGramas, origem }, ct);
+            if (resposta.IsSuccessStatusCode)
+                return await resposta.Content.ReadFromJsonAsync<PreviaOrcamento>(cancellationToken: ct)
+                    ?? new(false, null);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JsonException) { }
+
+        return new(false, null);
+    }
+
     public async Task<string[]> ListarMetodosMegaHairProAsync(CancellationToken ct)
     {
         try

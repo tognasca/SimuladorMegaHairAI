@@ -20,6 +20,18 @@ public sealed class MegaHairProPricingClient(
         return resposta?.ValorTotal is > 0 ? resposta.ValorTotal : null;
     }
 
+    public async Task<PreviaOrcamento> ConsultarPreviaAsync(
+        string metodo, decimal? quantidadeGramas, string? origem, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint("previa"))
+        {
+            Content = JsonContent.Create(new { metodo, quantidadeGramas = quantidadeGramas ?? 0, origem })
+        };
+        return await ConsultarApiAsync<PreviaOrcamento>(request, ct) ?? new(false, null);
+    }
+
+    public sealed record PreviaOrcamento(bool Ativo, decimal? ValorTotal);
+
     public async Task<string[]> ListarMetodosAsync(CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, Endpoint("metodos"));
