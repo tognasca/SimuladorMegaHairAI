@@ -27,13 +27,16 @@ public class ImageFormatHelperTests
 
 public class PromptBuilderTests
 {
-    [Fact]
-    public void PromptPrincipalPreservaIdentidade()
+    [Theory]
+    [InlineData(HairEditMode.Extend)]
+    [InlineData(HairEditMode.Shorten)]
+    [InlineData(HairEditMode.Recolor)]
+    public void PromptPrincipalPreservaIdentidade(HairEditMode modo)
     {
-        var prompt = PromptBuilder.BuildInpainting("55 cm", "Castanho Escuro", "Liso", "Fita Adesiva", HairEditMode.Extend);
+        var prompt = PromptBuilder.BuildInpainting("55 cm", "Castanho Escuro", "Liso", "Fita Adesiva", modo);
 
-        Assert.Contains("identical face", prompt, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("hair", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Edit only the hair inside the supplied mask", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Preserve the original face, body, clothing, and background unchanged", prompt, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -43,11 +46,16 @@ public class PromptBuilderTests
             .Select(p => p.prompt)
             .ToList();
 
+        Assert.Equal(3, prompts.Count);
         Assert.All(prompts, p =>
+        {
+            Assert.Contains("supplied mask", p, StringComparison.OrdinalIgnoreCase);
             Assert.True(
-                p.Contains("identical face", StringComparison.OrdinalIgnoreCase)
-                || p.Contains("preserve identity", StringComparison.OrdinalIgnoreCase)
-                || p.Contains("same woman", StringComparison.OrdinalIgnoreCase)));
+                p.Contains("Preserve the original face", StringComparison.OrdinalIgnoreCase)
+                || p.Contains("Do not create or alter any person, face", StringComparison.OrdinalIgnoreCase),
+                p);
+            Assert.Contains("background", p, StringComparison.OrdinalIgnoreCase);
+        });
     }
 }
 
