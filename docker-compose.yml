@@ -33,6 +33,7 @@ services:
       OpenAI__Quality: ${OpenAI__Quality:-high}
       Pipeline__Metodo: ${MEGAHAIR_METODO:-openai}
       PublicBaseUrl: ${PUBLIC_API_URL:-https://api-simulador.tatimegahair.com.br}
+      Orcamento__ChaveSincronizacao: ${Orcamento__ChaveSincronizacao:-}
       AllowedOrigins__0: http://localhost:5180
       AllowedOrigins__1: http://localhost:7180
       AllowedOrigins__2: https://simulador.tatimegahair.com.br
