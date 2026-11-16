@@ -4,7 +4,7 @@
 //  O "antes" e o "depois" vivem no MESMO palco (.mh-comp-stage). O zoom e
 //  o arraste transformam o palco inteiro, então as duas imagens sempre
 //  usam o mesmo sistema de coordenadas e nunca se deslocam entre si.
-//  O "depois" é recortado com clip-path (não é esticado nem movido).
+//  Cada foto é recortada em sua metade, incluindo quando existem margens transparentes.
 // ═══════════════════════════════════════════════════════════════════
 (function () {
     'use strict';
@@ -17,9 +17,20 @@
 
     function esperarImagem(img) {
         return new Promise(resolve => {
-            if (img.complete && img.naturalWidth > 0) return resolve(true);
-            img.addEventListener('load', () => resolve(true), { once: true });
-            img.addEventListener('error', () => resolve(false), { once: true });
+            if (img.complete) return resolve(img.naturalWidth > 0);
+            const carregou = () => concluir(img.naturalWidth > 0);
+            const falhou = () => concluir(false);
+            const prazo = setTimeout(falhou, 20000);
+
+            function concluir(ok) {
+                clearTimeout(prazo);
+                img.removeEventListener('load', carregou);
+                img.removeEventListener('error', falhou);
+                resolve(ok);
+            }
+
+            img.addEventListener('load', carregou);
+            img.addEventListener('error', falhou);
         });
     }
 
@@ -42,7 +53,7 @@
             if (!raiz || !palco || !antes || !depois || !alca) return { ok: false };
 
             const [okA, okD] = await Promise.all([esperarImagem(antes), esperarImagem(depois)]);
-            if (!okA || !okD) return { ok: false };
+            if (!okA || !okD || document.getElementById(wrapId) !== wrap) return { ok: false };
 
             // O quadro tem a proporção do "antes". Se o "depois" tiver outra proporção
             // (não deveria, a foto é enviada em 2:3), as duas imagens usam object-fit:contain
@@ -54,6 +65,8 @@
             wrap.classList.toggle('mh-comp-desalinhado', desalinhado);
             if (desalinhado) console.warn('[Resultado] Proporções diferentes: antes=' + arA.toFixed(3) + ' depois=' + arD.toFixed(3));
 
+            const botoesModo = [...wrap.querySelectorAll('[data-modo]')];
+            let visualizacao = 'comparar';
             const S = { pos: 0.5, escala: 1, tx: 0, ty: 0, W: 1, H: 1 };
             const ponteiros = new Map();
             let modo = null;            // 'slider' | 'pan' | 'pinch' | null
@@ -75,7 +88,13 @@
             const aplicar = () => {
                 limitarTranslacao();
                 palco.style.transform = 'translate(' + S.tx + 'px,' + S.ty + 'px) scale(' + S.escala + ')';
-                depois.style.clipPath = 'inset(0 0 0 ' + (S.pos * 100) + '%)';
+                const pos = visualizacao === 'antes' ? 1 : visualizacao === 'depois' ? 0 : S.pos;
+                antes.style.clipPath = 'inset(0 ' + ((1 - pos) * 100) + '% 0 0)';
+                depois.style.clipPath = 'inset(0 0 0 ' + (pos * 100) + '%)';
+                wrap.dataset.visualizacao = visualizacao;
+                alca.hidden = visualizacao !== 'comparar';
+                botoesModo.forEach(botao =>
+                    botao.setAttribute('aria-pressed', String(botao.dataset.modo === visualizacao)));
                 const x = S.tx + S.pos * S.W * S.escala;
                 alca.style.transform = 'translateX(' + x + 'px)';
                 alca.style.visibility = (x < -2 || x > S.W + 2) ? 'hidden' : 'visible';
@@ -103,7 +122,7 @@
             const ouvir = (alvo, tipo, fn, opts) => { alvo.addEventListener(tipo, fn, opts); ouvintes.push([alvo, tipo, fn, opts]); };
 
             ouvir(raiz, 'pointerdown', e => {
-                if (e.target.closest('.mh-comp-tools')) return;
+                if (e.button !== 0 || e.target.closest('.mh-comp-tools')) return;
                 try { raiz.setPointerCapture(e.pointerId); } catch (x) { /* ok */ }
                 const p = local(e);
                 ponteiros.set(e.pointerId, p);
@@ -129,7 +148,9 @@
                 }
                 ultimoToque = { t: agora, x: p.x, y: p.y };
 
-                if (Math.abs(p.x - xAlca()) < RAIO_ALCA) {
+                if (visualizacao !== 'comparar') {
+                    modo = S.escala > 1.001 ? 'pan' : null;
+                } else if (Math.abs(p.x - xAlca()) < RAIO_ALCA) {
                     modo = 'slider';
                 } else if (S.escala > 1.001) {
                     modo = 'pan';
@@ -172,7 +193,7 @@
                 try { raiz.releasePointerCapture(e.pointerId); } catch (x) { /* ok */ }
                 if (ponteiros.size < 2) pinch = null;
                 if (ponteiros.size === 0) modo = null;
-                else if (ponteiros.size === 1) modo = S.escala > 1.001 ? 'pan' : 'slider';
+                else if (ponteiros.size === 1) modo = S.escala > 1.001 ? 'pan' : null;
             };
             ouvir(raiz, 'pointerup', soltar);
             ouvir(raiz, 'pointercancel', soltar);
@@ -199,6 +220,14 @@
 
             // Botões de zoom / restaurar / tela cheia (data-acao).
             ouvir(wrap, 'click', e => {
+                const botaoModo = e.target.closest('[data-modo]');
+                if (botaoModo && botoesModo.includes(botaoModo)) {
+                    visualizacao = botaoModo.dataset.modo;
+                    if (visualizacao === 'comparar' && (S.pos === 0 || S.pos === 1)) S.pos = 0.5;
+                    aplicar();
+                    return;
+                }
+
                 const b = e.target.closest('[data-acao]');
                 if (!b || !wrap.contains(b)) return;
                 const cx = S.W / 2, cy = S.H / 2;
@@ -240,6 +269,8 @@
             if (!wrap) return;
             const ligar = typeof forcar === 'boolean' ? forcar : !wrap.classList.contains('mh-comp-full');
             wrap.classList.toggle('mh-comp-full', ligar);
+            wrap.querySelector('[data-acao="tela-cheia"]')
+                ?.setAttribute('aria-label', ligar ? 'Sair da tela cheia' : 'Tela cheia');
             document.documentElement.classList.toggle('mh-sem-rolagem', ligar);
             // O ResizeObserver recalcula o tamanho; volta o zoom ao normal para não "perder" a imagem.
             const btn = wrap.querySelector('[data-acao="restaurar"]');
@@ -248,6 +279,60 @@
 
         destruirComparador() {
             if (this._ativo) { this._ativo.destruir(); this._ativo = null; }
+        },
+
+        carteiraPix() {
+            const chave = 'tatimegahair.carteiraPix';
+            let token = localStorage.getItem(chave);
+            if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+                token = Array.from(crypto.getRandomValues(new Uint8Array(32)),
+                    byte => byte.toString(16).padStart(2, '0')).join('');
+                localStorage.setItem(chave, token);
+            }
+            return token;
+        },
+
+        restaurarCarteiraPix(token, pedido) {
+            if (!/^[a-f0-9]{64}$/i.test(token)) throw new Error('Código inválido');
+            localStorage.setItem('tatimegahair.carteiraPix', token.toLowerCase());
+            this.pedidoPix(pedido || '');
+        },
+
+        pedidoPix(valor) {
+            const chave = 'tatimegahair.pedidoPix';
+            if (valor === '') localStorage.removeItem(chave);
+            else if (valor) localStorage.setItem(chave, valor);
+            return localStorage.getItem(chave);
+        },
+
+        async fotoParaTv(url) {
+            const imagem = new Image();
+            imagem.src = url;
+            if (!await esperarImagem(imagem)) return null;
+            const escala = Math.min(1, 1080 / Math.max(imagem.naturalWidth, imagem.naturalHeight));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(imagem.naturalWidth * escala));
+            canvas.height = Math.max(1, Math.round(imagem.naturalHeight * escala));
+            canvas.getContext('2d').drawImage(imagem, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/jpeg', 0.82);
+        },
+
+        async compartilharOrcamento(url, texto) {
+            if (!navigator.share || !navigator.canShare) return 'indisponivel';
+            try {
+                const resposta = await fetch(url, { mode: 'cors' });
+                if (!resposta.ok) return 'indisponivel';
+                const blob = await resposta.blob();
+                const formato = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[blob.type];
+                if (!formato) return 'indisponivel';
+                const foto = new File([blob], 'simulacao-tati.' + formato, { type: blob.type });
+                const dados = { files: [foto], text: texto };
+                if (!navigator.canShare(dados)) return 'indisponivel';
+                await navigator.share(dados);
+                return 'ok';
+            } catch (erro) {
+                return erro?.name === 'AbortError' ? 'cancelado' : 'indisponivel';
+            }
         },
 
         /**

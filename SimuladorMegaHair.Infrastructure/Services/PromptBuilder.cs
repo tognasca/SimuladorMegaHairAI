@@ -59,7 +59,7 @@ public static class PromptBuilder
         var tipoEn = TraduzirTipo(tipoCabelo);
         var (compEn, local) = ResolverComprimento(comprimento);
 
-        return modo switch
+        var descricao = modo switch
         {
             HairEditMode.Recolor =>
                 $"Natural {corEn} hair, same style and length, evenly colored from roots to ends, " +
@@ -71,7 +71,11 @@ public static class PromptBuilder
             _ =>  $"{corEn} {tipoEn} hair, {compEn}, all hair evenly {corEn} from roots to ends, " +
                   $"flowing down both sides {local}. Photograph."
         };
+
+        return "Edit only the hair inside the supplied mask. Preserve the original face, body, clothing, and background unchanged. "
+               + descricao;
     }
+
     private static string BuildPromptBase(
         string comprimento,
         string cor,
@@ -155,6 +159,7 @@ public static class PromptBuilder
         yield return (
             "Strict masked inpainting of the supplied photograph: modify hair only, within the supplied mask. " +
             "Do not generate a woman, face, body, second person, salon, or any new scene content. " +
+            "Preserve the original face and background. " +
             $"Continue the existing roots into {TraduzirCor(cor)} {TraduzirTipo(tipoCabelo)} hair, " +
             $"{TraduzirComprimentoFeminino(comprimento)}. Keep all non-hair pixels unchanged.",
             negative);

@@ -57,20 +57,160 @@ public class ApiClient
         return caminho.Trim('"');
     }
 
+    public sealed record PreviaOrcamento(bool Ativo, decimal? ValorTotal);
+
+    public async Task<PreviaOrcamento> ConsultarPreviaOrcamentoAsync(
+        string metodo, int? quantidadeGramas, string origem, Dictionary<string, int> extras, CancellationToken ct)
+    {
+        try
+        {
+            using var resposta = await _http.PostAsJsonAsync("api/simulacoes/previa-orcamento",
+                new { metodo, quantidadeGramas, origem, extras }, ct);
+            if (resposta.IsSuccessStatusCode)
+                return await resposta.Content.ReadFromJsonAsync<PreviaOrcamento>(cancellationToken: ct)
+                    ?? new(false, null);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JsonException) { }
+
+        return new(false, null);
+    }
+
+    public sealed record OpcaoOrcamento(string Id, string Nome, string Calculo, decimal? Valor);
+    public sealed record OpcoesOrcamento(OpcaoOrcamento[] Origens, string[] Metodos, OpcaoOrcamento[] Extras, string[] SobConsulta);
+    public sealed class ItemOrcamento
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString("N");
+        public string Nome { get; set; } = "";
+        public string Grupo { get; set; } = "incluso";
+        public string Calculo { get; set; } = "fixo";
+        public decimal Valor { get; set; }
+        public int Quantidade { get; set; } = 1;
+    }
+    public sealed class TabelaOrcamento
+    {
+        public bool MostrarAntes { get; set; }
+        public List<ItemOrcamento> Itens { get; set; } = new();
+    }
+    public sealed record EstadoOrcamento(TabelaOrcamento Tabela, DateTimeOffset? Atualizado, bool Sincronizado);
+
+    public async Task<OpcoesOrcamento?> ObterOpcoesOrcamentoAsync(CancellationToken ct)
+    {
+        try { return await _http.GetFromJsonAsync<OpcoesOrcamento>("api/orcamento/opcoes", ct); }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JsonException) { return null; }
+    }
+
+    public async Task<EstadoOrcamento?> ObterOrcamentoAsync(CancellationToken ct)
+    {
+        using var resposta = await EnviarAutorizadaAsync(HttpMethod.Get, "api/orcamento", cancellationToken: ct);
+        resposta.EnsureSuccessStatusCode();
+        return await resposta.Content.ReadFromJsonAsync<EstadoOrcamento>(cancellationToken: ct);
+    }
+
+    public async Task SalvarOrcamentoAsync(TabelaOrcamento tabela, CancellationToken ct)
+    {
+        using var resposta = await EnviarAutorizadaAsync(HttpMethod.Put, "api/orcamento", JsonContent.Create(tabela), ct);
+        resposta.EnsureSuccessStatusCode();
+    }
+
+    public sealed class ConfiguracaoPiloto
+    {
+        public bool PublicoAtivo { get; set; }
+        public int LimiteDiario { get; set; }
+        public decimal Preco { get; set; }
+        public int Quantidade { get; set; }
+        public decimal CustoIa { get; set; }
+    }
+
+    public sealed record IndicadoresPiloto(int GratuitasHoje, long PacotesLiberados, decimal ReceitaPix,
+        long CreditosDisponiveis, long GeracoesPublicasHoje, long GeracoesEquipeHoje,
+        decimal CustoPublicoHoje, decimal CustoEquipeHoje, long CliquesHoje);
+
+    public sealed record EstadoPiloto(bool CreditosAtivos, ConfiguracaoPiloto Configuracao, IndicadoresPiloto Indicadores);
+
+    public async Task<EstadoPiloto?> ObterPainelPilotoAsync(CancellationToken ct)
+    {
+        using var resposta = await EnviarAutorizadaAsync(HttpMethod.Get, "api/piloto", cancellationToken: ct);
+        resposta.EnsureSuccessStatusCode();
+        return await resposta.Content.ReadFromJsonAsync<EstadoPiloto>(cancellationToken: ct);
+    }
+
+    public async Task SalvarPainelPilotoAsync(ConfiguracaoPiloto valores, CancellationToken ct)
+    {
+        using var resposta = await EnviarAutorizadaAsync(HttpMethod.Put, "api/piloto", JsonContent.Create(valores), ct);
+        resposta.EnsureSuccessStatusCode();
+    }
+
+    public async Task RegistrarCliqueWhatsAppAsync(Guid simulacaoId)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        try
+        {
+            using var resposta = await _http.PostAsync($"api/piloto/whatsapp/{simulacaoId}", null, timeout.Token);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException) { }
+    }
+
+    public sealed record OfertaPix(bool Ativo, decimal Preco, int Quantidade);
+    public sealed record CarteiraPixRecuperada(int Saldo, Guid? Pedido);
+    public sealed record EstadoPix(string? Status, string? CopiaECola, string? Qr, decimal? Preco, int? Quantidade);
+
+    public Task<OfertaPix?> ObterOfertaPixAsync(CancellationToken ct) =>
+        _http.GetFromJsonAsync<OfertaPix>("api/creditos/oferta", ct);
+
+    public async Task<EstadoPix?> ConsultarPixAsync(
+        string carteira, Guid pedido, string? email, string? cpf, OfertaPix? oferta, CancellationToken ct)
+    {
+        var criando = email is not null;
+        using var req = CriarRequisicao(criando ? HttpMethod.Post : HttpMethod.Get,
+            criando ? "api/creditos/pix" : $"api/creditos/pix/{pedido}");
+        req.Headers.Add("X-Simulador-Carteira", carteira);
+        if (criando) req.Content = JsonContent.Create(new
+        {
+            pedidoId = pedido, email, cpf, precoConfirmado = oferta?.Preco, quantidadeConfirmada = oferta?.Quantidade
+        });
+        using var resposta = await _http.SendAsync(req, ct);
+        if (resposta.StatusCode == HttpStatusCode.Conflict)
+        {
+            var nova = await resposta.Content.ReadFromJsonAsync<OfertaPix>(cancellationToken: ct);
+            if (nova is not null) throw new OfertaPixAlteradaException(nova with { Ativo = true });
+        }
+        resposta.EnsureSuccessStatusCode();
+        return await resposta.Content.ReadFromJsonAsync<EstadoPix>(cancellationToken: ct);
+    }
+
+    public sealed class OfertaPixAlteradaException(OfertaPix oferta) : Exception
+    {
+        public OfertaPix Oferta { get; } = oferta;
+    }
+
+    public async Task<CarteiraPixRecuperada?> RecuperarPixAsync(string carteira, CancellationToken ct)
+    {
+        using var req = CriarRequisicao(HttpMethod.Get, "api/creditos/carteira");
+        req.Headers.Add("X-Simulador-Carteira", carteira);
+        using var resposta = await _http.SendAsync(req, ct);
+        if (resposta.StatusCode == HttpStatusCode.NotFound) return null;
+        resposta.EnsureSuccessStatusCode();
+        return await resposta.Content.ReadFromJsonAsync<CarteiraPixRecuperada>(cancellationToken: ct);
+    }
+
     public async Task<SimulacaoResponse?> CriarSimulacaoAsync(
         CriarSimulacaoRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, string? carteira = null)
     {
-        var response = await _http.PostAsJsonAsync("api/simulacoes", request);
+        using var mensagem = CriarRequisicao(HttpMethod.Post, "api/simulacoes");
+        mensagem.Content = JsonContent.Create(request);
+        if (!string.IsNullOrEmpty(carteira)) mensagem.Headers.Add("X-Simulador-Carteira", carteira);
+        using var response = await _http.SendAsync(mensagem, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
-            var corpo = await response.Content.ReadAsStringAsync();
+            var corpo = await response.Content.ReadAsStringAsync(cancellationToken);
             throw new HttpRequestException(
                 $"API {(int)response.StatusCode}: {corpo}", null, response.StatusCode);
         }
 
-        return await response.Content.ReadFromJsonAsync<SimulacaoResponse>();
+        var resultado = await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: cancellationToken);
+        return PrepararMidia(resultado);
     }
 
     public async Task<SimulacaoResponse?> AjustarVolumeAsync(
@@ -82,7 +222,18 @@ public class ApiClient
         httpRequest.Content = JsonContent.Create(request);
         using var response = await _http.SendAsync(httpRequest, cancellationToken);
         await GarantirSucessoAsync(response, "Não foi possível ajustar o volume da simulação.");
-        return await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: cancellationToken);
+        var resultado = await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: cancellationToken);
+        return PrepararMidia(resultado);
+    }
+
+    private static SimulacaoResponse? PrepararMidia(SimulacaoResponse? resultado)
+    {
+        if (resultado is not null)
+        {
+            resultado.FotoOriginalUrl = MidiaSimulacao.ParaNavegador(resultado.FotoOriginalUrl) ?? string.Empty;
+            resultado.FotoResultadoUrl = MidiaSimulacao.ParaNavegador(resultado.FotoResultadoUrl) ?? string.Empty;
+        }
+        return resultado;
     }
 
     public async Task<List<SimulacaoResponse>> GetHistoricoAsync(

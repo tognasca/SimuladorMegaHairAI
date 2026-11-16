@@ -10,6 +10,12 @@ public class CriarSimulacaoRequest
     public string TipoCabelo { get; set; } = string.Empty;
     public string MetodoMegaHair { get; set; } = string.Empty;
 
+    public string? OrigemCabelo { get; set; }
+    public Dictionary<string, int>? ExtrasOrcamento { get; set; }
+    public decimal? QuantidadeGramas { get; set; }
+    public bool PreviaConfirmada { get; set; }
+    public decimal? PrecoConfirmado { get; set; }
+
     public HairEditMode Modo { get; set; } = HairEditMode.Extend;
 
     /// Provider de IA (Local=grátis, Replicate/OpenAI=pago)

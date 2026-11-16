@@ -35,7 +35,7 @@ public static class CaminhosSeguros
         @"^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\.(jpg|jpeg|png|webp)$", Opcoes);
 
     private static readonly Regex NomeResultado = new(
-        @"^([0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}|volume_[0-9]{3}g_[0-9a-f]{32})\.png$", Opcoes);
+        @"^([0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}|[0-9a-f]{32}|volume_[0-9]{3}g_[0-9a-f]{32})\.png$", Opcoes);
 
     /// <summary>
     /// Aceita "wwwroot/uploads/x.jpg", "uploads/x.jpg", "resultados/y.png"

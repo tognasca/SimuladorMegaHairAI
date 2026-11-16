@@ -3,6 +3,10 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject ApiClient Api
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider Auth
+@inject SimuladorMegaHair.Web.Services.SalaoTv Salao
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
 <PageTitle>Sua transformação — Tati Mega Hair</PageTitle>
 
 <div class="mh-app">
@@ -11,6 +15,38 @@
         <h1>Seu próximo visual começa <em>aqui</em></h1>
         <p>Escolha sua foto, personalize o cabelo e visualize novas possibilidades com a sua própria imagem.</p>
     </section>
+
+    <AuthorizeView>
+        <Authorized>
+            <section class="mh-tela" aria-label="Modo Salão">
+                <details open="@(controleTv is not null)">
+                    <summary>Modo Salão · TV</summary>
+                    @if (controleTv is null)
+                    {
+                        <p>Abra <a href="/tv" target="_blank" rel="noopener">/tv</a> no navegador da Smart TV e digite o código abaixo.</p>
+                        <label for="salao-codigo">Código da TV</label>
+                        <input id="salao-codigo" class="form-control" inputmode="numeric" maxlength="6" @bind="codigoTv" />
+                        <button type="button" class="mh-btn mh-btn-secundario" @onclick="ParearTvAsync">Parear TV</button>
+                    }
+                    else
+                    {
+                        <p>TV conectada</p>
+                        @if (etapa == Etapa.Resultado && resultado is not null && !resultado.PrecoMegaHairProIndisponivel && quantidadeGramas is > 0)
+                        {
+                            <button type="button" class="mh-btn mh-btn-secundario" @onclick="() => exibirOrcamentoTv = !exibirOrcamentoTv">
+                                @(exibirOrcamentoTv ? "Ocultar orçamento na TV" : "Mostrar orçamento na TV")
+                            </button>
+                        }
+                        <button type="button" class="mh-btn mh-btn-secundario" @onclick="EncerrarTvAsync">Encerrar atendimento na TV</button>
+                    }
+                    @if (mensagemTv is not null)
+                    {
+                        <p role="status">@mensagemTv</p>
+                    }
+                </details>
+            </section>
+        </Authorized>
+    </AuthorizeView>
 
     @* O seletor de arquivo fica SEMPRE no DOM: o <label for> abre a galeria direto
        (gesto nativo do toque), e o JS processa a foto assim que ela é escolhida. *@
@@ -116,32 +152,25 @@
 
             @if (passoEstilo == 0)
             {
-                <h2 class="mh-titulo mh-titulo-menor">Qual comprimento você sonha?</h2>
-                <div class="mh-comprimento-visual" aria-hidden="true">
-                    <svg viewBox="0 0 120 190" focusable="false" class="mh-cabelo-comprimento">
-                        <path d="M38 18 C22 34 28 65 24 93 C21 124 16 153 21 177" class="mh-mecha mh-mecha-a" />
-                        <path d="M49 17 C35 40 41 70 37 102 C34 130 31 155 34 178" class="mh-mecha mh-mecha-b" />
-                        <path d="M60 16 C48 43 55 78 52 108 C50 137 49 159 51 179" class="mh-mecha mh-mecha-c" />
-                        <path d="M72 17 C84 43 76 78 80 108 C83 137 85 159 82 179" class="mh-mecha mh-mecha-b" />
-                        <path d="M83 18 C99 34 92 65 96 93 C99 124 104 153 99 177" class="mh-mecha mh-mecha-a" />
-                        <path d="M30 23 Q60 7 90 23" class="mh-mecha-topo" />
-                        <g class="mh-regua" style="transform:translateY(@(OffsetComprimento())px)">
-                            <line x1="8" x2="112" y1="0" y2="0" />
-                            <circle cx="60" cy="0" r="4" />
-                        </g>
-                    </svg>
-                    <div class="mh-comprimento-info">
-                        <strong>@comprimento</strong>
-                        <span>@AlturaDescricao(comprimento)</span>
-                        <small>Ilustração aproximada</small>
+                <div class="mh-guia-comprimento">
+                    <h2 class="mh-titulo mh-titulo-menor">Escolha o comprimento</h2>
+                    <div class="mh-guia-tamanhos" role="group" aria-label="Comprimento">
+                        @foreach (var c in comprimentos)
+                        {
+                            <button type="button" class="mh-guia-tamanho"
+                                    aria-pressed="@(comprimento == c ? "true" : "false")"
+                                    @onclick="() => comprimento = c">@c</button>
+                        }
                     </div>
-                </div>
-                <div class="mh-chips mh-chips-rolagem" role="radiogroup" aria-label="Comprimento">
-                    @foreach (var c in comprimentos)
-                    {
-                        <button type="button" role="radio" aria-checked="@(comprimento == c ? "true" : "false")"
-                                class="mh-chip @(comprimento == c ? "mh-sel" : "")" @onclick="() => comprimento = c">@c</button>
-                    }
+                    <figure class="mh-guia-foto">
+                        <img src="images/comprimentos/@(comprimento.Replace(" cm", "")).webp"
+                             alt="Referência de cabelo ondulado visto de costas com @comprimento"
+                             width="420" height="420" />
+                        <figcaption aria-live="polite">
+                            <strong>Referência visual · @comprimento</strong>
+                            <span>A altura varia de pessoa para pessoa.</span>
+                        </figcaption>
+                    </figure>
                 </div>
             }
             else if (passoEstilo == 1)
@@ -184,6 +213,47 @@
                         }
                     </div>
                 </div>
+                <div class="mh-metodo">
+                    <label class="mh-metodo-titulo" for="mh-origem">Origem do cabelo</label>
+                    <select id="mh-origem" class="form-select" @bind="origemCabelo">
+                        <option value="">Selecione</option>
+                        @foreach (var origem in origensDisponiveis)
+                        {
+                            <option value="@origem.Id">@origem.Nome</option>
+                        }
+                    </select>
+                </div>
+                <div class="mh-metodo">
+                    <label class="mh-metodo-titulo" for="mh-quantidade">Quantidade de cabelo (g)</label>
+                    <input id="mh-quantidade" class="form-control" type="number" min="1" step="1"
+                           inputmode="numeric" @bind="quantidadeGramas" />
+                </div>
+                <button type="button" class="mh-link" @onclick="AbrirRecuperacaoPix">
+                    Já comprei créditos
+                </button>
+                @if (opcoesOrcamento?.Extras is { Length: > 0 } extras)
+                {
+                    <div class="mh-metodo">
+                        <h3 class="mh-metodo-titulo">Itens opcionais</h3>
+                        @foreach (var item in extras)
+                        {
+                            <div @key="item.Id" class="mb-2">
+                                <label for="@($"extra-{item.Id}")">@item.Nome · @PrecoOpcional(item)</label>
+                                @if (item.Calculo == "unidade")
+                                {
+                                    <input id="@($"extra-{item.Id}")" class="form-control" type="number" min="0" max="100"
+                                           aria-label="@($"Quantidade de {item.Nome}")" @bind="extrasSelecionados[item.Id]" />
+                                }
+                                else
+                                {
+                                    <input id="@($"extra-{item.Id}")" type="checkbox"
+                                           checked="@(extrasSelecionados[item.Id] > 0)"
+                                           @onchange="e => extrasSelecionados[item.Id] = e.Value is true ? 1 : 0" />
+                                }
+                            </div>
+                        }
+                    </div>
+                }
             }
 
             <div class="mh-rodape-fixo">
@@ -197,8 +267,91 @@
                 }
                 else
                 {
-                    <button type="button" class="mh-btn mh-btn-primario" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">✨ Transformar meu visual</button>
+                    <button type="button" class="mh-btn mh-btn-primario" disabled="@consultandoPrevia" @onclick="ConfirmarEscolhasAsync">
+                        @(consultandoPrevia ? "Consultando orçamento…" : "✨ Transformar meu visual")
+                    </button>
                 }
+            </div>
+        </section>
+    }
+
+    @if (etapa == Etapa.RecuperarPix)
+    {
+        <section class="mh-tela" aria-labelledby="recuperar-pix-titulo">
+            <h2 id="recuperar-pix-titulo" class="mh-titulo mh-titulo-menor">Recuperar créditos</h2>
+            <label for="recuperar-pix-codigo">Código privado da carteira</label>
+            <input id="recuperar-pix-codigo" class="form-control" type="password" autocomplete="off"
+                   maxlength="64" @bind="codigoRecuperacaoPix" />
+            <button type="button" class="mh-btn mh-btn-primario" disabled="@consultandoPix"
+                    @onclick="RecuperarCarteiraAsync">Recuperar carteira</button>
+            <button type="button" class="mh-link" disabled="@consultandoPix" @onclick="VoltarDoPix">Voltar às escolhas</button>
+            @if (mensagemPix is not null) { <p role="status">@mensagemPix</p> }
+        </section>
+    }
+
+    @if (ofertaPix is { Ativo: true } oferta && etapa == Etapa.Creditos)
+    {
+        <section class="mh-tela mh-tela-estilo" aria-labelledby="mh-pix-titulo">
+            <h2 id="mh-pix-titulo" class="mh-titulo mh-titulo-menor">Comprar novas simulações</h2>
+            <p>@(pix?.Quantidade ?? oferta.Quantidade) gerações por R$ @((pix?.Preco ?? oferta.Preco).ToString("N2", PtBr)), via Pix.</p>
+            @if (pix?.Status == "approved")
+            {
+                <p role="status">Pagamento aprovado. Seus créditos estão disponíveis neste navegador.</p>
+                <button type="button" class="mh-btn mh-btn-primario" @onclick="() => GerarSimulacaoAsync(forcarNovaPix)">Gerar meu visual</button>
+            }
+            else if (pix?.CopiaECola is { Length: > 0 } copia)
+            {
+                @if (pix.Qr is { Length: > 0 } qr)
+                {
+                    <img src="@($"data:image/png;base64,{qr}")" alt="QR Code Pix" width="180" height="180" />
+                }
+                <label for="mh-pix-codigo">Pix copia e cola</label>
+                <textarea id="mh-pix-codigo" class="form-control" readonly rows="3">@copia</textarea>
+                <button type="button" class="mh-btn mh-btn-primario" disabled="@consultandoPix" @onclick="VerificarPixAsync">Verificar pagamento</button>
+            }
+            else
+            {
+                <label for="mh-pix-email">E-mail do pagador</label>
+                <input id="mh-pix-email" class="form-control" type="email" maxlength="254" @bind="emailPix" />
+                <label for="mh-pix-cpf">CPF do pagador</label>
+                <input id="mh-pix-cpf" class="form-control" inputmode="numeric" maxlength="14" @bind="cpfPix" />
+                <button type="button" class="mh-btn mh-btn-primario" disabled="@consultandoPix" @onclick="CriarPixAsync">Gerar Pix</button>
+                @if (pedidoPix != Guid.Empty)
+                {
+                    <button type="button" class="mh-btn mh-btn-secundario" disabled="@consultandoPix" @onclick="VerificarPixAsync">Verificar Pix anterior</button>
+                }
+            }
+            <details>
+                <summary>Código para recuperar créditos em outro aparelho</summary>
+                <p>Guarde este código em um local privado antes de pagar. Quem tiver o código pode usar o saldo.</p>
+                <label for="backup-pix">Código da carteira</label>
+                <input id="backup-pix" class="form-control" readonly value="@carteiraPix" />
+            </details>
+            @if (mensagemPix is not null)
+            {
+                <p role="status">@mensagemPix</p>
+            }
+            <button type="button" class="mh-link" disabled="@consultandoPix" @onclick="VoltarDoPix">Voltar às escolhas</button>
+        </section>
+    }
+
+    @if (etapa == Etapa.Orcamento)
+    {
+        <section class="mh-tela mh-tela-estilo" aria-labelledby="mh-titulo-orcamento">
+            <h2 id="mh-titulo-orcamento" class="mh-titulo mh-titulo-menor">Seu orçamento de mega hair</h2>
+            <div class="mh-resultado-meta">
+                <span>@NomeOrigem(origemCabelo) · @comprimento · @tipoCabelo</span>
+                <span>@metodo · @(quantidadeGramas is > 0 ? $"{quantidadeGramas} g" : "Gramagem não informada")</span>
+                <strong>@(precoPrevia is > 0 ? $"Estimativa R$ {precoPrevia.Value.ToString("N2", PtBr)}" : "Orçamento indisponível no momento")</strong>
+            </div>
+            <p class="mh-nota">@NotaSobConsulta()</p>
+            @if (ResumoExtras() is { Length: > 0 } resumo)
+            {
+                <p class="mh-nota">Itens opcionais: @resumo</p>
+            }
+            <div class="mh-acoes-principais">
+                <button type="button" class="mh-btn mh-btn-primario" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">Gerar meu visual</button>
+                <button type="button" class="mh-btn mh-btn-secundario" @onclick="() => etapa = Etapa.Estilo">Ajustar escolhas</button>
             </div>
         </section>
     }
@@ -227,9 +380,11 @@
     @if (etapa == Etapa.Resultado && resultado is not null)
     {
         <section class="mh-tela mh-tela-resultado">
-            <h2 class="mh-titulo">✨ Seu novo visual está pronto!</h2>
+            <h2 class="mh-titulo">@(comparadorPronto ? "✨ Seu novo visual está pronto!" : comparadorFalhou ? "Resultado da simulação" : "Carregando seu novo visual…")</h2>
 
-            <div class="mh-comp-wrap" id="mh-comp-wrap" style="--ar:0.6667">
+            <div @key="tentativaComparador" class="mh-comp-wrap" id="mh-comp-wrap"
+                 aria-hidden="@(!comparadorPronto ? "true" : "false")"
+                 hidden="@comparadorFalhou">
                 <div class="mh-comp" tabindex="-1">
                     <div class="mh-comp-stage">
                         <img class="mh-comp-img mh-comp-antes" src="@(foto?.UrlNatural ?? resultado.FotoOriginalUrl)" alt="Antes" draggable="false" />
@@ -248,21 +403,44 @@
                         <button type="button" data-acao="tela-cheia" aria-label="Tela cheia">⛶</button>
                     </div>
                 </div>
-                <p class="mh-comp-legenda">Arraste para comparar · pinça ou toque duplo para ampliar</p>
+                <div class="mh-comp-modos" role="group" aria-label="Visualização das fotos">
+                    <button type="button" data-modo="antes" aria-pressed="false">Antes</button>
+                    <button type="button" data-modo="comparar" aria-pressed="true">Comparar</button>
+                    <button type="button" data-modo="depois" aria-pressed="false">Depois</button>
+                </div>
             </div>
 
             @if (comparadorFalhou)
             {
-                <div class="mh-alerta" role="alert">Não consegui carregar as imagens do resultado. <button type="button" class="mh-link" @onclick="() => GerarSimulacaoAsync(forcarNova: false)">Tentar de novo</button></div>
+                <div class="mh-alerta" role="alert">Não consegui abrir a imagem gerada. <button type="button" class="mh-link" @onclick="RecarregarComparador">Recarregar imagem</button></div>
             }
 
             <div class="mh-resultado-meta">
                 <span>@metodo · @comprimento · @cor · @tipoCabelo</span>
-                <strong>Estimativa R$ @resultado.ValorEstimado.ToString("N2", PtBr)</strong>
+                @if (resultado.PrecoMegaHairProIndisponivel || quantidadeGramas is null)
+                {
+                    <strong>Preço indisponível no momento</strong>
+                }
+                else
+                {
+                    <strong>Estimativa R$ @resultado.ValorEstimado.ToString("N2", PtBr)</strong>
+                }
             </div>
 
+            <p class="mh-nota">O orçamento considera o mega hair, a aplicação e os itens incluídos ou selecionados. @NotaSobConsulta()</p>
+            @if (ResumoExtras() is { Length: > 0 } extrasResultado)
+            {
+                <p class="mh-nota">Itens opcionais: @extrasResultado</p>
+            }
+
             <div class="mh-acoes-principais">
-                <button type="button" class="mh-btn mh-btn-primario @(salvo ? "mh-ok" : "")" disabled="@salvando" @onclick="SalvarAsync">
+                <button type="button" class="mh-btn mh-btn-primario" disabled="@(!comparadorPronto)" @onclick="CompartilharComTatiAsync">Enviar foto e orçamento para a Tati</button>
+                <a class="mh-link" href="@LinkWhatsAppTati()" @onclick="RegistrarCliqueWhatsAppAsync" target="_blank" rel="noopener">Abrir orçamento no WhatsApp</a>
+                @if (!string.IsNullOrEmpty(avisoCompartilhar))
+                {
+                    <p class="mh-nota" role="status">@avisoCompartilhar</p>
+                }
+                <button type="button" class="mh-btn mh-btn-secundario @(salvo ? "mh-ok" : "")" disabled="@(salvando || !comparadorPronto)" @onclick="SalvarAsync">
                     @(salvando ? "Salvando…" : salvo ? "✓ Salvo!" : "💾 Salvar minha transformação")
                 </button>
                 <button type="button" class="mh-btn mh-btn-secundario" @onclick="ExperimentarOutroVisual">✨ Experimentar outro visual</button>
@@ -359,9 +537,31 @@
     [SupplyParameterFromQuery(Name = "metodo"), Parameter] public string? MetodoSugerido { get; set; }
 
     // ── Estado ───────────────────────────────────────────────────────────────
-    private enum Etapa { Foto, Revisao, Estilo, Gerando, Resultado }
+    private enum Etapa { Foto, Revisao, Estilo, Orcamento, Creditos, RecuperarPix, Gerando, Resultado }
     private Etapa etapa = Etapa.Foto;
+    private ApiClient.OfertaPix? ofertaPix;
+    private ApiClient.EstadoPix? pix;
+    private Guid pedidoPix;
+    private string? carteiraPix;
+    private string codigoRecuperacaoPix = "";
+    private string emailPix = "";
+    private string cpfPix = "";
+    private string? mensagemPix;
+    private bool consultandoPix;
+    private bool forcarNovaPix;
+    private bool previaPixConfirmada;
+    private decimal? precoPixConfirmado;
+
+    private string codigoTv = "";
+    private string? controleTv;
+    private string? mensagemTv;
+    private bool exibirOrcamentoTv;
+    private ResultadoFoto? fotoSincronizada;
+    private string? fotoTv;
+
     private int passoEstilo;
+    private bool consultandoPrevia;
+    private decimal? precoPrevia;
 
     private ResultadoFoto? foto;
     private string? fotoServidorPath;
@@ -370,10 +570,12 @@
 
     private bool espelhoAberto, cameraPronta, cameraMultipla, cameraFrontal = true;
     private string? erroCamera;
-    private bool iniciarCameraPendente, iniciarComparadorPendente, comparadorFalhou;
+    private bool iniciarCameraPendente, iniciarComparadorPendente, comparadorFalhou, comparadorPronto;
+    private int tentativaComparador;
 
     private bool salvando, salvo;
     private string? avisoSalvar;
+    private string? avisoCompartilhar;
 
     private bool faseEnvio = true;
     private int indiceMensagem;
@@ -391,12 +593,27 @@
     private readonly List<string> cores = new() { "Preto", "Castanho Escuro", "Castanho Claro", "Loiro Escuro", "Loiro Médio", "Loiro Claro", "Loiro Platinado", "Ruivo", "Grisalho" };
     // O backend também aceita "Crespo"; a especificação desta tela pede três opções.
     private readonly List<string> tipos = new() { "Liso", "Ondulado", "Cacheado" };
-    private readonly List<string> metodos = new() { "Fita Adesiva", "Queratina", "Micro Link", "Costurado" };
+    private List<string> metodos = new() { "Fita Adesiva", "Queratina", "Micro Link", "Costurado" };
 
     private string comprimento = "55 cm";
     private string cor = "Castanho Escuro";
     private string tipoCabelo = "Liso";
     private string metodo = "Fita Adesiva";
+    private int? quantidadeGramas;
+    private ApiClient.OpcoesOrcamento? opcoesOrcamento;
+    private readonly Dictionary<string, int> extrasSelecionados = new();
+    private static readonly ApiClient.OpcaoOrcamento[] OrigensPadrao =
+    [
+        new("brasileiro-regional", "Brasileiro regional", "grama", null),
+        new("brasileiro-do-sul", "Brasileiro do Sul", "grama", null),
+        new("indiano", "Indiano", "grama", null),
+        new("russo", "Russo", "grama", null),
+        new("vietnamita", "Vietnamita", "grama", null)
+    ];
+    private ApiClient.OpcaoOrcamento[] origensDisponiveis =>
+        opcoesOrcamento?.Origens is { Length: > 0 } cadastradas ? cadastradas : OrigensPadrao;
+
+    private string origemCabelo = "";
 
     private record FiltroInfo(string Id, string Nome);
     private static readonly FiltroInfo[] Filtros =
@@ -468,11 +685,19 @@
     }
 
     // ── Ciclo de vida ────────────────────────────────────────────────────────
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (!string.IsNullOrWhiteSpace(ComprimentoSugerido) && comprimentos.Contains(ComprimentoSugerido)) comprimento = ComprimentoSugerido;
         if (!string.IsNullOrWhiteSpace(CorSugerida) && cores.Contains(CorSugerida)) cor = CorSugerida;
         if (!string.IsNullOrWhiteSpace(TipoSugerido) && tipos.Contains(TipoSugerido)) tipoCabelo = TipoSugerido;
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(6));
+        opcoesOrcamento = await Api.ObterOpcoesOrcamentoAsync(timeout.Token);
+        foreach (var item in opcoesOrcamento?.Extras ?? []) extrasSelecionados[item.Id] = 0;
+        if (opcoesOrcamento?.Metodos is { Length: > 0 } metodosCadastrados)
+        {
+            metodos = metodosCadastrados.ToList();
+            if (!metodos.Contains(metodo)) metodo = metodos[0];
+        }
         if (!string.IsNullOrWhiteSpace(MetodoSugerido) && metodos.Contains(MetodoSugerido)) metodo = MetodoSugerido;
     }
 
@@ -484,6 +709,8 @@
             await JS.InvokeVoidAsync("megaHairEspelho.registrarArquivo", "mh-arquivo", selfRef);
         }
 
+        await AtualizarTvAsync();
+
         if (iniciarCameraPendente)
         {
             iniciarCameraPendente = false;
@@ -493,8 +720,22 @@
         if (iniciarComparadorPendente)
         {
             iniciarComparadorPendente = false;
-            var r = await JS.InvokeAsync<ResultadoComparador>("megaHairResultado.iniciarComparador", "mh-comp-wrap");
-            if (!r.Ok) { comparadorFalhou = true; StateHasChanged(); }
+            var atual = resultado;
+            var tentativa = tentativaComparador;
+            var carregou = false;
+            try
+            {
+                var r = await JS.InvokeAsync<ResultadoComparador>("megaHairResultado.iniciarComparador", "mh-comp-wrap");
+                carregou = r.Ok;
+            }
+            catch (JSException) { }
+
+            if (etapa == Etapa.Resultado && resultado == atual && tentativaComparador == tentativa)
+            {
+                comparadorPronto = carregou;
+                comparadorFalhou = !carregou;
+                StateHasChanged();
+            }
         }
     }
 
@@ -600,6 +841,75 @@
     };
 
     // ── Revisão e navegação ──────────────────────────────────────────────────
+    private async Task ParearTvAsync()
+    {
+        if ((await Auth.GetAuthenticationStateAsync()).User.Identity?.IsAuthenticated != true)
+            return;
+
+        controleTv = Salao.Parear(codigoTv.Trim());
+        mensagemTv = controleTv is null ? "Código inválido, usado ou expirado. Confira o código na TV." : null;
+        codigoTv = "";
+    }
+
+    private void DesconectarTv()
+    {
+        if (controleTv is not null) Salao.Encerrar(controleTv);
+        controleTv = null;
+        fotoSincronizada = null;
+        fotoTv = null;
+        exibirOrcamentoTv = false;
+    }
+
+    private async Task EncerrarTvAsync()
+    {
+        DesconectarTv();
+        geracaoCts?.Cancel();
+        await NovaSimulacaoAsync();
+    }
+
+    private async Task AtualizarTvAsync()
+    {
+        if (controleTv is not { } controle) return;
+        if ((await Auth.GetAuthenticationStateAsync()).User.Identity?.IsAuthenticated != true)
+        {
+            DesconectarTv();
+            return;
+        }
+
+        var atual = etapa is Etapa.Foto or Etapa.Revisao ? null : foto;
+        if (atual != fotoSincronizada)
+        {
+            fotoSincronizada = atual;
+            fotoTv = null;
+            exibirOrcamentoTv = false;
+            if (atual?.UrlNatural is { } url)
+            {
+                try
+                {
+                    var previa = await JS.InvokeAsync<string?>("megaHairResultado.fotoParaTv", url);
+                    if (controle != controleTv || atual != fotoSincronizada || atual != foto) return;
+                    fotoTv = previa is { Length: <= 650000 } ? previa : null;
+                }
+                catch (JSException) { }
+            }
+        }
+
+        var final = etapa == Etapa.Resultado && comparadorPronto ? resultado : null;
+        if (final is null) exibirOrcamentoTv = false;
+        var estilo = atual is null ? null : $"{comprimento} · {cor} · {tipoCabelo}";
+        var orcamento = exibirOrcamentoTv && final is { PrecoMegaHairProIndisponivel: false } && quantidadeGramas is > 0
+            ? $"Estimativa do mega hair: R$ {final.ValorEstimado.ToString("N2", PtBr)} · {NotaSobConsulta()}"
+            : null;
+        var fase = etapa == Etapa.Gerando ? "gerando" : "pronto";
+        if (!Salao.Mostrar(controle, new(fase, fotoTv ?? final?.FotoOriginalUrl,
+                final?.FotoResultadoUrl, estilo, orcamento)))
+        {
+            DesconectarTv();
+            mensagemTv = "A sessão da TV expirou. Use o novo código que aparece na TV.";
+            StateHasChanged();
+        }
+    }
+
     private void UsarFoto()
     {
         erro = null; passoEstilo = 0; etapa = Etapa.Estilo;
@@ -626,29 +936,6 @@
 
     private string ClassePasso(int i) => i < passoEstilo ? "mh-feito" : i == passoEstilo ? "mh-atual" : "";
 
-    // Posição (em unidades do SVG) da linha que marca o comprimento na silhueta.
-    private double OffsetComprimento()
-    {
-        var cm = int.TryParse(new string(comprimento.Where(char.IsDigit).ToArray()), out var v) ? v : 55;
-        var t = Math.Clamp((cm - 30) / 55.0, 0, 1);
-        return 78 + t * 78; // ombros → cintura
-    }
-
-    // Mesmas faixas que o backend usa para descrever o comprimento à IA.
-    private static string AlturaDescricao(string c)
-    {
-        var cm = int.TryParse(new string(c.Where(char.IsDigit).ToArray()), out var v) ? v : 55;
-        return cm switch
-        {
-            <= 30 => "Na altura dos ombros",
-            <= 42 => "Logo acima do peito",
-            <= 50 => "Na altura do peito",
-            <= 60 => "Logo abaixo do peito",
-            <= 75 => "Perto do umbigo",
-            _ => "Na altura da cintura"
-        };
-    }
-
     private static string SvgTextura(string tipo)
     {
         const string cabeca = "<svg viewBox=\"0 0 60 90\" class=\"mh-textura-svg\" aria-hidden=\"true\" focusable=\"false\">";
@@ -670,9 +957,64 @@
     }
 
     // ── Geração ──────────────────────────────────────────────────────────────
+    private async Task ConfirmarEscolhasAsync()
+    {
+        if (consultandoPrevia || etapa != Etapa.Estilo || foto is null) return;
+        if (!EscolhasValidas()) return;
+
+        var fotoAtual = foto;
+        var escolhas = (metodo, quantidadeGramas, origemCabelo);
+        var extras = new Dictionary<string, int>(extrasSelecionados);
+        consultandoPrevia = true;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(7));
+            var previa = await Api.ConsultarPreviaOrcamentoAsync(
+                escolhas.metodo, escolhas.quantidadeGramas, escolhas.origemCabelo, extras, timeout.Token);
+            if (etapa != Etapa.Estilo || passoEstilo != 2 || foto != fotoAtual
+                || escolhas != (metodo, quantidadeGramas, origemCabelo)
+                || extras.Any(item => extrasSelecionados[item.Key] != item.Value))
+                return;
+
+            if (previa.Ativo)
+            {
+                precoPrevia = previa.ValorTotal;
+                etapa = Etapa.Orcamento;
+            }
+            else
+            {
+                await GerarSimulacaoAsync(forcarNova: false);
+            }
+        }
+        finally
+        {
+            consultandoPrevia = false;
+        }
+    }
+
+    private bool EscolhasValidas()
+    {
+        if (extrasSelecionados.Values.Any(quantidade => quantidade is < 0 or > 100))
+        {
+            erro = "Informe entre 0 e 100 unidades para cada item opcional.";
+            return false;
+        }
+
+        if (!quantidadeGramas.HasValue || (quantidadeGramas is > 0 and <= 5000 && !string.IsNullOrEmpty(origemCabelo)))
+            return true;
+
+        erro = "Selecione a origem do cabelo e informe uma quantidade entre 1 e 5.000 gramas.";
+        return false;
+    }
+
     private async Task GerarSimulacaoAsync(bool forcarNova)
     {
         if (foto is null || etapa == Etapa.Gerando) return;
+
+        if (!EscolhasValidas()) return;
+
+        var previaConfirmada = etapa == Etapa.Orcamento || (etapa == Etapa.Creditos && previaPixConfirmada);
+        var precoConfirmado = etapa == Etapa.Orcamento ? precoPrevia : etapa == Etapa.Creditos ? precoPixConfirmado : null;
 
         geracaoCts?.Cancel();
         geracaoCts = new CancellationTokenSource();
@@ -680,7 +1022,7 @@
         cts.CancelAfter(TempoLimiteGeracao);
         var ct = cts.Token;
 
-        erro = null; resultado = null; comparadorFalhou = false; salvo = false; avisoSalvar = null;
+        erro = null; resultado = null; avisoCompartilhar = null; comparadorFalhou = false; salvo = false; avisoSalvar = null;
         faseEnvio = string.IsNullOrWhiteSpace(fotoServidorPath);
         indiceMensagem = 0;
         cancelamentoManual = false;
@@ -709,19 +1051,43 @@
                 Cor = cor,
                 TipoCabelo = tipoCabelo,
                 MetodoMegaHair = metodo,
+                QuantidadeGramas = quantidadeGramas,
+                OrigemCabelo = origemCabelo,
+                ExtrasOrcamento = new(extrasSelecionados),
+                PreviaConfirmada = previaConfirmada,
+                PrecoConfirmado = precoConfirmado,
                 Provider = SimuladorMegaHair.Domain.Enums.ImageProvider.OpenAI,
                 ClienteId = Guid.TryParse(ClienteId, out var cid) ? cid : null,
                 ForcarNovaGeracao = forcarNova
             };
-            // O ApiClient não repassa o CancellationToken ao HttpClient; WaitAsync garante que
-            // "Cancelar" e o tempo limite realmente devolvam a tela à cliente.
-            resultado = await Api.CriarSimulacaoAsync(request, ct).WaitAsync(ct);
+            if (carteiraPix is null)
+            {
+                try { carteiraPix = await JS.InvokeAsync<string>("megaHairResultado.carteiraPix"); }
+                catch (JSException) { }
+            }
+            resultado = await Api.CriarSimulacaoAsync(request, ct, carteiraPix);
 
             if (resultado is null || string.IsNullOrWhiteSpace(resultado.FotoResultadoUrl))
                 throw new InvalidOperationException("A simulação não retornou imagem.");
 
             etapa = Etapa.Resultado;
-            iniciarComparadorPendente = true;
+            RecarregarComparador();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone)
+        {
+            fotoServidorPath = null;
+            etapa = Etapa.Estilo;
+            passoEstilo = 2;
+            erro = "A autorização da foto expirou. Toque em Transformar meu visual para enviá-la novamente.";
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.PaymentRequired)
+        {
+            etapa = Etapa.Estilo;
+            passoEstilo = 2;
+            erro = "Sua geração gratuita está indisponível. Fale com a Tati para continuar.";
+            previaPixConfirmada = previaConfirmada;
+            precoPixConfirmado = precoConfirmado;
+            await AbrirCreditosAsync(forcarNova);
         }
         catch (OperationCanceledException)
         {
@@ -738,6 +1104,126 @@
         {
             cts.Cancel(); // encerra o ciclo de mensagens
         }
+    }
+
+    private void AbrirRecuperacaoPix()
+    {
+        mensagemPix = null;
+        codigoRecuperacaoPix = "";
+        previaPixConfirmada = false;
+        precoPixConfirmado = null;
+        etapa = Etapa.RecuperarPix;
+    }
+
+    private async Task RecuperarCarteiraAsync()
+    {
+        var codigo = codigoRecuperacaoPix.Trim().ToLowerInvariant();
+        if (consultandoPix) return;
+        if (codigo.Length != 64 || !codigo.All(char.IsAsciiHexDigit))
+        {
+            mensagemPix = "Confira o código da carteira.";
+            return;
+        }
+
+        consultandoPix = true;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var recuperada = await Api.RecuperarPixAsync(codigo, timeout.Token);
+            if (recuperada is null)
+            {
+                mensagemPix = "Carteira não encontrada.";
+                return;
+            }
+            await JS.InvokeVoidAsync("megaHairResultado.restaurarCarteiraPix", codigo, recuperada.Pedido?.ToString());
+            carteiraPix = codigo;
+            codigoRecuperacaoPix = "";
+            VoltarDoPix();
+            if (recuperada.Saldo <= 0 && recuperada.Pedido.HasValue)
+            {
+                consultandoPix = false;
+                await AbrirCreditosAsync(false);
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JSException or System.Text.Json.JsonException)
+        {
+            mensagemPix = "Não foi possível recuperar a carteira agora.";
+        }
+        finally { consultandoPix = false; }
+    }
+
+    private async Task AbrirCreditosAsync(bool forcarNova)
+    {
+        if (carteiraPix is null) return;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            ofertaPix = await Api.ObterOfertaPixAsync(timeout.Token);
+            if (ofertaPix is not { Ativo: true }) return;
+            var salvo = await JS.InvokeAsync<string?>("megaHairResultado.pedidoPix");
+            Guid.TryParse(salvo, out pedidoPix);
+            pix = null;
+            mensagemPix = null;
+            forcarNovaPix = forcarNova;
+            etapa = Etapa.Creditos;
+            if (pedidoPix != Guid.Empty) await VerificarPixAsync();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JSException or System.Text.Json.JsonException) { }
+    }
+
+    private Task CriarPixAsync() => ProcessarPixAsync(criar: true);
+    private Task VerificarPixAsync() => ProcessarPixAsync(criar: false);
+
+    private void VoltarDoPix()
+    {
+        etapa = Etapa.Estilo;
+        passoEstilo = 2;
+        erro = null;
+    }
+
+    private async Task ProcessarPixAsync(bool criar)
+    {
+        if (consultandoPix || carteiraPix is null) return;
+        var cpf = new string(cpfPix.Where(char.IsAsciiDigit).ToArray());
+        if (criar && (string.IsNullOrWhiteSpace(emailPix) || cpf.Length != 11))
+        {
+            mensagemPix = "Confira o e-mail e informe os 11 dígitos do CPF.";
+            return;
+        }
+        if (!criar && pedidoPix == Guid.Empty) return;
+        consultandoPix = true;
+        mensagemPix = null;
+        try
+        {
+            if (pedidoPix == Guid.Empty)
+            {
+                pedidoPix = Guid.NewGuid();
+                await JS.InvokeVoidAsync("megaHairResultado.pedidoPix", pedidoPix.ToString());
+            }
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            pix = await Api.ConsultarPixAsync(carteiraPix, pedidoPix, criar ? emailPix.Trim() : null, cpf, ofertaPix, timeout.Token);
+            if (pix?.Status is "approved" or "cancelled" or "rejected" or "refunded")
+            {
+                await JS.InvokeVoidAsync("megaHairResultado.pedidoPix", "");
+                pedidoPix = Guid.Empty;
+                emailPix = "";
+                cpfPix = "";
+                if (pix.Status != "approved")
+                    mensagemPix = "O pagamento não foi aprovado. Você pode gerar outro Pix.";
+            }
+            else
+                mensagemPix = "Aguardando confirmação pelo Mercado Pago.";
+        }
+        catch (ApiClient.OfertaPixAlteradaException ex)
+        {
+            ofertaPix = ex.Oferta;
+            mensagemPix = "A oferta foi atualizada. Confira o preço e a quantidade antes de gerar o Pix.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JSException or System.Text.Json.JsonException)
+        {
+            mensagemPix = "Não foi possível verificar o Pix agora. Tente novamente antes de fazer outro pagamento.";
+        }
+        finally { consultandoPix = false; }
     }
 
     private const string MensagemPadrao = "Não conseguimos gerar a simulação desta vez. Vamos tentar novamente?";
@@ -807,6 +1293,65 @@
     }
 
     // ── Resultado ────────────────────────────────────────────────────────────
+    private string NomeOrigem(string origem) =>
+        origensDisponiveis.FirstOrDefault(item => item.Id == origem)?.Nome ?? "Não informada";
+
+    private static string PrecoOpcional(ApiClient.OpcaoOrcamento item)
+    {
+        var unidade = item.Calculo switch { "grama" => "/g", "unidade" => "/un.", _ => "" };
+        return $"R$ {item.Valor.GetValueOrDefault().ToString("0.00##", PtBr)}{unidade}";
+    }
+
+    private string NotaSobConsulta() =>
+        opcoesOrcamento?.SobConsulta is { Length: > 0 } itens
+            ? $"Sob consulta com o salão: {string.Join(", ", itens)}."
+            : "Coloração, se necessária, é orçada à parte após avaliação.";
+
+    private string ResumoExtras() => string.Join(", ",
+        (opcoesOrcamento?.Extras ?? []).Where(item => extrasSelecionados[item.Id] > 0)
+            .Select(item => item.Calculo == "unidade" ? $"{item.Nome} ({extrasSelecionados[item.Id]})" : item.Nome));
+
+    private string MensagemParaTati()
+    {
+        var origem = NomeOrigem(origemCabelo);
+        var gramagem = quantidadeGramas is > 0 ? $"{quantidadeGramas} g" : "Não informada";
+        var preco = resultado?.PrecoMegaHairProIndisponivel == false && quantidadeGramas is > 0
+            ? $"R$ {resultado.ValorEstimado.ToString("N2", PtBr)}"
+            : "A confirmar com a Tati";
+        return string.Join("\n",
+            "Oi, Tati! Quero conversar sobre o resultado da minha simulação de mega hair.",
+            $"Origem: {origem}",
+            $"Comprimento: {comprimento} | Textura: {tipoCabelo}",
+            $"Método: {metodo} | Quantidade: {gramagem}",
+            $"Estimativa do mega hair: {preco}",
+            $"Itens opcionais: {(ResumoExtras() is { Length: > 0 } itens ? itens : "Nenhum")}",
+            $"Cor simulada: {cor}. {NotaSobConsulta()}");
+    }
+
+    private Task RegistrarCliqueWhatsAppAsync() => resultado is { } simulacao
+        ? Api.RegistrarCliqueWhatsAppAsync(simulacao.Id)
+        : Task.CompletedTask;
+
+    private string LinkWhatsAppTati()
+    {
+        var numero = new string((Config["Tati:WhatsApp"] ?? "").Where(char.IsAsciiDigit).ToArray());
+        return $"https://wa.me/{numero}?text={Uri.EscapeDataString(MensagemParaTati())}";
+    }
+
+    private async Task CompartilharComTatiAsync()
+    {
+        if (resultado is null) return;
+        avisoCompartilhar = null;
+        try
+        {
+            var status = await JS.InvokeAsync<string>(
+                "megaHairResultado.compartilharOrcamento", resultado.FotoResultadoUrl, MensagemParaTati());
+            if (status == "ok" || status == "cancelado") return;
+        }
+        catch (JSException) { }
+        avisoCompartilhar = "Salve a foto e use Abrir orçamento no WhatsApp para anexá-la na conversa com a Tati.";
+    }
+
     private async Task SalvarAsync()
     {
         if (resultado is null || salvando) return;
@@ -838,6 +1383,14 @@
         return url;
     }
 
+    private void RecarregarComparador()
+    {
+        tentativaComparador++;
+        comparadorPronto = false;
+        comparadorFalhou = false;
+        iniciarComparadorPendente = true;
+    }
+
     private async Task ExperimentarOutroVisual()
     {
         await JS.InvokeVoidAsync("megaHairResultado.destruirComparador");
@@ -855,6 +1408,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        DesconectarTv();
         geracaoCts?.Cancel();
         geracaoCts?.Dispose();
         try
