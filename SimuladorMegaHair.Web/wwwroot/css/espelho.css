@@ -243,7 +243,7 @@ html.mh-sem-rolagem, html.mh-sem-rolagem body { overflow: hidden; }
 .mh-comp-wrap[data-visualizacao="antes"] .mh-comp:not(.mh-zoom),
 .mh-comp-wrap[data-visualizacao="depois"] .mh-comp:not(.mh-zoom) { cursor: default; }
 .mh-comp-stage { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
-.mh-comp-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; user-select: none; }
+.mh-comp-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center top; pointer-events: none; -webkit-user-drag: none; user-select: none; }
 .mh-comp-handle { position: absolute; top: 0; bottom: 0; left: 0; width: 0; z-index: 3; pointer-events: none; will-change: transform; }
 .mh-comp-handle::before { content: ""; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; background: #fff; box-shadow: 0 0 0 1px rgba(58, 42, 36, .18), 0 0 12px rgba(0, 0, 0, .25); }
 .mh-comp-knob {
