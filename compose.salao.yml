@@ -1,0 +1,72 @@
+name: megahair-${SALAO_SLUG:?Defina o identificador do salao}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-simulacaomegahairdb}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina uma senha para o banco deste salao}
+    volumes:
+      - megahair-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-simulacaomegahairdb};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?Defina uma senha para o banco deste salao}
+      Jwt__Key: ${JWT_KEY:?Defina uma JWT_KEY exclusiva deste salao}
+      Jwt__Issuer: ${JWT_ISSUER:-SimuladorMegaHair}
+      Jwt__Audience: ${JWT_AUDIENCE:-SimuladorMegaHair.Clients}
+      Replicate__ApiToken: ${REPLICATE_API_TOKEN:?Defina REPLICATE_API_TOKEN}
+      OpenAI__ApiToken: ${OpenAI__ApiToken:-}
+      OpenAI__Model: ${OpenAI__Model:-gpt-image-1}
+      OpenAI__Size: ${OpenAI__Size:-1024x1024}
+      OpenAI__Quality: ${OpenAI__Quality:-high}
+      Pipeline__Metodo: ${MEGAHAIR_METODO:-openai}
+      PublicBaseUrl: ${SALAO_API_URL:?Defina a URL HTTPS da API deste salao}
+      Orcamento__ChaveSincronizacao: ""
+      Orcamento__AdministradorEmail: ${SALAO_ADMIN_EMAIL:?Defina o e-mail do administrador}
+      Piloto__OperadorEmail: ${SALAO_ADMIN_EMAIL:?Defina o e-mail do administrador}
+      CadastroSalao__ChaveInicial: ${SALAO_SETUP_KEY:?Defina a chave de cadastro inicial}
+      AllowedOrigins__0: ${SALAO_WEB_URL:?Defina a URL HTTPS do simulador deste salao}
+      Creditos__Ativo: ${CREDITOS_ATIVO:-false}
+      MercadoPago__AccessToken: ${MERCADO_PAGO_ACCESS_TOKEN:-}
+    volumes:
+      - megahair-uploads:/app/wwwroot/uploads
+      - megahair-resultados:/app/wwwroot/resultados
+    ports:
+      - "127.0.0.1:${SALAO_API_PORT:?Defina uma porta local para a API}:5185"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    environment:
+      Api__BaseUrl: http://api:5185/
+      Salao__Nome: ${SALAO_NOME:?Defina o nome do salao}
+      Salao__WhatsApp: ${SALAO_WHATSAPP:?Defina o WhatsApp do salao com DDI e DDD}
+    volumes:
+      - megahair-web-keys:/root/.aspnet/DataProtection-Keys
+    ports:
+      - "127.0.0.1:${SALAO_WEB_PORT:?Defina uma porta local para o simulador}:5180"
+    depends_on:
+      - api
+
+volumes:
+  megahair-postgres-data:
+  megahair-web-keys:
+  megahair-uploads:
+  megahair-resultados:
