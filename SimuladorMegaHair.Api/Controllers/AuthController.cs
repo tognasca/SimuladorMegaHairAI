@@ -8,6 +8,7 @@ using SimuladorMegaHair.Domain.Entities;
 using SimuladorMegaHair.Infrastructure.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace SimuladorMegaHair.Api.Controllers;
@@ -38,6 +39,18 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<LoginResponse>> SetupInicial(
         [FromBody] CriarUsuarioRequest request, CancellationToken ct)
     {
+        var chaveInicial = _config["CadastroSalao:ChaveInicial"];
+        if (!string.IsNullOrWhiteSpace(chaveInicial))
+        {
+            var recebida = Request.Headers["X-Cadastro-Salao"].ToString();
+            if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(chaveInicial), Encoding.UTF8.GetBytes(recebida)))
+                return Unauthorized();
+
+            var admin = _config["Orcamento:AdministradorEmail"];
+            if (!string.Equals(request.Email?.Trim(), admin?.Trim(), StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Use o e-mail configurado para o administrador do salão.");
+        }
+
         if (await _dbContext.Usuarios.AnyAsync(ct))
             return Forbid();
 
