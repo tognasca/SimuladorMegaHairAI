@@ -30,4 +30,12 @@ try {
 
 Suba dois salões com diferentes identificadores, portas, e-mails e segredos. Configure preços diferentes para a mesma origem e confira os valores em cada link. Valide os logins em ambas as URLs, gere uma foto em cada salão e confirme que o link de mídia e o código da TV são aceitos somente na instância que os gerou. Confira a configuração e os dados da Tati no endereço atual antes e depois do teste.
 
-Este procedimento provisiona instâncias independentes. O cadastro centralizado e o provisionamento pela interface administrativa exigem implementação própria.
+## Cadastro central na tela
+
+Na instalação principal da Tati, faça login e abra **Salões** ou `/admin/saloes`. Use a conta do operador configurado. Se não houver operador configurado, a conta mais antiga da instalação administra a central.
+
+A lista começa com a Tati integrada ao MegaHairPro. Cadastre os demais salões, seus contatos e o identificador exclusivo da instância. Informe o link HTTPS depois da publicação. O sistema valida identificadores e links duplicados, mantém os dados no PostgreSQL e impede que uma edição antiga sobrescreva outra mais recente.
+
+O contato cadastrado na central serve para identificação administrativa. Login, WhatsApp usado no simulador e publicação são configurados na instância exclusiva. O cadastro central não cria contêineres nem replica senhas. As instalações de outros salões têm acesso bloqueado à central.
+
+Os arquivos Compose existentes continuam com a mesma função. A migração acrescenta apenas a tabela da central.
