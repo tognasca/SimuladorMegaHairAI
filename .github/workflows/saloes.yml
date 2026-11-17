@@ -64,6 +64,23 @@ jobs:
           done
           cat /tmp/salao-secundario.log
           exit 1
+      - name: Iniciar Web
+        working-directory: SimuladorMegaHair.Web
+        env:
+          Api__BaseUrl: http://127.0.0.1:5185/
+        run: |
+          dotnet bin/Release/net8.0/SimuladorMegaHair.Web.dll --urls http://127.0.0.1:5180 > /tmp/saloes-web.log 2>&1 &
+          for tentativa in $(seq 1 40); do
+            if curl -s -o /dev/null http://127.0.0.1:5180/admin/saloes; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/saloes-web.log
+          exit 1
+      - name: Testar tela em celular, tablet e desktop
+        run: |
+          npm install --prefix "$RUNNER_TEMP/saloes-browser" playwright
+          "$RUNNER_TEMP/saloes-browser/node_modules/.bin/playwright" install --with-deps chromium
+          NODE_PATH="$RUNNER_TEMP/saloes-browser/node_modules" node scripts/testar-tela-saloes.cjs
       - name: Logs da API
         if: failure()
         run: cat /tmp/saloes-api.log || true
