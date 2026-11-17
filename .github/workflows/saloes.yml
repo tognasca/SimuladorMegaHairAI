@@ -1,0 +1,55 @@
+name: Cadastro de saloes
+
+on:
+  push:
+    branches: [feat/isolamento-por-salao]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: teste-ci
+          POSTGRES_DB: saloes_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d saloes_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=saloes_ci;Username=postgres;Password=teste-ci
+      Jwt__Key: chave-exclusiva-para-teste-de-integracao-com-mais-de-32-caracteres
+      Piloto__OperadorEmail: admin@example.com
+      OpenAI__ApiToken: ""
+      Pipeline__Metodo: openai
+      PGPASSWORD: teste-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Testes
+        run: dotnet test SimuladorMegaHair.Tests/SimuladorMegaHair.Tests.csproj -c Release
+      - name: Compilar API
+        run: dotnet build SimuladorMegaHair.Api/SimuladorMegaHair.Api.csproj -c Release
+      - name: Iniciar API
+        working-directory: SimuladorMegaHair.Api
+        run: |
+          dotnet bin/Release/net8.0/SimuladorMegaHair.Api.dll --urls http://127.0.0.1:5185 > /tmp/saloes-api.log 2>&1 &
+          for tentativa in $(seq 1 40); do
+            if curl -s -o /dev/null http://127.0.0.1:5185/api/orcamento/opcoes; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/saloes-api.log
+          exit 1
+      - name: Cadastro, autorizacao e concorrencia
+        run: python3 scripts/testar-cadastro-saloes.py
+      - name: Logs da API
+        if: failure()
+        run: cat /tmp/saloes-api.log || true
