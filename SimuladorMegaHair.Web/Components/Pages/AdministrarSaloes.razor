@@ -1,0 +1,187 @@
+@page "/admin/saloes"
+@rendermode InteractiveServer
+@inject ApiClient Api
+@inject AuthTokenStore TokenStore
+<PageTitle>Cadastro de salões</PageTitle>
+
+<div class="mh-app">
+    <section class="mh-tela">
+        <h1 class="mh-titulo">Salões</h1>
+        @if (restrito)
+        {
+            <p>Entre com a conta que administra os salões.</p>
+            <a class="mh-link" href="/login?retorno=/admin/saloes">Entrar</a>
+        }
+        @if (mensagem is not null)
+        {
+            <p role="status">@mensagem</p>
+        }
+        @if (lista is not null)
+        {
+            <p>Gerencie os dados e os links dos salões. Cada link deve apontar para a instância exclusiva daquele salão.</p>
+            <button class="mh-btn mh-btn-primario" disabled="@ocupado" @onclick="Novo">Cadastrar salão</button>
+            <div class="table-responsive">
+                <table class="table">
+                    <caption>Salões cadastrados</caption>
+                    <thead><tr><th>Salão</th><th>Responsável</th><th>Orçamento</th><th>Acesso</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var salao in lista.Itens)
+                        {
+                            <tr @key="salao.Id">
+                                <td>@salao.Nome<br /><small>@salao.Identificador</small></td>
+                                <td>@salao.Responsavel<br />@salao.Email</td>
+                                <td>@(salao.MegaHairPro ? "MegaHairPro · Tati" : "Tabela própria")</td>
+                                <td>
+                                    @if (CadastroSalao.LinkValido(salao.UrlPublica))
+                                    {
+                                        <a href="@salao.UrlPublica" target="_blank" rel="noopener noreferrer">Abrir simulador</a>
+                                    }
+                                    else
+                                    {
+                                        <span>Aguardando link</span>
+                                    }
+                                </td>
+                                <td><button class="btn btn-outline-secondary" disabled="@ocupado" @onclick="() => Editar(salao)">Editar</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (lista.Total > 50)
+            {
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary" disabled="@(ocupado || pagina == 0)" @onclick="AnteriorAsync">Anterior</button>
+                    <span>Página @(pagina + 1)</span>
+                    <button class="btn btn-outline-secondary" disabled="@(ocupado || (pagina + 1) * 50 >= lista.Total)" @onclick="ProximaAsync">Próxima</button>
+                </div>
+            }
+        }
+        @if (edicao is { } cadastro && !restrito)
+        {
+            <h2 class="mt-4">@(cadastro.Id == Guid.Empty ? "Novo salão" : cadastro.Nome)</h2>
+            <EditForm Model="cadastro" OnValidSubmit="SalvarAsync" @key="cadastro">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <fieldset disabled="@ocupado">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="salao-nome">Nome do salão</label>
+                            <InputText class="form-control" id="salao-nome" maxlength="120" @bind-Value="cadastro.Nome" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="salao-identificador">Identificador</label>
+                            <InputText class="form-control" id="salao-identificador" maxlength="50" readonly="@(cadastro.Id != Guid.Empty)"
+                                @bind-Value="cadastro.Identificador" />
+                            <small>Use o mesmo identificador da instância do salão. Ele fica fixo após o cadastro.</small>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="salao-responsavel">Responsável</label>
+                            <InputText class="form-control" id="salao-responsavel" maxlength="120" @bind-Value="cadastro.Responsavel" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="salao-email">E-mail de contato</label>
+                            <InputText class="form-control" id="salao-email" type="email" maxlength="254" @bind-Value="cadastro.Email" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="salao-whatsapp">WhatsApp</label>
+                            <InputText class="form-control" id="salao-whatsapp" inputmode="numeric" maxlength="15" @bind-Value="cadastro.WhatsApp" />
+                            <small>Inclua DDI e DDD. Exemplo 5511999999999.</small>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="salao-link">Link do simulador</label>
+                            <InputText class="form-control" id="salao-link" type="url" maxlength="300" @bind-Value="cadastro.UrlPublica" />
+                            <small>Preencha quando a instância estiver publicada com HTTPS.</small>
+                        </div>
+                    </div>
+                    <p class="mt-3">Orçamento @(cadastro.MegaHairPro ? "sincronizado pelo MegaHairPro." : "configurado no próprio simulador do salão.")</p>
+                    <p>Salvar registra os dados na central. A publicação da instância e o acesso do administrador são configurados na instalação do salão.</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="mh-btn mh-btn-primario" type="submit">@(ocupado ? "Salvando…" : "Salvar cadastro")</button>
+                        <button class="btn btn-outline-secondary" type="button" @onclick="Cancelar">Cancelar</button>
+                    </div>
+                </fieldset>
+            </EditForm>
+        }
+    </section>
+</div>
+
+@code {
+    private ApiClient.ListaSaloes? lista;
+    private CadastroSalao? edicao;
+    private string? mensagem;
+    private int pagina;
+    private bool ocupado, restrito;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await TokenStore.RestaurarAsync();
+        await CarregarAsync();
+        StateHasChanged();
+    }
+
+    private void Novo() { edicao = new(); mensagem = null; }
+    private void Cancelar() => edicao = null;
+    private void Editar(CadastroSalao s)
+    {
+        mensagem = null;
+        edicao = new()
+        {
+            Id = s.Id, Versao = s.Versao, Nome = s.Nome, Identificador = s.Identificador,
+            Responsavel = s.Responsavel, Email = s.Email, WhatsApp = s.WhatsApp,
+            UrlPublica = s.UrlPublica, MegaHairPro = s.MegaHairPro
+        };
+    }
+
+    private Task AnteriorAsync() { pagina--; return CarregarAsync(); }
+    private Task ProximaAsync() { pagina++; return CarregarAsync(); }
+
+    private async Task CarregarAsync()
+    {
+        ocupado = true;
+        try
+        {
+            using var prazo = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            lista = await Api.ListarSaloesAsync(pagina, prazo.Token);
+            restrito = false;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+        {
+            restrito = true; lista = null; edicao = null;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
+        {
+            mensagem = "Não foi possível carregar os salões. Atualize a página para tentar novamente.";
+        }
+        finally { ocupado = false; }
+    }
+
+    private async Task SalvarAsync()
+    {
+        if (ocupado || edicao is null) return;
+        ocupado = true;
+        try
+        {
+            edicao.Normalizar();
+            using var prazo = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            await Api.SalvarSalaoAsync(edicao, prazo.Token);
+            edicao = null;
+            mensagem = "Cadastro salvo.";
+            await CarregarAsync();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+        {
+            restrito = true; lista = null; edicao = null;
+            mensagem = "Entre novamente com a conta da administração.";
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            mensagem = "O identificador ou link já está em uso, ou o cadastro mudou. Recarregue a página e confira os dados.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
+        {
+            mensagem = "Não foi possível confirmar o salvamento. Atualize a lista antes de tentar novamente.";
+        }
+        finally { ocupado = false; }
+    }
+}

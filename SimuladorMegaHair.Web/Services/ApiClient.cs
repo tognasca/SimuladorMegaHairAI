@@ -26,6 +26,26 @@ public class ApiClient
 
     public Uri? BaseAddress => _http.BaseAddress;
 
+    public sealed record ListaSaloes(CadastroSalao[] Itens, int Total);
+
+    public async Task<ListaSaloes> ListarSaloesAsync(int pagina, CancellationToken ct)
+    {
+        using var resposta = await EnviarAutorizadaAsync(HttpMethod.Get,
+            $"api/admin/saloes?pagina={pagina}", cancellationToken: ct);
+        await GarantirSucessoAsync(resposta, "Não foi possível carregar os salões.");
+        return await resposta.Content.ReadFromJsonAsync<ListaSaloes>(cancellationToken: ct)
+            ?? throw new JsonException("Resposta inválida.");
+    }
+
+    public async Task SalvarSalaoAsync(CadastroSalao cadastro, CancellationToken ct)
+    {
+        var criar = cadastro.Id == Guid.Empty;
+        using var resposta = await EnviarAutorizadaAsync(criar ? HttpMethod.Post : HttpMethod.Put,
+            criar ? "api/admin/saloes" : $"api/admin/saloes/{cadastro.Id}", JsonContent.Create(cadastro), ct);
+        await GarantirSucessoAsync(resposta, "Não foi possível salvar o salão.");
+    }
+
+
     /// <summary>Login anônimo contra POST /api/auth/login.</summary>
     public async Task<LoginResponse?> LoginAsync(string email, string senha)
     {
