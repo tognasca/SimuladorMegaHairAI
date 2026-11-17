@@ -434,7 +434,7 @@
             }
 
             <div class="mh-acoes-principais">
-                <button type="button" class="mh-btn mh-btn-primario" disabled="@(!comparadorPronto)" @onclick="CompartilharComTatiAsync">Enviar foto e orçamento para a Tati</button>
+                <button type="button" class="mh-btn mh-btn-primario" disabled="@(!comparadorPronto)" @onclick="CompartilharComTatiAsync">Enviar foto e orçamento para @NomeContatoSalao</button>
                 <a class="mh-link" href="@LinkWhatsAppTati()" @onclick="RegistrarCliqueWhatsAppAsync" target="_blank" rel="noopener">Abrir orçamento no WhatsApp</a>
                 @if (!string.IsNullOrEmpty(avisoCompartilhar))
                 {
@@ -1084,7 +1084,7 @@
         {
             etapa = Etapa.Estilo;
             passoEstilo = 2;
-            erro = "Sua geração gratuita está indisponível. Fale com a Tati para continuar.";
+            erro = "Sua geração gratuita está indisponível. Fale com o salão para continuar.";
             previaPixConfirmada = previaConfirmada;
             precoPixConfirmado = precoConfirmado;
             await AbrirCreditosAsync(forcarNova);
@@ -1311,15 +1311,17 @@
         (opcoesOrcamento?.Extras ?? []).Where(item => extrasSelecionados[item.Id] > 0)
             .Select(item => item.Calculo == "unidade" ? $"{item.Nome} ({extrasSelecionados[item.Id]})" : item.Nome));
 
+    private string NomeContatoSalao => Config["Salao:Nome"] ?? "a Tati";
+
     private string MensagemParaTati()
     {
         var origem = NomeOrigem(origemCabelo);
         var gramagem = quantidadeGramas is > 0 ? $"{quantidadeGramas} g" : "Não informada";
         var preco = resultado?.PrecoMegaHairProIndisponivel == false && quantidadeGramas is > 0
             ? $"R$ {resultado.ValorEstimado.ToString("N2", PtBr)}"
-            : "A confirmar com a Tati";
+            : "A confirmar com o salão";
         return string.Join("\n",
-            "Oi, Tati! Quero conversar sobre o resultado da minha simulação de mega hair.",
+            "Olá! Quero conversar sobre o resultado da minha simulação de mega hair.",
             $"Origem: {origem}",
             $"Comprimento: {comprimento} | Textura: {tipoCabelo}",
             $"Método: {metodo} | Quantidade: {gramagem}",
@@ -1334,7 +1336,7 @@
 
     private string LinkWhatsAppTati()
     {
-        var numero = new string((Config["Tati:WhatsApp"] ?? "").Where(char.IsAsciiDigit).ToArray());
+        var numero = new string((Config["Salao:WhatsApp"] ?? Config["Tati:WhatsApp"] ?? "").Where(char.IsAsciiDigit).ToArray());
         return $"https://wa.me/{numero}?text={Uri.EscapeDataString(MensagemParaTati())}";
     }
 
@@ -1349,7 +1351,7 @@
             if (status == "ok" || status == "cancelado") return;
         }
         catch (JSException) { }
-        avisoCompartilhar = "Salve a foto e use Abrir orçamento no WhatsApp para anexá-la na conversa com a Tati.";
+        avisoCompartilhar = "Salve a foto e use Abrir orçamento no WhatsApp para anexá-la na conversa com o salão.";
     }
 
     private async Task SalvarAsync()
