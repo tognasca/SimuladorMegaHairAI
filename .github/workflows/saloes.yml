@@ -25,7 +25,6 @@ jobs:
     env:
       ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=saloes_ci;Username=postgres;Password=teste-ci
       Jwt__Key: chave-exclusiva-para-teste-de-integracao-com-mais-de-32-caracteres
-      Piloto__OperadorEmail: admin@example.com
       OpenAI__ApiToken: ""
       Pipeline__Metodo: openai
       PGPASSWORD: teste-ci
@@ -50,6 +49,21 @@ jobs:
           exit 1
       - name: Cadastro, autorizacao e concorrencia
         run: python3 scripts/testar-cadastro-saloes.py
+      - name: Bloquear central na instancia de outro salao
+        working-directory: SimuladorMegaHair.Api
+        env:
+          CadastroSalao__ChaveInicial: chave-exclusiva-da-instancia-de-teste
+        run: |
+          dotnet bin/Release/net8.0/SimuladorMegaHair.Api.dll --urls http://127.0.0.1:5186 > /tmp/salao-secundario.log 2>&1 &
+          for tentativa in $(seq 1 40); do
+            if curl -s -o /dev/null http://127.0.0.1:5186/api/orcamento/opcoes; then
+              python3 ../scripts/testar-central-restrita.py
+              exit $?
+            fi
+            sleep 1
+          done
+          cat /tmp/salao-secundario.log
+          exit 1
       - name: Logs da API
         if: failure()
         run: cat /tmp/saloes-api.log || true
