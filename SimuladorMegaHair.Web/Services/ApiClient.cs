@@ -266,7 +266,10 @@ public class ApiClient
 
         using var response = await EnviarAutorizadaAsync(HttpMethod.Get, url, cancellationToken: cancellationToken);
         await GarantirSucessoAsync(response, "Não foi possível carregar o histórico.");
-        return await response.Content.ReadFromJsonAsync<List<SimulacaoResponse>>(cancellationToken: cancellationToken) ?? new();
+        var historico = await response.Content.ReadFromJsonAsync<List<SimulacaoResponse>>(cancellationToken: cancellationToken) ?? new();
+        foreach (var item in historico)
+            PrepararMidia(item);
+        return historico;
     }
 
     public async Task<List<ClienteResponse>> BuscarClientesAsync(
@@ -288,7 +291,11 @@ public class ApiClient
     {
         using var response = await EnviarAutorizadaAsync(HttpMethod.Get, $"api/clientes/{id}", cancellationToken: cancellationToken);
         await GarantirSucessoAsync(response, "Não foi possível carregar o cliente.");
-        return await response.Content.ReadFromJsonAsync<ClienteDetalheResponse>(cancellationToken: cancellationToken);
+        var cliente = await response.Content.ReadFromJsonAsync<ClienteDetalheResponse>(cancellationToken: cancellationToken);
+        if (cliente?.Simulacoes is not null)
+            foreach (var simulacao in cliente.Simulacoes)
+                PrepararMidia(simulacao);
+        return cliente;
     }
 
     public async Task<ClienteResponse?> CriarClienteAsync(
