@@ -1385,8 +1385,21 @@
         return url;
     }
 
-    private void RecarregarComparador()
+    private async Task RecarregarComparador()
     {
+        if (resultado is not null)
+        {
+            try
+            {
+                var atualizado = await Api.RenovarLinksSimulacaoAsync(resultado.Id);
+                if (atualizado is not null && !string.IsNullOrWhiteSpace(atualizado.FotoResultadoUrl))
+                    resultado = atualizado;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
+            {
+                erro = "Não foi possível atualizar a foto. Verifique a conexão e tente novamente.";
+            }
+        }
         tentativaComparador++;
         comparadorPronto = false;
         comparadorFalhou = false;
