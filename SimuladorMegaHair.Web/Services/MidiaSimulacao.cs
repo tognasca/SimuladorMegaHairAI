@@ -17,9 +17,19 @@ internal static class MidiaSimulacao
             return null;
 
         var caminho = origem.AbsolutePath.Split('/');
+        // Nunca envia o navegador para um IP local ou para o host interno da API.
+        // O endpoint no mesmo domínio do site acessa a API pela rede Docker.
         return caminho.Length == 4 && caminho[1] == "media" && Valido(caminho[2], caminho[3])
+            && OrigemAssinada(origem.Query)
             ? $"/midia-simulacao/{caminho[2]}/{caminho[3]}{origem.Query}"
             : null;
+    }
+
+    private static bool OrigemAssinada(string query)
+    {
+        var parametros = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(query);
+        return long.TryParse(parametros["exp"].ToString(), out var exp)
+            && exp > 0 && Assinatura.IsMatch(parametros["sig"].ToString());
     }
 
     internal static async Task EntregarAsync(string pasta, string arquivo, long exp, string sig,
