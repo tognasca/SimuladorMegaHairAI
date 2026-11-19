@@ -17,9 +17,19 @@ internal static class MidiaSimulacao
             return null;
 
         var caminho = origem.AbsolutePath.Split('/');
+        // Nunca envia o navegador para um IP local ou para o host interno da API.
+        // O endpoint no mesmo domínio do site acessa a API pela rede Docker.
         return caminho.Length == 4 && caminho[1] == "media" && Valido(caminho[2], caminho[3])
+            && OrigemAssinada(origem.Query)
             ? $"/midia-simulacao/{caminho[2]}/{caminho[3]}{origem.Query}"
             : null;
+    }
+
+    private static bool OrigemAssinada(string query)
+    {
+        var parametros = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(query);
+        return long.TryParse(parametros["exp"].ToString(), out var exp)
+            && exp > DateTimeOffset.UtcNow.ToUnixTimeSeconds() && Assinatura.IsMatch(parametros["sig"].ToString());
     }
 
     internal static async Task EntregarAsync(string pasta, string arquivo, long exp, string sig,
@@ -27,6 +37,7 @@ internal static class MidiaSimulacao
     {
         contexto.Response.Headers.CacheControl = "private, no-store";
         contexto.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        contexto.Response.Headers["X-Media-Proxy"] = "simulador";
         if (!Valido(pasta, arquivo) || !Assinatura.IsMatch(sig))
         {
             contexto.Response.StatusCode = StatusCodes.Status404NotFound;
@@ -67,8 +78,12 @@ internal static class MidiaSimulacao
         {
             contexto.Response.StatusCode = StatusCodes.Status504GatewayTimeout;
         }
+        catch (IOException) when (!contexto.Response.HasStarted)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status502BadGateway;
+        }
     }
 
     private static bool Valido(string pasta, string arquivo) =>
-        pasta is "uploads" or "resultados" && arquivo.Length <= 64 && Nome.IsMatch(arquivo);
+        (pasta is "uploads" or "resultados") && arquivo.Length <= 64 && Nome.IsMatch(arquivo);
 }
