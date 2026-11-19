@@ -65,7 +65,17 @@ public class ApiClient
     {
         using var form = new MultipartFormDataContent();
         using var content = new ByteArrayContent(bytes);
-        content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        // Detecta o tipo real da imagem; celulares podem enviar JPEG ou WebP.
+        var tipo = bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF
+            ? "image/jpeg"
+            : bytes.Length >= 8 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47
+                ? "image/png"
+                : bytes.Length >= 12 && bytes[0] == (byte)'R' && bytes[1] == (byte)'I' && bytes[2] == (byte)'F'
+                    && bytes[3] == (byte)'F' && bytes[8] == (byte)'W' && bytes[9] == (byte)'E'
+                    && bytes[10] == (byte)'B' && bytes[11] == (byte)'P'
+                    ? "image/webp"
+                    : throw new InvalidOperationException("Formato de foto inválido. Envie uma imagem JPEG, PNG ou WebP.");
+        content.Headers.ContentType = new MediaTypeHeaderValue(tipo);
         form.Add(content, "file", nomeArquivo);
 
         using var request = CriarRequisicao(HttpMethod.Post, "api/simulacoes/upload");
