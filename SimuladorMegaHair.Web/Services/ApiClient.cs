@@ -256,6 +256,14 @@ public class ApiClient
         return resultado;
     }
 
+    public async Task<SimulacaoResponse?> RenovarLinksSimulacaoAsync(Guid id, CancellationToken ct = default)
+    {
+        using var response = await EnviarAutorizadaAsync(HttpMethod.Get,
+            $"api/simulacoes/{id}", cancellationToken: ct);
+        await GarantirSucessoAsync(response, "Não foi possível atualizar os links das fotos.");
+        return PrepararMidia(await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: ct));
+    }
+
     public async Task<List<SimulacaoResponse>> GetHistoricoAsync(
         string? fotoOriginalPath = null,
         CancellationToken cancellationToken = default)
