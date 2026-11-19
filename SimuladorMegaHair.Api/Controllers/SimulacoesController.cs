@@ -427,6 +427,31 @@ public class SimulacoesController : ControllerBase
     //  HISTÓRICO
     // ═══════════════════════════════════════════════════════════
 
+    // A URL assinada anterior é a prova de posse da foto. Nunca autorizar só pelo ID:
+    // no SaaS um ID conhecido não pode revelar a imagem de outro salão.
+    [HttpPost("{id:guid}/renovar-midia")]
+    [AllowAnonymous]
+    [EnableRateLimiting("UploadPublico")]
+    public async Task<ActionResult<LinksMidiaSimulacao>> RenovarMidia(
+        Guid id, [FromBody] ProvaMidiaSimulacao prova,
+        [FromServices] MediaUrlSigner signer, CancellationToken ct)
+    {
+        Response.Headers.CacheControl = "private, no-store";
+        var agora = DateTimeOffset.UtcNow;
+        var simulacao = await _dbContext.Simulacoes.FindAsync(new object[] { id }, ct);
+        if (simulacao is null ||
+            simulacao.CriadoEm < agora.UtcDateTime.AddHours(-26) ||
+            !CaminhosSeguros.TryNormalizar(simulacao.FotoResultadoPath, out var pasta, out var arquivo) ||
+            pasta != CaminhosSeguros.PastaResultados ||
+            !signer.ValidarRenovacao(pasta, arquivo, prova.Exp, prova.Sig, agora))
+            return NotFound();
+
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        return Ok(new LinksMidiaSimulacao(
+            UrlMidia(baseUrl, simulacao.FotoOriginalPath, signer),
+            UrlMidia(baseUrl, simulacao.FotoResultadoPath, signer)));
+    }
+
     [HttpGet("historico")]
     [Authorize]
     public async Task<ActionResult<List<SimulacaoResponse>>> ObterHistorico(

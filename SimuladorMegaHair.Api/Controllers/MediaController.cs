@@ -38,7 +38,7 @@ public class MediaController : ControllerBase
         if (!System.IO.File.Exists(abs))
             return NotFound();
 
-        Response.Headers.CacheControl = "private, max-age=300";
+        Response.Headers.CacheControl = "private, no-store";
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         return PhysicalFile(abs, TipoConteudo(a));
     }
