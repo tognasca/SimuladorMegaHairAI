@@ -427,14 +427,28 @@ public class SimulacoesController : ControllerBase
     //  HISTÓRICO
     // ═══════════════════════════════════════════════════════════
 
-    // Reemite URLs temporárias de uma simulação existente sem executar a IA novamente.
-    [HttpGet("{id:guid}")]
-    [Authorize]
-    public async Task<ActionResult<SimulacaoResponse>> ObterSimulacao(
-        Guid id, [FromServices] MediaUrlSigner signer, CancellationToken ct)
+    // A URL assinada anterior é a prova de posse da foto. Nunca autorizar só pelo ID:
+    // no SaaS um ID conhecido não pode revelar a imagem de outro salão.
+    [HttpGet("{id:guid}/renovar-midia")]
+    [AllowAnonymous]
+    [EnableRateLimiting("UploadPublico")]
+    public async Task<ActionResult<SimulacaoResponse>> RenovarMidia(
+        Guid id, [FromQuery] long exp, [FromQuery] string? sig,
+        [FromServices] MediaUrlSigner signer, CancellationToken ct)
     {
         var simulacao = await _dbContext.Simulacoes.FindAsync(new object[] { id }, ct);
-        if (simulacao is null) return NotFound();
+        if (simulacao is null ||
+            !CaminhosSeguros.TryNormalizar(simulacao.FotoResultadoPath, out var pasta, out var arquivo))
+            return NotFound();
+
+        var agora = DateTimeOffset.UtcNow;
+        // Permite renovar por até 24 horas depois da expiração, sem aceitar
+        // URLs arbitrariamente antigas nem assinaturas com validade excessiva.
+        if (exp < agora.AddHours(-24).ToUnixTimeSeconds() ||
+            exp > agora.AddHours(3).ToUnixTimeSeconds() ||
+            !signer.Validar(pasta, arquivo, exp, sig, agora.AddHours(-24)))
+            return StatusCode(StatusCodes.Status403Forbidden);
+
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
         return Ok(MontarResponse(simulacao, baseUrl, signer, veioDoCache: true));
     }
