@@ -44,6 +44,13 @@ public sealed class MediaUrlSigner
         return CryptographicOperations.FixedTimeEquals(recebida, esperada);
     }
 
+    public bool ValidarRenovacao(string pasta, string arquivo, long exp, string? sig, DateTimeOffset agora)
+    {
+        return sig is { Length: 43 }
+            && exp <= agora.Add(_validade).ToUnixTimeSeconds()
+            && Validar(pasta, arquivo, exp, sig, agora.AddHours(-24));
+    }
+
     private string Calcular(string pasta, string arquivo, long exp)
     {
         using var hmac = new HMACSHA256(_chave);

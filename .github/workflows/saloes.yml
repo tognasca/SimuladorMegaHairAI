@@ -76,6 +76,11 @@ jobs:
           done
           cat /tmp/saloes-web.log
           exit 1
+      - name: Validar renovação de mídia e proxy
+        run: |
+          python3 -m venv "$RUNNER_TEMP/megahair-media"
+          "$RUNNER_TEMP/megahair-media/bin/pip" install Pillow
+          "$RUNNER_TEMP/megahair-media/bin/python" scripts/testar-renovacao-midia.py
       - name: Testar tela em celular, tablet e desktop
         run: |
           npm install --prefix "$RUNNER_TEMP/saloes-browser" playwright

@@ -256,7 +256,7 @@ public class ApiClient
         return resultado;
     }
 
-    public async Task<SimulacaoResponse?> RenovarLinksSimulacaoAsync(Guid id, string? urlResultado, CancellationToken ct = default)
+    public async Task<LinksMidiaSimulacao?> RenovarLinksSimulacaoAsync(Guid id, string? urlResultado, CancellationToken ct = default)
     {
         if (!Uri.TryCreate(urlResultado, UriKind.RelativeOrAbsolute, out var url))
             return null;
@@ -266,10 +266,16 @@ public class ApiClient
         if (!long.TryParse(parametros["exp"].ToString(), out var exp) ||
             !System.Text.RegularExpressions.Regex.IsMatch(parametros["sig"].ToString(), @"\A[A-Za-z0-9_-]{43}\z"))
             return null;
-        using var response = await EnviarAutorizadaAsync(HttpMethod.Get,
-            $"api/simulacoes/{id}/renovar-midia?exp={exp}&sig={parametros["sig"]}", cancellationToken: ct);
+        using var prazo = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        prazo.CancelAfter(TimeSpan.FromSeconds(10));
+        using var response = await EnviarAutorizadaAsync(HttpMethod.Post,
+            $"api/simulacoes/{id}/renovar-midia",
+            JsonContent.Create(new ProvaMidiaSimulacao(exp, parametros["sig"].ToString())), prazo.Token);
         await GarantirSucessoAsync(response, "Não foi possível atualizar os links das fotos.");
-        return PrepararMidia(await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: ct));
+        var links = await response.Content.ReadFromJsonAsync<LinksMidiaSimulacao>(cancellationToken: prazo.Token);
+        var original = MidiaSimulacao.ParaNavegador(links?.FotoOriginalUrl);
+        var resultado = MidiaSimulacao.ParaNavegador(links?.FotoResultadoUrl);
+        return original is null || resultado is null ? null : new LinksMidiaSimulacao(original, resultado);
     }
 
     public async Task<List<SimulacaoResponse>> GetHistoricoAsync(

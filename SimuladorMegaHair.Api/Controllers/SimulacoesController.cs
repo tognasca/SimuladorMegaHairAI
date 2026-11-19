@@ -429,28 +429,27 @@ public class SimulacoesController : ControllerBase
 
     // A URL assinada anterior é a prova de posse da foto. Nunca autorizar só pelo ID:
     // no SaaS um ID conhecido não pode revelar a imagem de outro salão.
-    [HttpGet("{id:guid}/renovar-midia")]
+    [HttpPost("{id:guid}/renovar-midia")]
     [AllowAnonymous]
     [EnableRateLimiting("UploadPublico")]
-    public async Task<ActionResult<SimulacaoResponse>> RenovarMidia(
-        Guid id, [FromQuery] long exp, [FromQuery] string? sig,
+    public async Task<ActionResult<LinksMidiaSimulacao>> RenovarMidia(
+        Guid id, [FromBody] ProvaMidiaSimulacao prova,
         [FromServices] MediaUrlSigner signer, CancellationToken ct)
     {
+        Response.Headers.CacheControl = "private, no-store";
+        var agora = DateTimeOffset.UtcNow;
         var simulacao = await _dbContext.Simulacoes.FindAsync(new object[] { id }, ct);
         if (simulacao is null ||
-            !CaminhosSeguros.TryNormalizar(simulacao.FotoResultadoPath, out var pasta, out var arquivo))
+            simulacao.CriadoEm < agora.UtcDateTime.AddHours(-26) ||
+            !CaminhosSeguros.TryNormalizar(simulacao.FotoResultadoPath, out var pasta, out var arquivo) ||
+            pasta != CaminhosSeguros.PastaResultados ||
+            !signer.ValidarRenovacao(pasta, arquivo, prova.Exp, prova.Sig, agora))
             return NotFound();
 
-        var agora = DateTimeOffset.UtcNow;
-        // Permite renovar por até 24 horas depois da expiração, sem aceitar
-        // URLs arbitrariamente antigas nem assinaturas com validade excessiva.
-        if (exp < agora.AddHours(-24).ToUnixTimeSeconds() ||
-            exp > agora.AddHours(3).ToUnixTimeSeconds() ||
-            !signer.Validar(pasta, arquivo, exp, sig, agora.AddHours(-24)))
-            return StatusCode(StatusCodes.Status403Forbidden);
-
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        return Ok(MontarResponse(simulacao, baseUrl, signer, veioDoCache: true));
+        return Ok(new LinksMidiaSimulacao(
+            UrlMidia(baseUrl, simulacao.FotoOriginalPath, signer),
+            UrlMidia(baseUrl, simulacao.FotoResultadoPath, signer)));
     }
 
     [HttpGet("historico")]

@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SimuladorMegaHair.Api\SimuladorMegaHair.Api.csproj" />
     <ProjectReference Include="..\SimuladorMegaHair.Domain\SimuladorMegaHair.Domain.csproj" />
     <ProjectReference Include="..\SimuladorMegaHair.Infrastructure\SimuladorMegaHair.Infrastructure.csproj" />
     <ProjectReference Include="..\SimuladorMegaHair.Web\SimuladorMegaHair.Web.csproj" />

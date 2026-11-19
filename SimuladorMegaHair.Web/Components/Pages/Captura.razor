@@ -412,7 +412,7 @@
 
             @if (comparadorFalhou)
             {
-                <div class="mh-alerta" role="alert">Não consegui abrir a imagem gerada. <button type="button" class="mh-link" @onclick="RecarregarComparador">Recarregar imagem</button></div>
+                <div class="mh-alerta" role="alert">Não consegui abrir a imagem gerada. Verifique a conexão e tente novamente. <button type="button" class="mh-link" disabled="@renovandoComparador" @onclick="RecarregarComparador">@(renovandoComparador ? "Atualizando imagem…" : "Recarregar imagem")</button></div>
             }
 
             <div class="mh-resultado-meta">
@@ -567,6 +567,7 @@
     private string? fotoServidorPath;
     private string? erro;
     private SimulacaoResponse? resultado;
+    private bool renovandoComparador;
 
     private bool espelhoAberto, cameraPronta, cameraMultipla, cameraFrontal = true;
     private string? erroCamera;
@@ -1071,7 +1072,7 @@
                 throw new InvalidOperationException("A simulação não retornou imagem.");
 
             etapa = Etapa.Resultado;
-            await RecarregarComparador();
+            IniciarComparador();
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone)
         {
@@ -1361,7 +1362,7 @@
         StateHasChanged();
         try
         {
-            var r = await JS.InvokeAsync<ResultadoSalvar>("megaHairResultado.salvar", UrlParaSalvar(), "minha-transformacao-tati-megahair.png");
+            var r = await JS.InvokeAsync<ResultadoSalvar>("megaHairResultado.salvar", resultado.FotoResultadoUrl, "minha-transformacao-tati-megahair.png");
             if (r.Ok) { salvo = true; }
             else if (r.Motivo == "cancelado") { /* a cliente fechou a folha de compartilhar */ }
             else avisoSalvar = "Não consegui salvar direto. Abra a imagem e segure o dedo sobre ela (ou clique com o botão direito) para salvar.";
@@ -1370,36 +1371,35 @@
         finally { salvando = false; }
     }
 
-    // Baixa pela própria origem do site (/baixar/resultado/...), sem depender de CORS na API pública.
-    private string UrlParaSalvar()
-    {
-        var url = resultado?.FotoResultadoUrl;
-        if (string.IsNullOrWhiteSpace(url)) return string.Empty;
-        try
-        {
-            var caminho = Uri.TryCreate(url, UriKind.Absolute, out var abs) ? abs.AbsolutePath : url;
-            var nome = System.IO.Path.GetFileName(caminho);
-            if (!string.IsNullOrWhiteSpace(nome)) return "/baixar/resultado/" + Uri.EscapeDataString(nome);
-        }
-        catch { /* usa a URL original */ }
-        return url;
-    }
-
     private async Task RecarregarComparador()
     {
-        if (resultado is not null)
+        var atual = resultado;
+        if (atual is null || renovandoComparador) return;
+
+        renovandoComparador = true;
+        try
         {
-            try
+            var links = await Api.RenovarLinksSimulacaoAsync(atual.Id, atual.FotoResultadoUrl);
+            if (resultado != atual) return;
+            if (links is not null)
             {
-                var atualizado = await Api.RenovarLinksSimulacaoAsync(resultado.Id, resultado.FotoResultadoUrl);
-                if (atualizado is not null && !string.IsNullOrWhiteSpace(atualizado.FotoResultadoUrl))
-                    resultado = atualizado;
+                atual.FotoOriginalUrl = links.FotoOriginalUrl;
+                atual.FotoResultadoUrl = links.FotoResultadoUrl;
             }
-            catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
-            {
-                erro = "Não foi possível atualizar a foto. Verifique a conexão e tente novamente.";
-            }
+            IniciarComparador();
         }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
+        {
+            if (resultado == atual) IniciarComparador();
+        }
+        finally
+        {
+            renovandoComparador = false;
+        }
+    }
+
+    private void IniciarComparador()
+    {
         tentativaComparador++;
         comparadorPronto = false;
         comparadorFalhou = false;
