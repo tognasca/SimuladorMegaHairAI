@@ -127,7 +127,8 @@ public class SimulacoesController : ControllerBase
 
         await System.IO.File.WriteAllBytesAsync(fullPath, bytes, ct);
 
-        // ✅ Padroniza com forward slash (funciona em Windows e Linux)
+        // Devolve apenas o caminho e a autorização temporária para gerar.
+        // A imagem é entregue separadamente pela rota /media, nunca pelo diretório wwwroot.
         return Ok($"wwwroot/uploads/{fileName}?{signer.Assinar("autorizacao-upload", fileName)}");
     }
 
