@@ -27,6 +27,7 @@ internal static class MidiaSimulacao
     {
         contexto.Response.Headers.CacheControl = "private, no-store";
         contexto.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        contexto.Response.Headers["X-Media-Proxy"] = "simulador";
         if (!Valido(pasta, arquivo) || !Assinatura.IsMatch(sig))
         {
             contexto.Response.StatusCode = StatusCodes.Status404NotFound;
@@ -66,6 +67,10 @@ internal static class MidiaSimulacao
         catch (OperationCanceledException) when (!contexto.RequestAborted.IsCancellationRequested && !contexto.Response.HasStarted)
         {
             contexto.Response.StatusCode = StatusCodes.Status504GatewayTimeout;
+        }
+        catch (IOException) when (!contexto.Response.HasStarted)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status502BadGateway;
         }
     }
 
