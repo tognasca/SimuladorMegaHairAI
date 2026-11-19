@@ -29,7 +29,7 @@ internal static class MidiaSimulacao
     {
         var parametros = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(query);
         return long.TryParse(parametros["exp"].ToString(), out var exp)
-            && exp > 0 && Assinatura.IsMatch(parametros["sig"].ToString());
+            && exp > DateTimeOffset.UtcNow.ToUnixTimeSeconds() && Assinatura.IsMatch(parametros["sig"].ToString());
     }
 
     internal static async Task EntregarAsync(string pasta, string arquivo, long exp, string sig,
@@ -85,5 +85,5 @@ internal static class MidiaSimulacao
     }
 
     private static bool Valido(string pasta, string arquivo) =>
-        pasta is "uploads" or "resultados" && arquivo.Length <= 64 && Nome.IsMatch(arquivo);
+        (pasta is "uploads" or "resultados") && arquivo.Length <= 64 && Nome.IsMatch(arquivo);
 }
