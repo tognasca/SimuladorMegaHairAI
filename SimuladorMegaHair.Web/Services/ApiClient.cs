@@ -256,10 +256,18 @@ public class ApiClient
         return resultado;
     }
 
-    public async Task<SimulacaoResponse?> RenovarLinksSimulacaoAsync(Guid id, CancellationToken ct = default)
+    public async Task<SimulacaoResponse?> RenovarLinksSimulacaoAsync(Guid id, string? urlResultado, CancellationToken ct = default)
     {
+        if (!Uri.TryCreate(urlResultado, UriKind.RelativeOrAbsolute, out var url))
+            return null;
+        var query = url.IsAbsoluteUri ? url.Query : urlResultado?.Split('?', 2).Skip(1).FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(query)) return null;
+        var parametros = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(query);
+        if (!long.TryParse(parametros["exp"].ToString(), out var exp) ||
+            !System.Text.RegularExpressions.Regex.IsMatch(parametros["sig"].ToString(), @"\A[A-Za-z0-9_-]{43}\z"))
+            return null;
         using var response = await EnviarAutorizadaAsync(HttpMethod.Get,
-            $"api/simulacoes/{id}", cancellationToken: ct);
+            $"api/simulacoes/{id}/renovar-midia?exp={exp}&sig={parametros["sig"]}", cancellationToken: ct);
         await GarantirSucessoAsync(response, "Não foi possível atualizar os links das fotos.");
         return PrepararMidia(await response.Content.ReadFromJsonAsync<SimulacaoResponse>(cancellationToken: ct));
     }
