@@ -427,6 +427,18 @@ public class SimulacoesController : ControllerBase
     //  HISTÓRICO
     // ═══════════════════════════════════════════════════════════
 
+    // Reemite URLs temporárias de uma simulação existente sem executar a IA novamente.
+    [HttpGet("{id:guid}")]
+    [Authorize]
+    public async Task<ActionResult<SimulacaoResponse>> ObterSimulacao(
+        Guid id, [FromServices] MediaUrlSigner signer, CancellationToken ct)
+    {
+        var simulacao = await _dbContext.Simulacoes.FindAsync(new object[] { id }, ct);
+        if (simulacao is null) return NotFound();
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        return Ok(MontarResponse(simulacao, baseUrl, signer, veioDoCache: true));
+    }
+
     [HttpGet("historico")]
     [Authorize]
     public async Task<ActionResult<List<SimulacaoResponse>>> ObterHistorico(
