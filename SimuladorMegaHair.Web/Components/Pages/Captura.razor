@@ -1071,7 +1071,7 @@
                 throw new InvalidOperationException("A simulação não retornou imagem.");
 
             etapa = Etapa.Resultado;
-            RecarregarComparador();
+            await RecarregarComparador();
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone)
         {
@@ -1391,7 +1391,7 @@
         {
             try
             {
-                var atualizado = await Api.RenovarLinksSimulacaoAsync(resultado.Id);
+                var atualizado = await Api.RenovarLinksSimulacaoAsync(resultado.Id, resultado.FotoResultadoUrl);
                 if (atualizado is not null && !string.IsNullOrWhiteSpace(atualizado.FotoResultadoUrl))
                     resultado = atualizado;
             }
