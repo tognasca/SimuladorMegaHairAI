@@ -53,6 +53,10 @@ jobs:
           done
           cat /tmp/saloes-api.log
           exit 1
+      - name: Verificar isolamento das mídias de diagnóstico
+        run: |
+          status=$(curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:5185/bench/20261020_180435/index.html)
+          test "$status" = 404
       - name: Cadastro, autorizacao e concorrencia
         run: python3 scripts/testar-cadastro-saloes.py
       - name: Bloquear central na instancia de outro salao

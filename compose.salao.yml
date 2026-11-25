@@ -23,6 +23,7 @@ services:
       dockerfile: Dockerfile.api
     restart: unless-stopped
     environment:
+      ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-simulacaomegahairdb};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?Defina uma senha para o banco deste salao}
       Jwt__Key: ${JWT_KEY:?Defina uma JWT_KEY exclusiva deste salao}
       Jwt__Issuer: ${JWT_ISSUER:-SimuladorMegaHair}
@@ -57,6 +58,7 @@ services:
       dockerfile: Dockerfile.web
     restart: unless-stopped
     environment:
+      ASPNETCORE_ENVIRONMENT: Production
       Api__BaseUrl: http://api:5185/
       Salao__Nome: ${SALAO_NOME:?Defina o nome do salao}
       Salao__WhatsApp: ${SALAO_WHATSAPP:?Defina o WhatsApp do salao com DDI e DDD}

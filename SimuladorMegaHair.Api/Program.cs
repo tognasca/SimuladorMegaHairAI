@@ -488,7 +488,11 @@ if (Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var publicUri))
 app.UseHttpsRedirection();
 
 app.UseWhen(context => !context.Request.Path.StartsWithSegments("/uploads", StringComparison.OrdinalIgnoreCase)
-                      && !context.Request.Path.StartsWithSegments("/resultados", StringComparison.OrdinalIgnoreCase),
+                      && !context.Request.Path.StartsWithSegments("/resultados", StringComparison.OrdinalIgnoreCase)
+                      && (app.Environment.IsDevelopment() ||
+                          (!context.Request.Path.StartsWithSegments("/bench", StringComparison.OrdinalIgnoreCase)
+                           && !context.Request.Path.StartsWithSegments("/masks", StringComparison.OrdinalIgnoreCase)
+                           && !context.Request.Path.StartsWithSegments("/temp", StringComparison.OrdinalIgnoreCase))),
     branch => branch.UseStaticFiles());
 
 
