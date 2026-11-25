@@ -17,6 +17,7 @@ services:
       retries: 20
 
   api:
+    image: ${MEGAHAIR_API_IMAGE:-megahair-api:local}
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -50,6 +51,7 @@ services:
         condition: service_healthy
 
   web:
+    image: ${MEGAHAIR_WEB_IMAGE:-megahair-web:local}
     build:
       context: .
       dockerfile: Dockerfile.web
