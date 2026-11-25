@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
@@ -25,6 +25,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="images/logo_tati.png" />
 
+    <link rel="manifest" href="/manifest.webmanifest" />
     <HeadOutlet />
 </head>
 
@@ -32,6 +33,7 @@
     <!-- prerender desativado para permitir a restauração do login via JS interop. -->
     <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
     <script src="_framework/blazor.web.js"></script>
+    <script src="/js/pwa.js" defer></script>
     <script src="js/camera.js"></script>
     <script src="js/espelho.js?v=20261029-framing916"></script>
     <script src="js/resultado.js?v=20261115-resultado-imagem"></script>

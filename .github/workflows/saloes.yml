@@ -2,7 +2,7 @@ name: Cadastro de saloes
 
 on:
   push:
-    branches: [feat/isolamento-por-salao]
+    branches: [feat/isolamento-por-salao, feature/megahair-oneclick-2027]
   pull_request:
     branches: [master]
 
@@ -37,16 +37,26 @@ jobs:
         run: dotnet test SimuladorMegaHair.Tests/SimuladorMegaHair.Tests.csproj -c Release
       - name: Compilar API
         run: dotnet build SimuladorMegaHair.Api/SimuladorMegaHair.Api.csproj -c Release
+      - name: Auditar vulnerabilidades nas dependências da API
+        run: dotnet list SimuladorMegaHair.Api/SimuladorMegaHair.Api.csproj package --vulnerable --include-transitive
+      - name: Compilar imagens Docker
+        run: |
+          docker build --file Dockerfile.api --tag megahair-api:ci .
+          docker build --file Dockerfile.web --tag megahair-web:ci .
       - name: Iniciar API
         working-directory: SimuladorMegaHair.Api
         run: |
           dotnet bin/Release/net8.0/SimuladorMegaHair.Api.dll --urls http://127.0.0.1:5185 > /tmp/saloes-api.log 2>&1 &
           for tentativa in $(seq 1 40); do
-            if curl -s -o /dev/null http://127.0.0.1:5185/api/orcamento/opcoes; then exit 0; fi
+            if curl -fsS -o /dev/null http://127.0.0.1:5185/health/ready; then exit 0; fi
             sleep 1
           done
           cat /tmp/saloes-api.log
           exit 1
+      - name: Verificar isolamento das mídias de diagnóstico
+        run: |
+          status=$(curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:5185/bench/20261020_180435/index.html)
+          test "$status" = 404
       - name: Cadastro, autorizacao e concorrencia
         run: python3 scripts/testar-cadastro-saloes.py
       - name: Bloquear central na instancia de outro salao
@@ -71,16 +81,19 @@ jobs:
         run: |
           dotnet bin/Release/net8.0/SimuladorMegaHair.Web.dll --urls http://127.0.0.1:5180 > /tmp/saloes-web.log 2>&1 &
           for tentativa in $(seq 1 40); do
-            if curl -s -o /dev/null http://127.0.0.1:5180/admin/saloes; then exit 0; fi
+            if curl -fsS -o /dev/null http://127.0.0.1:5180/health/live; then exit 0; fi
             sleep 1
           done
           cat /tmp/saloes-web.log
           exit 1
+      - name: Testar entrega de fotos pela origem Web
+        run: python3 scripts/testar-midia-ci.py
       - name: Testar tela em celular, tablet e desktop
         run: |
           npm install --prefix "$RUNNER_TEMP/saloes-browser" playwright
           "$RUNNER_TEMP/saloes-browser/node_modules/.bin/playwright" install --with-deps chromium
           NODE_PATH="$RUNNER_TEMP/saloes-browser/node_modules" node scripts/testar-tela-saloes.cjs
+          NODE_PATH="$RUNNER_TEMP/saloes-browser/node_modules" node scripts/testar-pwa.cjs
       - name: Logs da API
         if: failure()
         run: cat /tmp/saloes-api.log || true

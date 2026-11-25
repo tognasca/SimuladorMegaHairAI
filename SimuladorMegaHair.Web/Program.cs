@@ -71,6 +71,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
+app.MapGet("/health/live", () => Results.NoContent());
+
 app.MapGet("/midia-simulacao/{pasta}/{arquivo}", MidiaSimulacao.EntregarAsync);
 
 app.MapGet("/tv", () => Results.Redirect("/salao-tv.html"));

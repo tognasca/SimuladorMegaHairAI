@@ -28,6 +28,8 @@ public class MediaController : ControllerBase
     [HttpGet("{pasta}/{arquivo}")]
     public IActionResult Obter(string pasta, string arquivo, [FromQuery] long exp, [FromQuery] string? sig)
     {
+        Response.Headers.CacheControl = "private, no-store";
+
         if (!CaminhosSeguros.TryNormalizar($"{pasta}/{arquivo}", out var p, out var a))
             return NotFound();
 
